@@ -1,0 +1,70 @@
+﻿# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Production builds
+dist/
+**/dist/
+build/
+**/build/
+
+# Tests and coverage
+coverage/
+**/coverage/
+.nyc_output/
+
+# Vite and tool caches
+.vite/
+**/.vite/
+.cache/
+**/.cache/
+
+# Runtime files
+logs/
+**/logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.pid
+*.pid.lock
+
+# Private uploads and temporary processing
+uploads/
+**/uploads/
+temp/
+**/temp/
+tmp/
+**/tmp/
+
+# Sensitive files
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Repomix output
+repomix-output.*
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Operating systems
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+*.pfx
+repomix-output.*

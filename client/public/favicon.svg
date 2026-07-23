@@ -1,0 +1,34 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+  role="img"
+  aria-label="זיכרון חי"
+>
+  <rect width="64" height="64" rx="16" fill="#80633d" />
+
+  <path
+    d="M32 23C28 18 21 17 15 20V44C21 41 28 42 32 47"
+    fill="none"
+    stroke="#fffdf8"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <path
+    d="M32 23C36 18 43 17 49 20V44C43 41 36 42 32 47"
+    fill="none"
+    stroke="#fffdf8"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <path
+    d="M32 23V47"
+    fill="none"
+    stroke="#d8c59f"
+    stroke-width="3"
+    stroke-linecap="round"
+  />
+</svg>
