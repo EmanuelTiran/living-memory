@@ -4,8 +4,12 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "argon2": "^0.45.1",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "jose": "^6.2.4",
+    "mongoose": "^9.8.0",
     "zod": "^4.4.3"
   },
   "scripts": {

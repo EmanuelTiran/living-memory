@@ -1,0 +1,235 @@
+.memory-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-block-start: 34px;
+    gap: 24px;
+  }
+
+  .memory-toolbar h2 {
+    margin: 0;
+    color: #33413d;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+  }
+
+  .memory-form {
+    display: grid;
+    margin-block-start: 26px;
+    padding: clamp(20px, 4vw, 32px);
+    gap: 22px;
+    background: #f7f4ec;
+    border: 1px solid rgba(83, 98, 91, 0.14);
+    border-radius: 18px;
+  }
+
+  .memory-form-heading h2 {
+    margin: 0;
+    color: #33413d;
+    font-size: 1.35rem;
+  }
+
+  .memory-form-heading p {
+    margin: 8px 0 0;
+    color: #707670;
+    line-height: 1.65;
+  }
+
+  .memory-form-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .memory-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 14px;
+    resize: vertical;
+    color: #26302d;
+    background: #fffefa;
+    border: 1px solid rgba(83, 98, 91, 0.24);
+    border-radius: 12px;
+    outline: none;
+    line-height: 1.6;
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  .memory-textarea:focus {
+    border-color: #8a6a42;
+    box-shadow:
+      0 0 0 4px rgba(138, 106, 66, 0.1);
+  }
+
+  .memory-form-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .memory-message {
+    margin-block-start: 22px;
+  }
+
+  .memory-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+    gap: 12px;
+    color: #68706c;
+  }
+
+  .memory-loading p {
+    margin: 0;
+  }
+
+  .memory-empty-state {
+    display: grid;
+    min-height: 260px;
+    margin-block-start: 26px;
+    place-items: center;
+    align-content: center;
+    padding: 30px;
+    text-align: center;
+    background: rgba(247, 244, 236, 0.6);
+    border: 1px dashed rgba(83, 98, 91, 0.25);
+    border-radius: 18px;
+  }
+
+  .memory-empty-icon {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    color: #fffdf8;
+    font-size: 1.8rem;
+    background: #80633d;
+    border-radius: 16px;
+  }
+
+  .memory-empty-state h2 {
+    margin: 18px 0 0;
+    color: #33413d;
+    font-size: 1.3rem;
+  }
+
+  .memory-empty-state p {
+    max-width: 480px;
+    margin: 10px 0 0;
+    color: #707670;
+    line-height: 1.7;
+  }
+
+  .memory-list {
+    display: grid;
+    margin-block-start: 26px;
+    gap: 18px;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .memory-card {
+    padding: 24px;
+    background: #fffefa;
+    border: 1px solid rgba(83, 98, 91, 0.15);
+    border-radius: 18px;
+    box-shadow:
+      0 10px 30px rgba(59, 52, 40, 0.05);
+  }
+
+  .memory-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .memory-privacy {
+    margin: 0 0 6px;
+    color: #4d7b68;
+    font-size: 0.76rem;
+    font-weight: 700;
+  }
+
+  .memory-card h3 {
+    margin: 0;
+    color: #2d3a36;
+    font-size: 1.25rem;
+  }
+
+  .memory-initial {
+    display: grid;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    color: #fffdf8;
+    font-size: 1.1rem;
+    font-weight: 700;
+    background: #80633d;
+    border-radius: 14px;
+  }
+
+  .memory-relationship {
+    display: inline-block;
+    margin: 16px 0 0;
+    padding: 6px 10px;
+    color: #69563d;
+    font-size: 0.8rem;
+    background: #f2e9db;
+    border-radius: 999px;
+  }
+
+  .memory-description {
+    margin: 16px 0 0;
+    color: #626965;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+
+  .memory-description-empty {
+    color: #858985;
+    font-style: italic;
+  }
+
+  .memory-created-at {
+    margin: 20px 0 0;
+    padding-block-start: 14px;
+    color: #898d89;
+    font-size: 0.78rem;
+    border-top: 1px solid rgba(83, 98, 91, 0.1);
+  }
+
+  @media (max-width: 760px) {
+    .memory-toolbar {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .memory-toolbar .primary-button {
+      width: 100%;
+    }
+
+    .memory-form-grid,
+    .memory-list {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .memory-form-actions {
+      flex-direction: column;
+    }
+
+    .memory-form-actions .primary-button,
+    .memory-form-actions .secondary-button {
+      width: 100%;
+    }
+
+    .memory-card {
+      padding: 20px;
+    }
+  }

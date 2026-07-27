@@ -1,3 +1,7 @@
+
+### `docs/ROADMAP.md`
+
+```md
 # Roadmap
 
 ## Phase 1 — Foundations
@@ -11,27 +15,43 @@
 - Root scripts.
 - Basic API tests.
 - Vite `/api` development proxy.
+- Public GitHub repository.
+- Feature-branch and pull-request workflow.
 
-Status: completed and awaiting final Git review.
+Status: completed and merged.
 
 ## Phase 2 — MongoDB and Server Infrastructure
 
-- MongoDB and Mongoose connection.
+- MongoDB Atlas and Mongoose connection.
+- Dedicated application database.
 - Expanded environment validation.
+- Database connection before HTTP startup.
+- Graceful HTTP and database shutdown.
+- Startup failure handling.
 - Central error handling.
+- Consistent API error responses.
+- Safe malformed-JSON handling.
 - Request IDs.
-- Safe logging.
-- Initial feature-module structure.
+- Safe structured logging.
+- Request duration logging.
+- Cross-cutting server infrastructure structure.
+- Feature-module conventions without premature empty modules.
+- Server infrastructure integration tests.
+
+Status: implementation and runtime verification completed. Final Git review is pending.
 
 ## Phase 3 — Authentication
 
+- First business feature module.
 - User model.
 - Registration and login.
 - Password hashing.
 - Short-lived access token.
 - Refresh-token rotation.
-- Logout and session revocation.
-- Authentication tests.
+- Secure logout and session revocation.
+- Authentication validation.
+- Authentication integration tests.
+- Security headers and authentication-specific rate limiting.
 
 ## Phase 4 — Memory Profiles
 
@@ -81,6 +101,8 @@ Status: completed and awaiting final Git review.
 - Private media storage.
 - Processing jobs and workers.
 - Audio transcription.
+- Optional voice interaction.
+- Optional avatar and video experiences.
 - Administration.
 - Advanced privacy and security.
 - Accessibility and performance.
