@@ -5,7 +5,10 @@ import { notFound } from './middleware/notFound.js'
 import { requestId } from './middleware/requestId.js'
 import { requestLogger } from './middleware/requestLogger.js'
 import authRoutes from './modules/auth/authRoutes.js'
+import chatRoutes from './modules/chat/chatRoutes.js'
+import biographyRoutes from './modules/memories/biographyRoutes.js'
 import memoryRoutes from './modules/memories/memoryRoutes.js'
+import recordingRoutes from './modules/media/recordingRoutes.js'
 
 const app = express()
 
@@ -32,6 +35,22 @@ app.get('/api/health', (_req, res) => {
 })
 
 app.use('/api/auth', authRoutes)
+
+app.use(
+  '/api/memories/:memoryId/biography',
+  biographyRoutes,
+)
+
+app.use(
+  '/api/memories/:memoryId/chat',
+  chatRoutes,
+)
+
+app.use(
+  '/api/memories/:memoryId/recordings',
+  recordingRoutes,
+)
+
 app.use('/api/memories', memoryRoutes)
 
 app.use(notFound)

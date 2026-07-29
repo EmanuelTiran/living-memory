@@ -1,0 +1,411 @@
+.biography-questionnaire {
+  margin-block-start: 28px;
+  background: #fffefa;
+  border: 1px solid rgba(83, 98, 91, 0.14);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.biography-introduction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(22px, 4vw, 32px);
+  gap: 28px;
+  background:
+    linear-gradient(135deg,
+      rgba(245, 239, 228, 0.86),
+      rgba(237, 246, 241, 0.7));
+}
+
+.biography-introduction h2 {
+  margin: 8px 0 0;
+  color: #33413d;
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+}
+
+.biography-introduction>div>p:last-child {
+  max-width: 660px;
+  margin: 10px 0 0;
+  color: #626965;
+  line-height: 1.75;
+}
+
+.biography-toggle-button {
+  flex: 0 0 auto;
+}
+
+.biography-questionnaire-content {
+  padding: clamp(22px, 4vw, 32px);
+  border-top: 1px solid rgba(83, 98, 91, 0.12);
+}
+
+.biography-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 130px;
+  gap: 12px;
+  color: #68706c;
+}
+
+.biography-loading p {
+  margin: 0;
+}
+
+.biography-message {
+  margin: 0 0 20px;
+}
+
+.biography-progress {
+  margin-block-end: 26px;
+  padding: 18px 20px;
+  background: #f7f4ec;
+  border-radius: 14px;
+}
+
+.biography-progress-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.biography-progress-heading strong {
+  color: #3d4b46;
+  font-size: 0.9rem;
+}
+
+.biography-progress-heading span {
+  color: #80633d;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.biography-progress-track {
+  height: 9px;
+  margin-block-start: 12px;
+  background: rgba(128, 99, 61, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.biography-progress-track span {
+  display: block;
+  height: 100%;
+  background:
+    linear-gradient(90deg,
+      #80633d,
+      #4d7b68);
+  border-radius: inherit;
+  transition: width 240ms ease;
+}
+
+.biography-question-list {
+  display: grid;
+  gap: 20px;
+}
+
+.biography-question-card {
+  position: relative;
+  padding: clamp(20px, 4vw, 28px);
+  background: #f9f7f1;
+  border: 1px solid rgba(83, 98, 91, 0.14);
+  border-radius: 18px;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.biography-question-saved {
+  background: #f0f7f3;
+  border-color: rgba(49, 95, 77, 0.25);
+}
+
+.biography-saved-mark {
+  display: inline-flex;
+  margin: 0 0 14px;
+  padding: 6px 10px;
+  color: #315f4d;
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: #dfeee7;
+  border-radius: 999px;
+}
+
+.biography-question-form {
+  display: grid;
+  gap: 18px;
+}
+
+.biography-question-form fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.biography-question-title {
+  width: 100%;
+  padding: 0;
+  color: #2f3c38;
+  font-size: 1.08rem;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.biography-question-category,
+.biography-answer-category {
+  margin: 7px 0 0;
+  color: #80633d;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.biography-options {
+  display: grid;
+  margin-block-start: 18px;
+  gap: 10px;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+.biography-option {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 12px 14px;
+  gap: 10px;
+  color: #59615d;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  background: #fff;
+  border: 1px solid rgba(83, 98, 91, 0.18);
+  border-radius: 12px;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.biography-option:hover {
+  border-color: rgba(128, 99, 61, 0.42);
+}
+
+.biography-option input {
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: #80633d;
+}
+
+.biography-option-selected {
+  color: #4e3f2c;
+  background: #f5efe4;
+  border-color: #a88a61;
+  box-shadow:
+    0 0 0 3px rgba(128, 99, 61, 0.08);
+}
+
+.biography-custom-option {
+  grid-column: 1 / -1;
+}
+
+.biography-custom-field {
+  display: grid;
+  margin-block-start: 14px;
+  gap: 8px;
+}
+
+.biography-custom-field>span {
+  color: #46534f;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.biography-custom-field textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 13px 14px;
+  color: #26302d;
+  background: #fff;
+  border: 1px solid rgba(83, 98, 91, 0.24);
+  border-radius: 12px;
+  outline: none;
+  line-height: 1.7;
+  resize: vertical;
+}
+
+.biography-custom-field textarea:focus {
+  border-color: #80633d;
+  box-shadow:
+    0 0 0 4px rgba(128, 99, 61, 0.1);
+}
+
+.biography-custom-field small {
+  justify-self: end;
+  color: #858985;
+  font-size: 0.72rem;
+}
+
+.biography-save-button {
+  justify-self: start;
+}
+
+.biography-next-batch {
+  padding: 22px;
+  text-align: center;
+  background: #edf6f1;
+  border: 1px solid rgba(49, 95, 77, 0.18);
+  border-radius: 16px;
+}
+
+.biography-next-batch p {
+  margin: 0 0 16px;
+  color: #496158;
+  line-height: 1.7;
+}
+
+.biography-complete {
+  display: flex;
+  align-items: center;
+  padding: 26px;
+  gap: 18px;
+  background: #edf6f1;
+  border: 1px solid rgba(49, 95, 77, 0.2);
+  border-radius: 16px;
+}
+
+.biography-complete>span {
+  display: grid;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 900;
+  background: #4d7b68;
+  border-radius: 50%;
+}
+
+.biography-complete h3 {
+  margin: 0;
+  color: #315f4d;
+}
+
+.biography-complete p {
+  margin: 7px 0 0;
+  color: #587067;
+  line-height: 1.65;
+}
+
+.biography-saved-answers {
+  margin-block-start: 24px;
+  border-top: 1px solid rgba(83, 98, 91, 0.12);
+}
+
+.biography-saved-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0 0;
+  color: #3d4b46;
+  font: inherit;
+  font-weight: 800;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.biography-saved-toggle strong {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: #fffdf8;
+  font-size: 0.78rem;
+  background: #80633d;
+  border-radius: 11px;
+}
+
+.biography-answer-list {
+  display: grid;
+  margin-block-start: 18px;
+  gap: 14px;
+}
+
+.biography-answer-card {
+  padding: 18px;
+  background: #f7f4ec;
+  border: 1px solid rgba(83, 98, 91, 0.12);
+  border-radius: 14px;
+}
+
+.biography-answer-card h3 {
+  margin: 8px 0 0;
+  color: #33413d;
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.biography-answer-card>p:not(.biography-answer-category) {
+  margin: 10px 0 0;
+  color: #626965;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.biography-answer-card .story-action-button {
+  margin-block-start: 14px;
+}
+
+.biography-cancel-edit {
+  justify-self: start;
+}
+
+.biography-no-previous-answers {
+  margin: 0;
+  color: #777d78;
+  font-size: 0.88rem;
+}
+
+@media (max-width: 760px) {
+  .biography-introduction {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .biography-toggle-button {
+    width: 100%;
+  }
+
+  .biography-options {
+    grid-template-columns: 1fr;
+  }
+
+  .biography-custom-option {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .biography-progress-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .biography-save-button,
+  .biography-next-batch .primary-button,
+  .biography-cancel-edit {
+    width: 100%;
+  }
+
+  .biography-complete {
+    align-items: flex-start;
+  }
+}

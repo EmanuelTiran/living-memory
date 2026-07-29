@@ -1,0 +1,47 @@
+.memory-chat-launcher {
+  border-color: rgba(77, 123, 104, 0.24) !important;
+  background:
+    linear-gradient(145deg,
+      rgba(237, 246, 241, 0.9),
+      #fffefa) !important;
+}
+
+.memory-chat-start-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  min-height: 42px;
+  margin-block-start: auto;
+  padding: 10px 16px;
+  color: #fffdf8;
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-decoration: none;
+  background: #4d7b68;
+  border: 1px solid #4d7b68;
+  border-radius: 11px;
+  box-shadow:
+    0 8px 20px rgba(77, 123, 104, 0.18);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.memory-chat-start-button:hover {
+  background: #3f6b59;
+  border-color: #3f6b59;
+  transform: translateY(-1px);
+}
+
+.memory-chat-start-button:focus-visible {
+  outline: 3px solid rgba(77, 123, 104, 0.28);
+  outline-offset: 3px;
+}
+
+@media (max-width: 520px) {
+  .memory-chat-start-button {
+    width: 100%;
+  }
+}

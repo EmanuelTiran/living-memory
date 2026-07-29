@@ -16,6 +16,7 @@ import {
   refreshSession,
   registerAccount,
 } from './api/authApi.js'
+import MemoryChatPage from './features/chat/MemoryChatPage.jsx'
 import MemoryDashboard from './features/memories/MemoryDashboard.jsx'
 import MemoryProfilePage from './features/memories/MemoryProfilePage.jsx'
 import './App.css'
@@ -493,6 +494,15 @@ function App() {
     }
   }, [])
 
+  const memoryChatPage = (
+    <MemoryChatPage
+      authentication={authentication}
+      onAuthenticationChange={
+        setAuthentication
+      }
+    />
+  )
+
   return (
     <Routes>
       <Route
@@ -587,6 +597,38 @@ function App() {
                 setAuthentication
               }
             />
+          ) : (
+            <Navigate
+              to="/login"
+              replace
+            />
+          )
+        }
+      />
+
+      <Route
+        path="/app/memories/:memoryId/chat"
+        element={
+          initializing ? (
+            <LoadingScreen />
+          ) : authentication?.user ? (
+            memoryChatPage
+          ) : (
+            <Navigate
+              to="/login"
+              replace
+            />
+          )
+        }
+      />
+
+      <Route
+        path="/app/memories/:memoryId/chat/:conversationId"
+        element={
+          initializing ? (
+            <LoadingScreen />
+          ) : authentication?.user ? (
+            memoryChatPage
           ) : (
             <Navigate
               to="/login"
