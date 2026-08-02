@@ -17,6 +17,15 @@ import {
   chatMemoryParamsSchema,
   sendChatMessageSchema,
 } from './validation.js'
+import {
+  generateChatMessageSpeech,
+} from '../voice/speechController.js'
+import {
+  chatSpeechRateLimiter,
+} from '../voice/speechRateLimiter.js'
+import {
+  chatSpeechParamsSchema,
+} from '../voice/speechValidation.js'
 
 const chatRoutes = Router({
   mergeParams: true,
@@ -37,6 +46,15 @@ chatRoutes.get(
   ),
   validateQuery(chatHistoryQuerySchema),
   getChatHistory,
+)
+
+chatRoutes.post(
+  '/conversations/:conversationId/messages/:messageId/speech',
+  validateParams(
+    chatSpeechParamsSchema,
+  ),
+  chatSpeechRateLimiter,
+  generateChatMessageSpeech,
 )
 
 chatRoutes.post(

@@ -1,3 +1,7 @@
+import ChatMessageSpeechButton from './ChatMessageSpeechButton.jsx'
+import {
+  useChatSpeechPlayback,
+} from './useChatSpeechPlayback.js'
 import {
   useCallback,
   useEffect,
@@ -78,6 +82,16 @@ function getErrorMessage(error) {
   }
 
   const messages = {
+    CHAT_MESSAGE_NOT_FOUND:
+      'הודעת הצ׳אט לא נמצאה או שאינה זמינה להשמעה.',
+    CHAT_MESSAGE_NOT_SPEAKABLE:
+      'התשובה ארוכה מדי או שאינה מתאימה להשמעה.',
+    AI_SPEECH_RATE_LIMITED:
+      'בוצעו יותר מדי בקשות השמעה בזמן קצר. המתינו מעט ונסו שוב.',
+    AI_SPEECH_PROVIDER_ERROR:
+      'שירות הקול אינו זמין כרגע. נסו שוב מאוחר יותר.',
+    AI_SPEECH_INVALID_RESPONSE:
+      'שירות הקול החזיר קובץ אודיו לא תקין.',
     MEMORY_NOT_FOUND:
       'הזיכרון לא נמצא או שאין לכם הרשאה לבצע את הפעולה.',
     CHAT_CONVERSATION_NOT_FOUND:
@@ -286,7 +300,7 @@ function MemoryChatPage({
   const subjectName =
     typeof location.state?.subjectName ===
       'string' &&
-    location.state.subjectName.trim()
+      location.state.subjectName.trim()
       ? location.state.subjectName.trim()
       : 'הזיכרון'
 
@@ -332,6 +346,17 @@ function MemoryChatPage({
       onAuthenticationChange,
     ],
   )
+  const {
+    speechState,
+    toggleSpeech,
+  } = useChatSpeechPlayback({
+    memoryId,
+    conversationId:
+      conversation?.id ??
+      conversationId,
+    runAuthenticatedRequest,
+    getErrorMessage,
+  })
 
   useEffect(() => {
     let isActive = true
@@ -369,7 +394,7 @@ function MemoryChatPage({
           if (
             conversationCreationRef
               .current.memoryId !==
-              memoryId ||
+            memoryId ||
             !conversationCreationRef
               .current.request
           ) {
@@ -706,7 +731,7 @@ function MemoryChatPage({
       if (
         error instanceof ApiError &&
         error.code ===
-          'BIOGRAPHY_SOURCE_EXISTS'
+        'BIOGRAPHY_SOURCE_EXISTS'
       ) {
         markMessageAsPromoted(
           promotionForm.messageId,
@@ -862,7 +887,7 @@ function MemoryChatPage({
           </div>
 
           <span className="chat-text-badge">
-            שיחת טקסט
+            טקסט וקול AI
           </span>
         </header>
 
@@ -875,10 +900,12 @@ function MemoryChatPage({
           <p>
             זוהי הדמיה מבוססת בינה מלאכותית
             הנשענת על חומרים שנמסרו ואושרו.
-            אין מדובר באדם עצמו. תשובות
-            המסומנות כהדמיה יצירתית אינן
-            עובדות עד שהמשתמש בודק ומאשר
-            אותן.
+            אין מדובר באדם עצמו. אפשר להשמיע
+            את התשובות בקול AI כללי ומלאכותי;
+            אין זה קולו האמיתי או חיקוי קולו
+            של האדם. תשובות המסומנות כהדמיה
+            יצירתית אינן עובדות עד שהמשתמש
+            בודק ומאשר אותן.
           </p>
         </aside>
 
@@ -926,16 +953,16 @@ function MemoryChatPage({
                 ) => {
                   const classification =
                     answerClassifications[
-                      chatMessage
-                        .groundingStatus
+                    chatMessage
+                      .groundingStatus
                     ]
 
                   const statusClassName =
                     classification
                       ? getClassificationClassName(
-                          chatMessage
-                            .groundingStatus,
-                        )
+                        chatMessage
+                          .groundingStatus,
+                      )
                       : ''
 
                   const previousQuestion =
@@ -946,18 +973,18 @@ function MemoryChatPage({
 
                   const canRequestCreative =
                     chatMessage.role ===
-                      'assistant' &&
+                    'assistant' &&
                     chatMessage
                       .groundingStatus ===
-                      'insufficient_context' &&
+                    'insufficient_context' &&
                     previousQuestion.length > 0
 
                   const isCreative =
                     chatMessage.role ===
-                      'assistant' &&
+                    'assistant' &&
                     chatMessage
                       .groundingStatus ===
-                      'creative'
+                    'creative'
 
                   const isPromoted =
                     promotedMessageIds.has(
@@ -985,13 +1012,13 @@ function MemoryChatPage({
                       <div className="chat-message-heading">
                         <strong>
                           {chatMessage.role ===
-                          'user'
+                            'user'
                             ? 'אתם'
                             : getAssistantName(
-                                chatMessage
-                                  .groundingStatus,
-                                subjectName,
-                              )}
+                              chatMessage
+                                .groundingStatus,
+                              subjectName,
+                            )}
                         </strong>
 
                         <time
@@ -1019,6 +1046,21 @@ function MemoryChatPage({
                       <p>
                         {chatMessage.content}
                       </p>
+
+                      {chatMessage.role ===
+                        'assistant' && (
+                          <ChatMessageSpeechButton
+                            messageId={
+                              chatMessage.id
+                            }
+                            speechState={
+                              speechState
+                            }
+                            onToggle={
+                              toggleSpeech
+                            }
+                          />
+                        )}
 
                       {chatMessage.role ===
                         'assistant' &&
@@ -1080,7 +1122,7 @@ function MemoryChatPage({
                             }
                           >
                             {creativeRequestMessageId ===
-                            chatMessage.id
+                              chatMessage.id
                               ? 'יוצרים הדמיה...'
                               : 'הצגת הדמיה יצירתית'}
                           </button>
@@ -1088,15 +1130,15 @@ function MemoryChatPage({
                           {creativeRequestError
                             ?.messageId ===
                             chatMessage.id && (
-                            <p
-                              className="chat-action-error"
-                              role="alert"
-                            >
-                              {
-                                creativeRequestError.text
-                              }
-                            </p>
-                          )}
+                              <p
+                                className="chat-action-error"
+                                role="alert"
+                              >
+                                {
+                                  creativeRequestError.text
+                                }
+                              </p>
+                            )}
                         </div>
                       )}
 

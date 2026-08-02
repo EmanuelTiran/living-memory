@@ -1,6 +1,23 @@
 import 'dotenv/config'
 import { z } from 'zod'
 
+export const OPENAI_SPEECH_VOICES =
+  Object.freeze([
+    'alloy',
+    'ash',
+    'ballad',
+    'coral',
+    'echo',
+    'fable',
+    'nova',
+    'onyx',
+    'sage',
+    'shimmer',
+    'verse',
+    'marin',
+    'cedar',
+  ])
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum([
@@ -110,6 +127,36 @@ const envSchema = z.object({
       .max(300000)
       .default(120000),
 
+  OPENAI_SPEECH_MODEL: z
+    .string()
+    .trim()
+    .min(
+      1,
+      'OPENAI_SPEECH_MODEL must not be empty',
+    )
+    .max(
+      100,
+      'OPENAI_SPEECH_MODEL must not exceed 100 characters',
+    )
+    .default('gpt-4o-mini-tts'),
+
+  OPENAI_SPEECH_VOICE: z
+    .enum(
+      OPENAI_SPEECH_VOICES,
+      {
+        error:
+          'OPENAI_SPEECH_VOICE is not supported',
+      },
+    )
+    .default('marin'),
+
+  OPENAI_SPEECH_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .min(1000)
+    .max(120000)
+    .default(60000),
+
   RECORDING_STORAGE_ROOT: z
     .string()
     .trim()
@@ -173,6 +220,13 @@ export const env = Object.freeze({
   openaiTranscriptionTimeoutMs:
     result.data
       .OPENAI_TRANSCRIPTION_TIMEOUT_MS,
+  openaiSpeechModel:
+    result.data.OPENAI_SPEECH_MODEL,
+  openaiSpeechVoice:
+    result.data.OPENAI_SPEECH_VOICE,
+  openaiSpeechTimeoutMs:
+    result.data
+      .OPENAI_SPEECH_TIMEOUT_MS,
   recordingStorageRoot:
     result.data
       .RECORDING_STORAGE_ROOT,

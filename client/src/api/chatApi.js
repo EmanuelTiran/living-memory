@@ -4,6 +4,25 @@ function createChatBasePath(memoryId) {
   return `/api/memories/${encodeURIComponent(memoryId)}/chat`
 }
 
+async function parseErrorResponse(response) {
+  const payload = await response
+    .json()
+    .catch(() => null)
+
+  return new ApiError(
+    payload?.error?.message ??
+      'The request could not be completed.',
+    {
+      statusCode: response.status,
+      code:
+        payload?.error?.code ??
+        'REQUEST_FAILED',
+      details:
+        payload?.error?.details ?? [],
+    },
+  )
+}
+
 async function request(
   memoryId,
   path,
@@ -18,7 +37,8 @@ async function request(
     credentials: 'include',
     headers: {
       Accept: 'application/json',
-      Authorization: `Bearer ${accessToken}`,
+      Authorization:
+        `Bearer ${accessToken}`,
     },
   }
 
@@ -45,6 +65,12 @@ async function request(
     )
   }
 
+  if (!response.ok) {
+    throw await parseErrorResponse(
+      response,
+    )
+  }
+
   const payload =
     response.status === 204
       ? null
@@ -52,22 +78,97 @@ async function request(
           .json()
           .catch(() => null)
 
-  if (!response.ok) {
-    throw new ApiError(
-      payload?.error?.message ??
-        'The request could not be completed.',
+  return payload?.data ?? null
+}
+
+async function requestSpeech(
+  memoryId,
+  path,
+  accessToken,
+) {
+  let response
+
+  try {
+    response = await fetch(
+      `${createChatBasePath(memoryId)}${path}`,
       {
-        statusCode: response.status,
-        code:
-          payload?.error?.code ??
-          'REQUEST_FAILED',
-        details:
-          payload?.error?.details ?? [],
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'audio/mpeg',
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+      },
+    )
+  } catch {
+    throw new ApiError(
+      'Unable to connect to the server.',
+      {
+        code: 'NETWORK_ERROR',
       },
     )
   }
 
-  return payload?.data ?? null
+  if (!response.ok) {
+    throw await parseErrorResponse(
+      response,
+    )
+  }
+
+  const contentType =
+    response.headers
+      .get('content-type')
+      ?.split(';')[0]
+      .trim()
+      .toLowerCase()
+
+  const isAiGenerated =
+    response.headers.get(
+      'x-ai-generated-audio',
+    ) === 'true'
+
+  if (
+    contentType !== 'audio/mpeg' ||
+    !isAiGenerated
+  ) {
+    throw new ApiError(
+      'The server returned invalid speech audio.',
+      {
+        statusCode: response.status,
+        code:
+          'AI_SPEECH_INVALID_RESPONSE',
+      },
+    )
+  }
+
+  let audioBlob
+
+  try {
+    audioBlob = await response.blob()
+  } catch {
+    throw new ApiError(
+      'The speech audio could not be read.',
+      {
+        statusCode: response.status,
+        code:
+          'AI_SPEECH_INVALID_RESPONSE',
+      },
+    )
+  }
+
+  if (audioBlob.size === 0) {
+    throw new ApiError(
+      'The server returned empty speech audio.',
+      {
+        statusCode: response.status,
+        code:
+          'AI_SPEECH_INVALID_RESPONSE',
+      },
+    )
+  }
+
+  return audioBlob
 }
 
 export async function createMemoryChatConversation(
@@ -137,6 +238,19 @@ export async function getMemoryChatHistory(
   return request(
     memoryId,
     `/conversations/${encodeURIComponent(conversationId)}/messages?${query.toString()}`,
+    accessToken,
+  )
+}
+
+export function getMemoryChatMessageSpeech(
+  accessToken,
+  memoryId,
+  conversationId,
+  messageId,
+) {
+  return requestSpeech(
+    memoryId,
+    `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/speech`,
     accessToken,
   )
 }
