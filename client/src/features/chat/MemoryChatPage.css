@@ -507,6 +507,93 @@
   opacity: 0.7;
 }
 
+.chat-voice-input {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(46, 111, 159, 0.06);
+  border: 1px solid rgba(46, 111, 159, 0.14);
+  border-radius: 12px;
+}
+
+.chat-voice-input-controls {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.chat-voice-button,
+.chat-voice-cancel-button {
+  display: inline-flex;
+  min-height: 38px;
+  padding: 7px 12px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #315f4d;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  background: #eef6f2;
+  border: 1px solid rgba(77, 123, 104, 0.28);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.chat-voice-button:hover:not(:disabled),
+.chat-voice-cancel-button:hover:not(:disabled) {
+  background: #dfeee7;
+}
+
+.chat-voice-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.chat-voice-button-recording {
+  color: #8b2929;
+  background: #fbefef;
+  border-color: rgba(139, 41, 41, 0.3);
+}
+
+.chat-voice-cancel-button {
+  color: #69563d;
+  background: transparent;
+  border-color: rgba(128, 99, 61, 0.25);
+}
+
+.chat-voice-settings-link {
+  color: #355f86;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.chat-voice-privacy-note,
+.chat-voice-status,
+.chat-voice-error {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.55;
+}
+
+.chat-voice-privacy-note {
+  color: #66716d;
+}
+
+.chat-voice-status {
+  color: #315f4d;
+  font-weight: 700;
+}
+
+.chat-voice-error {
+  padding: 8px 10px;
+  color: #8b4545;
+  background: #fbefef;
+  border: 1px solid rgba(139, 69, 69, 0.18);
+  border-radius: 9px;
+}
+
 .chat-composer-footer {
   display: flex;
   align-items: center;
@@ -641,12 +728,14 @@
   }
 
   .chat-composer-footer,
+  .chat-voice-input-controls,
   .creative-source-actions {
     align-items: stretch;
     flex-direction: column;
   }
 
   .chat-composer-footer button,
+  .chat-voice-input-controls button,
   .creative-source-actions button {
     width: 100%;
   }

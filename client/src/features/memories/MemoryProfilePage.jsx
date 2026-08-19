@@ -13,6 +13,8 @@ import {
 } from '../../api/memoryApi.js'
 import MemoryChatLauncher from '../chat/MemoryChatLauncher.jsx'
 import BiographyQuestionnaire from './BiographyQuestionnaire.jsx'
+import DigitalPersonaSetup from './DigitalPersonaSetup.jsx'
+import MemoryAssets from './MemoryAssets.jsx'
 import MemoryRecordings from './MemoryRecordings.jsx'
 import './MemoryProfilePage.css'
 import './MemoryProfileManagement.css'
@@ -635,6 +637,18 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
           runAuthenticatedRequest={runAuthenticatedRequest}
         />
 
+        <MemoryAssets
+          memoryId={memoryProfile.id}
+          subjectName={memoryProfile.subjectName}
+          runAuthenticatedRequest={runAuthenticatedRequest}
+        />
+
+        <DigitalPersonaSetup
+          memoryId={memoryProfile.id}
+          subjectName={memoryProfile.subjectName}
+          runAuthenticatedRequest={runAuthenticatedRequest}
+        />
+
         <section className="story-workspace" aria-labelledby="stories-title">
           <div className="story-form-panel">
             <div className="story-section-header">
@@ -878,13 +892,6 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
         </section>
 
         <section className="profile-features" aria-label="אפשרויות הזיכרון">
-          <article>
-            <span aria-hidden="true">02</span>
-            <h2>תמונות ומסמכים</h2>
-            <p>בהמשך יהיה אפשר להוסיף תמונות ומסמכים משפחתיים.</p>
-            <strong>בקרוב</strong>
-          </article>
-
           <MemoryChatLauncher
             memoryId={memoryProfile.id}
             subjectName={memoryProfile.subjectName}

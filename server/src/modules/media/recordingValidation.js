@@ -200,6 +200,23 @@ export const createMemoryRecordingSchema =
       permittedUses:
         permittedUsesSchema,
     }),
+  }).superRefine((value, context) => {
+    if (
+      value.consent.permittedUses.includes(
+        'voice_imitation',
+      ) &&
+      value.consent.basis !== 'self'
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: [
+          'consent',
+          'basis',
+        ],
+        message:
+          'Voice imitation is currently limited to the recorded person’s own voice.',
+      })
+    }
   })
 
 export const memoryRecordingMemoryParamsSchema =

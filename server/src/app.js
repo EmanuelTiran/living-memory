@@ -8,6 +8,7 @@ import authRoutes from './modules/auth/authRoutes.js'
 import chatRoutes from './modules/chat/chatRoutes.js'
 import biographyRoutes from './modules/memories/biographyRoutes.js'
 import memoryRoutes from './modules/memories/memoryRoutes.js'
+import memoryAssetRoutes from './modules/media/memoryAssetRoutes.js'
 import recordingRoutes from './modules/media/recordingRoutes.js'
 
 const app = express()
@@ -49,6 +50,11 @@ app.use(
 app.use(
   '/api/memories/:memoryId/recordings',
   recordingRoutes,
+)
+
+app.use(
+  '/api/memories/:memoryId/assets',
+  memoryAssetRoutes,
 )
 
 app.use('/api/memories', memoryRoutes)

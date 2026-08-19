@@ -399,6 +399,25 @@ memoryRecordingSchema.pre(
 
 memoryRecordingSchema.pre(
   'validate',
+  function validateVoiceImitationConsent() {
+    const permitsVoiceImitation =
+      this.consent?.permittedUses
+        ?.includes('voice_imitation')
+
+    if (
+      permitsVoiceImitation &&
+      this.consent?.basis !== 'self'
+    ) {
+      this.invalidate(
+        'consent.basis',
+        'Voice imitation is currently limited to the recorded person’s own voice.',
+      )
+    }
+  },
+)
+
+memoryRecordingSchema.pre(
+  'validate',
   function validateTranscriptionState() {
     const transcriptionWasRequested =
       this.transcriptionStatus !==

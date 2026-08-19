@@ -1,3 +1,14 @@
+import ChatAvatarStage from './ChatAvatarStage.jsx'
+import ChatMessageSpeechButton from './ChatMessageSpeechButton.jsx'
+import {
+  useChatSpeechPlayback,
+} from './useChatSpeechPlayback.js'
+import {
+  useDIDRealtimeAvatar,
+} from './useDIDRealtimeAvatar.js'
+import {
+  useChatVoiceInput,
+} from './useChatVoiceInput.js'
 import {
   useCallback,
   useEffect,
@@ -17,6 +28,9 @@ import {
 import {
   promoteCreativeChatReply,
 } from '../../api/biographyApi.js'
+import {
+  getDigitalPersonaSetup,
+} from '../../api/memoryApi.js'
 import {
   createMemoryChatConversation,
   getMemoryChatHistory,
@@ -78,6 +92,60 @@ function getErrorMessage(error) {
   }
 
   const messages = {
+    CHAT_MESSAGE_NOT_FOUND:
+      'הודעת הצ׳אט לא נמצאה או שאינה זמינה להשמעה.',
+    CHAT_MESSAGE_NOT_SPEAKABLE:
+      'התשובה ארוכה מדי או שאינה מתאימה להשמעה.',
+    AI_SPEECH_RATE_LIMITED:
+      'בוצעו יותר מדי בקשות השמעה בזמן קצר. המתינו מעט ונסו שוב.',
+    AI_SPEECH_PROVIDER_ERROR:
+      'שירות הקול אינו זמין כרגע. נסו שוב מאוחר יותר.',
+    AI_SPEECH_INVALID_RESPONSE:
+      'שירות הקול החזיר קובץ אודיו לא תקין.',
+    VOICE_CLONE_NOT_CONFIGURED:
+      'שירות הקול האישי עדיין אינו מוגדר בשרת.',
+    VOICE_CLONE_AUTHENTICATION_FAILED:
+      'ElevenLabs דחה את מפתח הגישה. בדקו את ה־API Key והרשאות Text to Speech.',
+    VOICE_CLONE_BILLING_REQUIRED:
+      'אין כרגע יתרה זמינה ב־ElevenLabs להפעלת הקול האישי.',
+    VOICE_CLONE_RATE_LIMITED:
+      'שירות הקול האישי עמוס כרגע. המתינו מעט ונסו שוב.',
+    VOICE_CLONE_PROVIDER_TIMEOUT:
+      'הכנת הקול האישי ארכה יותר מדי זמן. נסו שוב.',
+    VOICE_CLONE_PROVIDER_ERROR:
+      'שירות הקול האישי אינו זמין כרגע.',
+    VOICE_CLONE_INVALID_RESPONSE:
+      'שירות הקול האישי החזיר קובץ אודיו לא תקין.',
+    VOICE_CLONE_PROFILE_UNAVAILABLE:
+      'שכפול הקול המאושר אינו זמין. בדקו את הגדרות הקול בפרופיל.',
+    VOICE_CLONE_TEXT_TOO_LONG:
+      'התשובה ארוכה מ־2,000 תווים. בקשו תשובה קצרה יותר ואז נסו להשמיע שוב.',
+    CHAT_VOICE_INPUT_CONSENT_REQUIRED:
+      'הקלט הקולי עדיין לא אושר. פתחו את פרופיל הזיכרון ואשרו את סעיפי OpenAI.',
+    CHAT_VOICE_INPUT_NOT_CONFIGURED:
+      'שירות התמלול הקולי עדיין אינו מוגדר בשרת.',
+    CHAT_VOICE_INPUT_RATE_LIMITED:
+      'בוצעו יותר מדי תמלולים בזמן קצר. המתינו מעט ונסו שוב.',
+    CHAT_VOICE_INPUT_FILE_TOO_LARGE:
+      'ההקלטה גדולה מדי. הקליטו שאלה קצרה יותר.',
+    CHAT_VOICE_INPUT_REQUIRED:
+      'לא התקבל קובץ קול. נסו להקליט שוב.',
+    CHAT_VOICE_INPUT_TYPE_UNSUPPORTED:
+      'הדפדפן יצר קובץ קול שאינו נתמך.',
+    CHAT_VOICE_INPUT_CONTENT_INVALID:
+      'קובץ הקול שהתקבל אינו תקין.',
+    CHAT_VOICE_INPUT_EMPTY_TRANSCRIPT:
+      'לא זוהה דיבור בהקלטה. נסו שוב בחדר שקט.',
+    CHAT_VOICE_INPUT_TRANSCRIPT_TOO_LONG:
+      'התמלול ארוך מדי לשדה ההודעה. הקליטו שאלה קצרה יותר.',
+    CHAT_VOICE_INPUT_INVALID_RESPONSE:
+      'שירות התמלול החזיר תשובה לא תקינה.',
+    TRANSCRIPTION_PROVIDER_TIMEOUT:
+      'התמלול ארך יותר מדי זמן. נסו שוב.',
+    TRANSCRIPTION_PROVIDER_UNAVAILABLE:
+      'שירות התמלול עמוס כרגע. המתינו מעט ונסו שוב.',
+    TRANSCRIPTION_PROVIDER_ERROR:
+      'לא הצלחנו לתמלל את ההקלטה כרגע.',
     MEMORY_NOT_FOUND:
       'הזיכרון לא נמצא או שאין לכם הרשאה לבצע את הפעולה.',
     CHAT_CONVERSATION_NOT_FOUND:
@@ -122,6 +190,27 @@ function formatMessageTime(value) {
       timeStyle: 'short',
     },
   ).format(date)
+}
+
+function formatRecordingTime(seconds) {
+  const safeSeconds = Math.max(
+    0,
+    Number.isFinite(seconds)
+      ? Math.floor(seconds)
+      : 0,
+  )
+
+  const minutes = Math.floor(
+    safeSeconds / 60,
+  )
+
+  return `${String(minutes).padStart(
+    2,
+    '0',
+  )}:${String(safeSeconds % 60).padStart(
+    2,
+    '0',
+  )}`
 }
 
 function mergeEarlierMessages(
@@ -225,6 +314,7 @@ function MemoryChatPage({
   const navigate = useNavigate()
 
   const messageEndRef = useRef(null)
+  const composerRef = useRef(null)
 
   const conversationCreationRef =
     useRef({
@@ -278,6 +368,14 @@ function MemoryChatPage({
   const [errorMessage, setErrorMessage] =
     useState('')
 
+  const [digitalPersonaSetup, setDigitalPersonaSetup] =
+    useState(null)
+
+  const [
+    liveConversationEnabled,
+    setLiveConversationEnabled,
+  ] = useState(true)
+
   const [
     sendErrorMessage,
     setSendErrorMessage,
@@ -286,7 +384,7 @@ function MemoryChatPage({
   const subjectName =
     typeof location.state?.subjectName ===
       'string' &&
-    location.state.subjectName.trim()
+      location.state.subjectName.trim()
       ? location.state.subjectName.trim()
       : 'הזיכרון'
 
@@ -333,6 +431,115 @@ function MemoryChatPage({
     ],
   )
 
+  const handleVoiceTranscript = useCallback(
+    (transcript) => {
+      const normalizedTranscript =
+        transcript.trim()
+
+      if (!normalizedTranscript) {
+        return
+      }
+
+      setMessage((current) => {
+        const normalizedCurrent =
+          current.trimEnd()
+
+        const combined =
+          normalizedCurrent
+            ? `${normalizedCurrent}\n${normalizedTranscript}`
+            : normalizedTranscript
+
+        return combined.slice(
+          0,
+          CHAT_MESSAGE_MAX_LENGTH,
+        )
+      })
+
+      window.requestAnimationFrame(() => {
+        composerRef.current?.focus()
+      })
+    },
+    [],
+  )
+
+  const realtimeAvatar =
+    useDIDRealtimeAvatar({
+      config:
+        digitalPersonaSetup?.avatar
+          ?.realtime,
+      enabled:
+        liveConversationEnabled &&
+        digitalPersonaSetup?.avatar
+          ?.active === true,
+    })
+
+  const {
+    speechState,
+    avatarState,
+    toggleSpeech,
+    stopSpeech,
+  } = useChatSpeechPlayback({
+    memoryId,
+    conversationId:
+      conversation?.id ??
+      conversationId,
+    runAuthenticatedRequest,
+    getErrorMessage,
+    realtimeAvatar,
+  })
+
+  const chatVoiceInput =
+    digitalPersonaSetup?.chatVoiceInput
+
+  const voiceInputState =
+    useChatVoiceInput({
+      active:
+        chatVoiceInput?.active === true,
+      maxDurationSeconds:
+        chatVoiceInput
+          ?.maxDurationSeconds ?? 60,
+      maxFileSizeBytes:
+        chatVoiceInput
+          ?.maxFileSizeBytes ??
+        10 * 1024 * 1024,
+      memoryId,
+      runAuthenticatedRequest,
+      onTranscript:
+        handleVoiceTranscript,
+      getErrorMessage,
+    })
+
+  useEffect(() => {
+    let isActive = true
+
+    async function loadDigitalPersona() {
+      try {
+        const loadedSetup =
+          await runAuthenticatedRequest(
+            (accessToken) =>
+              getDigitalPersonaSetup(
+                accessToken,
+                memoryId,
+              ),
+          )
+
+        if (isActive) {
+          setDigitalPersonaSetup(loadedSetup)
+        }
+      } catch {
+        if (isActive) {
+          setDigitalPersonaSetup(null)
+        }
+      }
+    }
+
+    loadDigitalPersona()
+
+    return () => {
+      isActive = false
+    }
+  }, [memoryId, runAuthenticatedRequest])
+
   useEffect(() => {
     let isActive = true
 
@@ -369,7 +576,7 @@ function MemoryChatPage({
           if (
             conversationCreationRef
               .current.memoryId !==
-              memoryId ||
+            memoryId ||
             !conversationCreationRef
               .current.request
           ) {
@@ -477,6 +684,37 @@ function MemoryChatPage({
     ])
   }
 
+  function startLiveAssistantResponse(
+    assistantMessage,
+  ) {
+    if (
+      !liveConversationEnabled ||
+      digitalPersonaSetup?.voiceClone
+        ?.active !== true ||
+      !assistantMessage?.id
+    ) {
+      return
+    }
+
+    void toggleSpeech(
+      assistantMessage.id,
+      {
+        requestAvatarVideo:
+          digitalPersonaSetup?.avatar
+            ?.active === true &&
+          digitalPersonaSetup?.avatar
+            ?.realtime?.available !==
+            true,
+        requestRealtimeAvatar:
+          digitalPersonaSetup?.avatar
+            ?.active === true &&
+          digitalPersonaSetup?.avatar
+            ?.realtime?.available ===
+            true,
+      },
+    )
+  }
+
   async function handleSendMessage(event) {
     event.preventDefault()
 
@@ -486,13 +724,15 @@ function MemoryChatPage({
     if (
       !normalizedMessage ||
       !conversation ||
-      isSending
+      isSending ||
+      voiceInputState.isBusy
     ) {
       return
     }
 
     setIsSending(true)
     setSendErrorMessage('')
+    stopSpeech()
 
     try {
       const exchange =
@@ -508,6 +748,10 @@ function MemoryChatPage({
 
       appendExchange(exchange)
       setMessage('')
+      voiceInputState.clearFeedback()
+      startLiveAssistantResponse(
+        exchange.assistantMessage,
+      )
     } catch (error) {
       setSendErrorMessage(
         getErrorMessage(error),
@@ -546,6 +790,7 @@ function MemoryChatPage({
     }
 
     setIsSending(true)
+    stopSpeech()
     setCreativeRequestMessageId(
       insufficientMessage.id,
     )
@@ -567,6 +812,9 @@ function MemoryChatPage({
         )
 
       appendExchange(exchange)
+      startLiveAssistantResponse(
+        exchange.assistantMessage,
+      )
     } catch (error) {
       setCreativeRequestError({
         messageId:
@@ -706,7 +954,7 @@ function MemoryChatPage({
       if (
         error instanceof ApiError &&
         error.code ===
-          'BIOGRAPHY_SOURCE_EXISTS'
+        'BIOGRAPHY_SOURCE_EXISTS'
       ) {
         markMessageAsPromoted(
           promotionForm.messageId,
@@ -788,7 +1036,8 @@ function MemoryChatPage({
 
     if (
       message.trim() &&
-      !isSending
+      !isSending &&
+      !voiceInputState.isBusy
     ) {
       event.currentTarget.form
         ?.requestSubmit()
@@ -862,7 +1111,10 @@ function MemoryChatPage({
           </div>
 
           <span className="chat-text-badge">
-            שיחת טקסט
+            {digitalPersonaSetup?.avatar
+              ?.localFallbackAvailable
+              ? 'טקסט, קול ואווטאר AI'
+              : 'טקסט וקול AI'}
           </span>
         </header>
 
@@ -875,12 +1127,39 @@ function MemoryChatPage({
           <p>
             זוהי הדמיה מבוססת בינה מלאכותית
             הנשענת על חומרים שנמסרו ואושרו.
-            אין מדובר באדם עצמו. תשובות
-            המסומנות כהדמיה יצירתית אינן
-            עובדות עד שהמשתמש בודק ומאשר
-            אותן.
+            אין מדובר באדם עצמו. אפשר להשמיע
+            בקול AI כללי או בשכפול קול שאושר
+            מפורשות. אם נבחר D‑ID, גם הווידאו
+            והתנועות הם יצירת AI ולא תיעוד אמיתי.
+            תשובות המסומנות כהדמיה
+            יצירתית אינן עובדות עד שהמשתמש
+            בודק ומאשר אותן.
           </p>
         </aside>
+
+        <ChatAvatarStage
+          subjectName={subjectName}
+          avatar={digitalPersonaSetup?.avatar}
+          speechState={speechState}
+          avatarState={avatarState}
+          voiceInputPhase={
+            voiceInputState.phase
+          }
+          isSending={isSending}
+          liveConversationAvailable={
+            digitalPersonaSetup?.voiceClone
+              ?.active === true
+          }
+          liveConversationEnabled={
+            liveConversationEnabled
+          }
+          onLiveConversationChange={
+            setLiveConversationEnabled
+          }
+          realtimeAvatar={
+            realtimeAvatar
+          }
+        />
 
         <section
           className="chat-window"
@@ -926,16 +1205,16 @@ function MemoryChatPage({
                 ) => {
                   const classification =
                     answerClassifications[
-                      chatMessage
-                        .groundingStatus
+                    chatMessage
+                      .groundingStatus
                     ]
 
                   const statusClassName =
                     classification
                       ? getClassificationClassName(
-                          chatMessage
-                            .groundingStatus,
-                        )
+                        chatMessage
+                          .groundingStatus,
+                      )
                       : ''
 
                   const previousQuestion =
@@ -946,18 +1225,18 @@ function MemoryChatPage({
 
                   const canRequestCreative =
                     chatMessage.role ===
-                      'assistant' &&
+                    'assistant' &&
                     chatMessage
                       .groundingStatus ===
-                      'insufficient_context' &&
+                    'insufficient_context' &&
                     previousQuestion.length > 0
 
                   const isCreative =
                     chatMessage.role ===
-                      'assistant' &&
+                    'assistant' &&
                     chatMessage
                       .groundingStatus ===
-                      'creative'
+                    'creative'
 
                   const isPromoted =
                     promotedMessageIds.has(
@@ -985,13 +1264,13 @@ function MemoryChatPage({
                       <div className="chat-message-heading">
                         <strong>
                           {chatMessage.role ===
-                          'user'
+                            'user'
                             ? 'אתם'
                             : getAssistantName(
-                                chatMessage
-                                  .groundingStatus,
-                                subjectName,
-                              )}
+                              chatMessage
+                                .groundingStatus,
+                              subjectName,
+                            )}
                         </strong>
 
                         <time
@@ -1019,6 +1298,36 @@ function MemoryChatPage({
                       <p>
                         {chatMessage.content}
                       </p>
+
+                      {chatMessage.role ===
+                        'assistant' && (
+                          <ChatMessageSpeechButton
+                            messageId={
+                              chatMessage.id
+                            }
+                            speechState={
+                              speechState
+                            }
+                            avatarState={
+                              avatarState
+                            }
+                            didAvatarActive={
+                              digitalPersonaSetup
+                                ?.avatar?.active ===
+                              true
+                            }
+                            didRealtimeAvailable={
+                              digitalPersonaSetup
+                                ?.avatar
+                                ?.realtime
+                                ?.available ===
+                              true
+                            }
+                            onToggle={
+                              toggleSpeech
+                            }
+                          />
+                        )}
 
                       {chatMessage.role ===
                         'assistant' &&
@@ -1080,7 +1389,7 @@ function MemoryChatPage({
                             }
                           >
                             {creativeRequestMessageId ===
-                            chatMessage.id
+                              chatMessage.id
                               ? 'יוצרים הדמיה...'
                               : 'הצגת הדמיה יצירתית'}
                           </button>
@@ -1088,15 +1397,15 @@ function MemoryChatPage({
                           {creativeRequestError
                             ?.messageId ===
                             chatMessage.id && (
-                            <p
-                              className="chat-action-error"
-                              role="alert"
-                            >
-                              {
-                                creativeRequestError.text
-                              }
-                            </p>
-                          )}
+                              <p
+                                className="chat-action-error"
+                                role="alert"
+                              >
+                                {
+                                  creativeRequestError.text
+                                }
+                              </p>
+                            )}
                         </div>
                       )}
 
@@ -1306,6 +1615,7 @@ function MemoryChatPage({
 
           <textarea
             id="chat-message"
+            ref={composerRef}
             value={message}
             rows={3}
             maxLength={
@@ -1324,6 +1634,152 @@ function MemoryChatPage({
             }
           />
 
+          <div className="chat-voice-input">
+            <div className="chat-voice-input-controls">
+              {chatVoiceInput?.active !==
+              true ? (
+                <>
+                  <button
+                    className="chat-voice-button"
+                    type="button"
+                    disabled
+                  >
+                    <span aria-hidden="true">
+                      🎙️
+                    </span>
+                    קלט קולי לא מאושר
+                  </button>
+
+                  <Link
+                    className="chat-voice-settings-link"
+                    to={`/app/memories/${encodeURIComponent(memoryId)}`}
+                  >
+                    ניהול הסכמות
+                  </Link>
+                </>
+              ) : !voiceInputState
+                  .browserSupported ? (
+                <button
+                  className="chat-voice-button"
+                  type="button"
+                  disabled
+                >
+                  המיקרופון אינו נתמך בדפדפן הזה
+                </button>
+              ) : voiceInputState.phase ===
+                'recording' ? (
+                <>
+                  <button
+                    className="chat-voice-button chat-voice-button-recording"
+                    type="button"
+                    disabled={isSending}
+                    onClick={
+                      voiceInputState.stopRecording
+                    }
+                  >
+                    <span aria-hidden="true">
+                      ■
+                    </span>
+                    עצירת הקלטה{' '}
+                    {formatRecordingTime(
+                      voiceInputState
+                        .elapsedSeconds,
+                    )}
+                  </button>
+
+                  <button
+                    className="chat-voice-cancel-button"
+                    type="button"
+                    onClick={
+                      voiceInputState
+                        .cancelRecording
+                    }
+                  >
+                    ביטול
+                  </button>
+                </>
+              ) : voiceInputState.phase ===
+                  'requesting' ? (
+                <>
+                  <button
+                    className="chat-voice-button"
+                    type="button"
+                    disabled
+                  >
+                    פותחים את המיקרופון...
+                  </button>
+
+                  <button
+                    className="chat-voice-cancel-button"
+                    type="button"
+                    onClick={
+                      voiceInputState
+                        .cancelRecording
+                    }
+                  >
+                    ביטול
+                  </button>
+                </>
+              ) : voiceInputState.phase ===
+                  'transcribing' ? (
+                <button
+                  className="chat-voice-button"
+                  type="button"
+                  disabled
+                >
+                  מתמללים לעברית...
+                </button>
+              ) : (
+                <button
+                  className="chat-voice-button"
+                  type="button"
+                  disabled={isSending}
+                  onClick={
+                    () => {
+                      stopSpeech()
+                      voiceInputState.startRecording()
+                    }
+                  }
+                >
+                  <span aria-hidden="true">
+                    🎙️
+                  </span>
+                  הקלטת שאלה
+                </button>
+              )}
+            </div>
+
+            <p className="chat-voice-privacy-note">
+              האודיו זמני ואינו נשמר כזיכרון.
+              התמלול לא יישלח עד שתבדקו אותו
+              ותלחצו בעצמכם על „שליחת הודעה“.
+            </p>
+
+            {voiceInputState.statusMessage && (
+              <p
+                className="chat-voice-status"
+                role="status"
+              >
+                {
+                  voiceInputState
+                    .statusMessage
+                }
+              </p>
+            )}
+
+            {voiceInputState.errorMessage && (
+              <p
+                className="chat-voice-error"
+                role="alert"
+              >
+                {
+                  voiceInputState
+                    .errorMessage
+                }
+              </p>
+            )}
+          </div>
+
           <div className="chat-composer-footer">
             <span>
               {message.length}/
@@ -1334,6 +1790,7 @@ function MemoryChatPage({
               type="submit"
               disabled={
                 isSending ||
+                voiceInputState.isBusy ||
                 !message.trim()
               }
             >

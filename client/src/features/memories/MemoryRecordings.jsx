@@ -51,6 +51,7 @@ function createInitialForm() {
     storageConsent: false,
     transcriptionConsent: false,
     sourceConsent: false,
+    voiceImitationConsent: false,
   }
 }
 
@@ -214,6 +215,21 @@ function hasPermittedUse(recording, permittedUse) {
   return Boolean(recording.consent?.permittedUses?.includes(permittedUse))
 }
 
+function notifyRecordingsUpdated(
+  memoryId,
+) {
+  window.dispatchEvent(
+    new CustomEvent(
+      'living-memory:recordings-updated',
+      {
+        detail: {
+          memoryId,
+        },
+      },
+    ),
+  )
+}
+
 function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
   const fileInputRef = useRef(null)
 
@@ -300,6 +316,14 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
         nextForm.sourceConsent = false
       }
 
+      if (
+        name === 'consentBasis' &&
+        value !== 'self'
+      ) {
+        nextForm.voiceImitationConsent =
+          false
+      }
+
       return nextForm
     })
   }
@@ -377,10 +401,26 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
       return
     }
 
+    if (
+      form.voiceImitationConsent &&
+      form.consentBasis !== 'self'
+    ) {
+      setErrorMessage(
+        'בשלב זה אפשר לאשר חיקוי קול רק כאשר האדם שבהקלטה הוא המשתמש עצמו.',
+      )
+      return
+    }
+
     const permittedUses = ['transcription']
 
     if (form.sourceConsent) {
       permittedUses.push('memory_grounding')
+    }
+
+    if (form.voiceImitationConsent) {
+      permittedUses.push(
+        'voice_imitation',
+      )
     }
 
     setIsSubmitting(true)
@@ -416,6 +456,10 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
         current.map((currentRecording) =>
           currentRecording.id === storedRecording.id ? storedRecording : currentRecording,
         ),
+      )
+
+      notifyRecordingsUpdated(
+        memoryId,
       )
 
       const transcriptionResult = await runAuthenticatedRequest((accessToken) =>
@@ -651,6 +695,10 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
               ? storedRecording
               : currentRecording,
         ),
+      )
+
+      notifyRecordingsUpdated(
+        memoryId,
       )
 
       setRetryFilesByRecordingId(
@@ -1010,11 +1058,44 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                 אני מאפשר/ת להשתמש בתמלול כמקור מידע, אך רק לאחר שאבדוק ואאשר אותו בנפרד.
               </span>
             </label>
+
+            <label>
+              <input
+                type="checkbox"
+                name="voiceImitationConsent"
+                checked={
+                  form.voiceImitationConsent
+                }
+                disabled={
+                  hasActiveUpload ||
+                  form.consentBasis !==
+                    'self'
+                }
+                onChange={
+                  handleFormChange
+                }
+              />
+
+              <span>
+                <strong>
+                  דגימת קול אישית
+                </strong>
+                אני האדם שבהקלטה ואני
+                מאשר/ת להשתמש בה כדגימת
+                ייחוס לחיקוי הקול. העברה
+                לספק חיצוני עדיין תחייב
+                אישור נפרד במסך הקול
+                והאווטאר.
+              </span>
+            </label>
           </fieldset>
 
           <p className="recording-consent-boundary">
-            הסכמות אלו אינן כוללות יצירת קול מלאכותי, חיקוי קול או השמעת קול למשתמשים
-            אחרים.
+            ללא סימון “דגימת קול אישית”
+            ההקלטה אינה יכולה לשמש לחיקוי
+            קול. גם לאחר הסימון, היא נשארת
+            פרטית ולא תועבר לספק חיצוני עד
+            לאישור נפרד.
           </p>
 
           <button
@@ -1149,6 +1230,16 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                         שימוש כמקור:{' '}
                         {canApproveAsSource
                           ? 'אפשרי לאחר בדיקה'
+                          : 'לא אושר'}
+                      </span>
+
+                      <span>
+                        חיקוי קול:{' '}
+                        {hasPermittedUse(
+                          recording,
+                          'voice_imitation',
+                        )
+                          ? 'אושר על ידי האדם עצמו'
                           : 'לא אושר'}
                       </span>
                     </div>

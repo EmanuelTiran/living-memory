@@ -1,10 +1,24 @@
 import mongoose from 'mongoose'
 import { env } from './env.js'
 import { logger } from '../utils/logger.js'
+import {
+  prepareMongoDBSrvDns,
+} from './mongodbDnsResolver.js'
 
 export async function connectToDatabase() {
   if (mongoose.connection.readyState === 1) {
     return mongoose.connection
+  }
+
+  const dnsPreparation =
+    await prepareMongoDBSrvDns(
+      env.mongodbUri,
+    )
+
+  if (dnsPreparation.fallbackApplied) {
+    logger.warn(
+      'MongoDB SRV DNS fallback activated',
+    )
   }
 
   await mongoose.connect(env.mongodbUri, {
