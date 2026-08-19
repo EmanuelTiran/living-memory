@@ -85,6 +85,11 @@ async function requestSpeech(
   memoryId,
   path,
   accessToken,
+  {
+    includeAvatarJob = false,
+    includeRealtimeAvatar = false,
+    includeRealtimeChunk = false,
+  } = {},
 ) {
   let response
 
@@ -95,7 +100,8 @@ async function requestSpeech(
         method: 'POST',
         credentials: 'include',
         headers: {
-          Accept: 'audio/mpeg',
+          Accept:
+            'audio/mpeg, audio/wav',
           Authorization:
             `Bearer ${accessToken}`,
         },
@@ -129,7 +135,10 @@ async function requestSpeech(
     ) === 'true'
 
   if (
-    contentType !== 'audio/mpeg' ||
+    ![
+      'audio/mpeg',
+      'audio/wav',
+    ].includes(contentType) ||
     !isAiGenerated
   ) {
     throw new ApiError(
@@ -168,7 +177,256 @@ async function requestSpeech(
     )
   }
 
-  return audioBlob
+  if (
+    !includeAvatarJob &&
+    !includeRealtimeAvatar &&
+    !includeRealtimeChunk
+  ) {
+    return audioBlob
+  }
+
+  if (
+    includeRealtimeAvatar ||
+    includeRealtimeChunk
+  ) {
+    const realtimeAudioUrl =
+      response.headers.get(
+        'x-did-realtime-audio-url',
+      )
+    const realtimeReleaseToken =
+      response.headers.get(
+        'x-did-realtime-release-token',
+      )
+
+    if (
+      !realtimeAudioUrl ||
+      !/^(?:https|s3):\/\//i.test(
+        realtimeAudioUrl,
+      ) ||
+      !realtimeReleaseToken
+    ) {
+      throw new ApiError(
+        'The server did not return realtime avatar audio metadata.',
+        {
+          statusCode: response.status,
+          code:
+            'DID_REALTIME_INVALID_RESPONSE',
+        },
+      )
+    }
+
+    const realtimeResult = {
+      audioBlob,
+      realtimeAudioUrl,
+      realtimeReleaseToken,
+    }
+
+    if (!includeRealtimeChunk) {
+      return realtimeResult
+    }
+
+    const chunkIndex = Number.parseInt(
+      response.headers.get(
+        'x-did-realtime-chunk-index',
+      ) ?? '',
+      10,
+    )
+    const chunkCount = Number.parseInt(
+      response.headers.get(
+        'x-did-realtime-chunk-count',
+      ) ?? '',
+      10,
+    )
+
+    if (
+      !Number.isInteger(chunkIndex) ||
+      chunkIndex < 0 ||
+      !Number.isInteger(chunkCount) ||
+      chunkCount < 1 ||
+      chunkIndex >= chunkCount
+    ) {
+      throw new ApiError(
+        'The server returned invalid realtime speech chunk metadata.',
+        {
+          statusCode: response.status,
+          code:
+            'DID_REALTIME_INVALID_RESPONSE',
+        },
+      )
+    }
+
+    return {
+      ...realtimeResult,
+      chunkIndex,
+      chunkCount,
+    }
+  }
+
+  const avatarJobId =
+    response.headers.get(
+      'x-avatar-job-id',
+    )
+
+  if (!avatarJobId) {
+    throw new ApiError(
+      'The server did not return an avatar job identifier.',
+      {
+        statusCode: response.status,
+        code:
+          'DID_AVATAR_INVALID_RESPONSE',
+      },
+    )
+  }
+
+  return {
+    audioBlob,
+    avatarJobId,
+  }
+}
+
+async function requestVoiceInputTranscription(
+  memoryId,
+  accessToken,
+  audioBlob,
+  fileName,
+) {
+  const formData = new FormData()
+
+  formData.append(
+    'audio',
+    audioBlob,
+    fileName,
+  )
+
+  let response
+
+  try {
+    response = await fetch(
+      `${createChatBasePath(memoryId)}/voice-input/transcription`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+        body: formData,
+      },
+    )
+  } catch {
+    throw new ApiError(
+      'Unable to connect to the server.',
+      {
+        code: 'NETWORK_ERROR',
+      },
+    )
+  }
+
+  if (!response.ok) {
+    throw await parseErrorResponse(
+      response,
+    )
+  }
+
+  const payload = await response
+    .json()
+    .catch(() => null)
+
+  const transcript =
+    payload?.data?.transcript
+
+  if (
+    typeof transcript?.text !==
+      'string' ||
+    !transcript.text.trim() ||
+    transcript.autoSent !== false ||
+    transcript.audioStored !== false
+  ) {
+    throw new ApiError(
+      'The server returned an invalid voice-input transcript.',
+      {
+        statusCode: response.status,
+        code:
+          'CHAT_VOICE_INPUT_INVALID_RESPONSE',
+      },
+    )
+  }
+
+  return transcript
+}
+
+async function requestAvatarVideo(
+  memoryId,
+  avatarJobId,
+  accessToken,
+) {
+  let response
+
+  try {
+    response = await fetch(
+      `${createChatBasePath(memoryId)}/avatar-jobs/${encodeURIComponent(avatarJobId)}/video`,
+      {
+        credentials: 'include',
+        headers: {
+          Accept: 'video/mp4',
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+      },
+    )
+  } catch {
+    throw new ApiError(
+      'Unable to connect to the server.',
+      {
+        code: 'NETWORK_ERROR',
+      },
+    )
+  }
+
+  if (!response.ok) {
+    throw await parseErrorResponse(response)
+  }
+
+  const contentType = response.headers
+    .get('content-type')
+    ?.split(';')[0]
+    .trim()
+    .toLowerCase()
+
+  const isAiGenerated =
+    response.headers.get(
+      'x-ai-generated-video',
+    ) === 'true'
+
+  if (
+    contentType !== 'video/mp4' ||
+    !isAiGenerated
+  ) {
+    throw new ApiError(
+      'The server returned invalid avatar video.',
+      {
+        statusCode: response.status,
+        code:
+          'DID_AVATAR_INVALID_RESPONSE',
+      },
+    )
+  }
+
+  const videoBlob = await response.blob()
+
+  if (videoBlob.size === 0) {
+    throw new ApiError(
+      'The server returned empty avatar video.',
+      {
+        statusCode: response.status,
+        code:
+          'DID_AVATAR_INVALID_RESPONSE',
+      },
+    )
+  }
+
+  return videoBlob
 }
 
 export async function createMemoryChatConversation(
@@ -185,6 +443,20 @@ export async function createMemoryChatConversation(
   )
 
   return data.conversation
+}
+
+export function transcribeMemoryChatVoiceInput(
+  accessToken,
+  memoryId,
+  audioBlob,
+  fileName,
+) {
+  return requestVoiceInputTranscription(
+    memoryId,
+    accessToken,
+    audioBlob,
+    fileName,
+  )
 }
 
 export async function sendMemoryChatMessage(
@@ -251,6 +523,94 @@ export function getMemoryChatMessageSpeech(
   return requestSpeech(
     memoryId,
     `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/speech`,
+    accessToken,
+  )
+}
+
+export function getMemoryChatMessageAvatarSpeech(
+  accessToken,
+  memoryId,
+  conversationId,
+  messageId,
+) {
+  return requestSpeech(
+    memoryId,
+    `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/avatar-speech`,
+    accessToken,
+    {
+      includeAvatarJob: true,
+    },
+  )
+}
+
+export function getMemoryChatMessageRealtimeAvatarSpeech(
+  accessToken,
+  memoryId,
+  conversationId,
+  messageId,
+) {
+  return requestSpeech(
+    memoryId,
+    `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/realtime-avatar-speech`,
+    accessToken,
+    {
+      includeRealtimeAvatar: true,
+    },
+  )
+}
+
+export function getMemoryChatMessageRealtimeAvatarSpeechChunk(
+  accessToken,
+  memoryId,
+  conversationId,
+  messageId,
+  chunkIndex,
+) {
+  return requestSpeech(
+    memoryId,
+    `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/realtime-avatar-speech/chunks/${encodeURIComponent(chunkIndex)}`,
+    accessToken,
+    {
+      includeRealtimeChunk: true,
+    },
+  )
+}
+
+export function releaseMemoryChatRealtimeAvatarAudio(
+  accessToken,
+  memoryId,
+  realtimeAudioToken,
+) {
+  return request(
+    memoryId,
+    `/realtime-audio/${encodeURIComponent(realtimeAudioToken)}`,
+    accessToken,
+    {
+      method: 'DELETE',
+    },
+  )
+}
+
+export function getMemoryChatAvatarJobStatus(
+  accessToken,
+  memoryId,
+  avatarJobId,
+) {
+  return request(
+    memoryId,
+    `/avatar-jobs/${encodeURIComponent(avatarJobId)}`,
+    accessToken,
+  ).then((data) => data.avatarJob)
+}
+
+export function getMemoryChatAvatarVideo(
+  accessToken,
+  memoryId,
+  avatarJobId,
+) {
+  return requestAvatarVideo(
+    memoryId,
+    avatarJobId,
     accessToken,
   )
 }

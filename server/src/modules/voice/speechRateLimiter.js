@@ -70,3 +70,8 @@ export function createSpeechRateLimiter({
 
 export const chatSpeechRateLimiter =
   createSpeechRateLimiter()
+
+export const chatRealtimeSpeechChunkRateLimiter =
+  createSpeechRateLimiter({
+    maxRequests: 24,
+  })

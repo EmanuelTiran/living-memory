@@ -14,6 +14,9 @@ import {
     generateSpeechAudio:
       vi.fn(),
 
+    tryGenerateClonedSpeech:
+      vi.fn(),
+
     ChatConversation: {
       findOne: vi.fn(),
     },
@@ -22,6 +25,14 @@ import {
       findOne: vi.fn(),
     },
   }))
+
+  vi.mock(
+    '../src/modules/voice/voiceCloneSpeechService.js',
+    () => ({
+      tryGenerateClonedSpeech:
+        mocks.tryGenerateClonedSpeech,
+    }),
+  )
 
   vi.mock(
     '../src/modules/memories/memoryAccessService.js',
@@ -62,6 +73,7 @@ import {
 
   import {
     generateMemoryChatMessageSpeech,
+    generateMemoryChatMessageSpeechChunk,
   } from '../src/modules/voice/speechService.js'
 
   const userId =
@@ -148,6 +160,9 @@ import {
       .mockResolvedValue(
         createSpeechResult(),
       )
+
+    mocks.tryGenerateClonedSpeech
+      .mockResolvedValue(null)
   })
 
   describe('Speech service', () => {
@@ -184,6 +199,13 @@ import {
         memoryId,
         participantUserId: userId,
         role: 'assistant',
+      })
+
+      expect(
+        mocks.tryGenerateClonedSpeech,
+      ).toHaveBeenCalledWith({
+        memoryId,
+        text: assistantContent,
       })
 
       expect(
@@ -378,5 +400,67 @@ import {
         code:
           'AI_SPEECH_PROVIDER_ERROR',
       })
+    })
+
+    it('generates only the requested first speech chunk', async () => {
+      const longContent = [
+        'זהו המשפט הראשון של התשובה והוא נועד להתחיל את ההשמעה במהירות.',
+        'המשפט השני מוסיף פרטים חשובים על הזיכרון ועל האנשים שהשתתפו בו.',
+        'המשפט השלישי ממשיך את הסיפור ומסביר בצורה רגועה וברורה מה קרה אחר כך.',
+        'לבסוף מגיע משפט מסכם שמחזיר אותנו לרעיון המרכזי של התשובה.',
+      ].join(' ')
+
+      mocks.ChatMessage.findOne
+        .mockReturnValue(
+          createMessageQuery({
+            _id: messageId,
+            content: longContent,
+          }),
+        )
+
+      const result =
+        await generateMemoryChatMessageSpeechChunk(
+          userId,
+          memoryId,
+          conversationId,
+          messageId,
+          0,
+        )
+
+      expect(result.chunkIndex).toBe(0)
+      expect(result.chunkCount)
+        .toBeGreaterThan(1)
+      expect(
+        mocks.generateSpeechAudio,
+      ).toHaveBeenCalledWith({
+        userId,
+        text: expect.stringMatching(
+          /^זהו המשפט הראשון/u,
+        ),
+      })
+      expect(
+        mocks.generateSpeechAudio
+          .mock.calls[0][0].text.length,
+      ).toBeLessThan(longContent.length)
+    })
+
+    it('returns a safe error for a speech chunk outside the answer', async () => {
+      await expect(
+        generateMemoryChatMessageSpeechChunk(
+          userId,
+          memoryId,
+          conversationId,
+          messageId,
+          5,
+        ),
+      ).rejects.toMatchObject({
+        statusCode: 404,
+        code:
+          'REALTIME_SPEECH_CHUNK_NOT_FOUND',
+      })
+
+      expect(
+        mocks.generateSpeechAudio,
+      ).not.toHaveBeenCalled()
     })
   })

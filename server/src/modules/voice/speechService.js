@@ -9,8 +9,15 @@ import {
   SPEECH_TEXT_MAX_LENGTH,
 } from './openaiSpeechProvider.js'
 import {
+  splitSpeechText,
+} from './speechChunking.js'
+import {
   chatSpeechParamsSchema,
+  realtimeAvatarSpeechChunkParamsSchema,
 } from './speechValidation.js'
+import {
+  tryGenerateClonedSpeech,
+} from './voiceCloneSpeechService.js'
 
 const ACTIVE_CONVERSATION_STATUS =
   'active'
@@ -54,6 +61,17 @@ function createMessageNotSpeakableError() {
       statusCode: 422,
       code:
         'CHAT_MESSAGE_NOT_SPEAKABLE',
+    },
+  )
+}
+
+function createSpeechChunkNotFoundError() {
+  return new AppError(
+    'The requested speech chunk was not found.',
+    {
+      statusCode: 404,
+      code:
+        'REALTIME_SPEECH_CHUNK_NOT_FOUND',
     },
   )
 }
@@ -125,21 +143,10 @@ function validateSpeakableContent(content) {
   return content
 }
 
-export async function generateMemoryChatMessageSpeech(
+async function loadSpeakableMessage(
   userId,
-  memoryId,
-  conversationId,
-  messageId,
+  validatedIdentifiers,
 ) {
-  validateUserId(userId)
-
-  const validatedIdentifiers =
-    chatSpeechParamsSchema.parse({
-      memoryId,
-      conversationId,
-      messageId,
-    })
-
   await assertCanChatWithMemory(
     userId,
     validatedIdentifiers.memoryId,
@@ -156,13 +163,104 @@ export async function generateMemoryChatMessageSpeech(
       validatedIdentifiers,
     )
 
-  const text =
-    validateSpeakableContent(
-      assistantMessage.content,
-    )
+  return validateSpeakableContent(
+    assistantMessage.content,
+  )
+}
+
+async function generateSpeechForText({
+  userId,
+  memoryId,
+  text,
+}) {
+  const clonedSpeech =
+    await tryGenerateClonedSpeech({
+      memoryId,
+      text,
+    })
+
+  if (clonedSpeech) {
+    return clonedSpeech
+  }
 
   return generateSpeechAudio({
     userId,
     text,
   })
+}
+
+export async function generateMemoryChatMessageSpeech(
+  userId,
+  memoryId,
+  conversationId,
+  messageId,
+) {
+  validateUserId(userId)
+
+  const validatedIdentifiers =
+    chatSpeechParamsSchema.parse({
+      memoryId,
+      conversationId,
+      messageId,
+    })
+
+  const text =
+    await loadSpeakableMessage(
+      userId,
+      validatedIdentifiers,
+    )
+
+  return generateSpeechForText({
+    userId,
+    memoryId:
+      validatedIdentifiers.memoryId,
+    text,
+  })
+}
+
+export async function generateMemoryChatMessageSpeechChunk(
+  userId,
+  memoryId,
+  conversationId,
+  messageId,
+  chunkIndex,
+) {
+  validateUserId(userId)
+
+  const validatedIdentifiers =
+    realtimeAvatarSpeechChunkParamsSchema.parse({
+      memoryId,
+      conversationId,
+      messageId,
+      chunkIndex,
+    })
+
+  const text =
+    await loadSpeakableMessage(
+      userId,
+      validatedIdentifiers,
+    )
+
+  const chunks = splitSpeechText(text)
+  const chunkText =
+    chunks[validatedIdentifiers.chunkIndex]
+
+  if (!chunkText) {
+    throw createSpeechChunkNotFoundError()
+  }
+
+  const speech =
+    await generateSpeechForText({
+      userId,
+      memoryId:
+        validatedIdentifiers.memoryId,
+      text: chunkText,
+    })
+
+  return {
+    speech,
+    chunkIndex:
+      validatedIdentifiers.chunkIndex,
+    chunkCount: chunks.length,
+  }
 }

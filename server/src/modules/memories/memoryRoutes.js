@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { requireAuth } from '../../middleware/requireAuth.js'
 import { validateBody } from '../../middleware/validateBody.js'
 import { validateParams } from '../../middleware/validateParams.js'
+import digitalPersonaRoutes from '../digitalPersona/digitalPersonaRoutes.js'
 import {
   archiveMemory,
   createMemory,
@@ -35,6 +36,11 @@ memoryRoutes.post(
   '/',
   validateBody(createMemoryProfileSchema),
   createMemory,
+)
+
+memoryRoutes.use(
+  '/:memoryId/digital-persona',
+  digitalPersonaRoutes,
 )
 
 memoryRoutes.get(

@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   verifyAccessToken: vi.fn(),
   chatSpeechRateLimiter:
     vi.fn(),
+  chatRealtimeSpeechChunkRateLimiter:
+    vi.fn(),
   generateMemoryChatMessageSpeech:
     vi.fn(),
 }))
@@ -30,6 +32,8 @@ vi.mock(
   () => ({
     chatSpeechRateLimiter:
       mocks.chatSpeechRateLimiter,
+    chatRealtimeSpeechChunkRateLimiter:
+      mocks.chatRealtimeSpeechChunkRateLimiter,
   }),
 )
 
@@ -86,6 +90,14 @@ beforeEach(() => {
   vi.resetAllMocks()
 
   mocks.chatSpeechRateLimiter
+    .mockImplementation(
+      (_req, _res, next) => {
+        next()
+      },
+    )
+
+  mocks
+    .chatRealtimeSpeechChunkRateLimiter
     .mockImplementation(
       (_req, _res, next) => {
         next()
@@ -176,6 +188,82 @@ describe('Speech routes', () => {
       Buffer.compare(
         response.body,
         audioBuffer,
+      ),
+    ).toBe(0)
+  })
+
+  it('returns protected MP3 audio for an approved ElevenLabs custom voice', async () => {
+    authenticateRequest()
+
+    const mp3Buffer = Buffer.from([
+      0x49,
+      0x44,
+      0x33,
+      0x04,
+      0x00,
+      0x00,
+    ])
+
+    mocks
+      .generateMemoryChatMessageSpeech
+      .mockResolvedValue({
+        audioBuffer: mp3Buffer,
+        byteLength:
+          mp3Buffer.length,
+        contentType: 'audio/mpeg',
+        fileExtension: 'mp3',
+        provider: 'elevenlabs',
+        model: 'eleven_v3',
+        voice:
+          'approved-custom-clone',
+        voiceType: 'custom_clone',
+        isAiGenerated: true,
+        disclosure:
+          'AI custom voice.',
+      })
+
+    const response = await request(app)
+      .post(
+        `/api/memories/${memoryId}/chat/conversations/${conversationId}/messages/${messageId}/speech`,
+      )
+      .set(
+        'Authorization',
+        'Bearer valid-access-token',
+      )
+      .buffer(true)
+      .parse(
+        (res, callback) => {
+          const chunks = []
+
+          res.on('data', (chunk) => {
+            chunks.push(chunk)
+          })
+
+          res.on('end', () => {
+            callback(
+              null,
+              Buffer.concat(chunks),
+            )
+          })
+        },
+      )
+
+    expect(response.status).toBe(200)
+    expect(response.headers)
+      .toMatchObject({
+        'content-type': 'audio/mpeg',
+        'content-disposition':
+          'inline; filename="memory-response.mp3"',
+        'x-ai-generated-audio':
+          'true',
+        'x-ai-voice-type':
+          'custom_clone',
+      })
+
+    expect(
+      Buffer.compare(
+        response.body,
+        mp3Buffer,
       ),
     ).toBe(0)
   })

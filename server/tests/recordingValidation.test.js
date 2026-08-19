@@ -156,8 +156,7 @@ import {
           createValidInput({
             consent: {
               confirmed: true,
-              basis:
-                'rights_holder',
+              basis: 'self',
               permittedUses: [
                 'transcription',
                 'voice_imitation',
@@ -169,6 +168,25 @@ import {
       expect(
         result.consent.permittedUses,
       ).toContain('voice_imitation')
+    })
+
+    it('rejects voice imitation for someone else’s recording', () => {
+      const result =
+        createMemoryRecordingSchema.safeParse(
+          createValidInput({
+            consent: {
+              confirmed: true,
+              basis:
+                'rights_holder',
+              permittedUses: [
+                'transcription',
+                'voice_imitation',
+              ],
+            },
+          }),
+        )
+
+      expect(result.success).toBe(false)
     })
 
     it('validates memory and recording identifiers', () => {

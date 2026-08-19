@@ -23,13 +23,16 @@ import {
         'Content-Length':
           String(speech.byteLength),
         'Content-Disposition':
-          'inline; filename="memory-response.mp3"',
+          `inline; filename="memory-response.${speech.fileExtension}"`,
         'Cache-Control':
           'private, no-store, max-age=0',
         'X-Content-Type-Options':
           'nosniff',
         'X-AI-Generated-Audio':
           'true',
+        'X-AI-Voice-Type':
+          speech.voiceType ??
+          'general_synthetic',
       })
       .send(speech.audioBuffer)
   }

@@ -207,3 +207,113 @@ export async function archiveMemoryStory(
     },
   )
 }
+
+export async function getDigitalPersonaSetup(
+  accessToken,
+  memoryId,
+) {
+  const data = await request(
+    `/${encodeURIComponent(memoryId)}/digital-persona`,
+    accessToken,
+  )
+
+  return data.digitalPersona
+}
+
+export async function acceptDigitalPersonaSelfConsent(
+  accessToken,
+  memoryId,
+  input,
+) {
+  const data = await request(
+    `/${encodeURIComponent(memoryId)}/digital-persona/consent`,
+    accessToken,
+    {
+      method: 'PUT',
+      body: input,
+    },
+  )
+
+  return data.digitalPersona
+}
+
+export async function revokeDigitalPersonaSelfConsent(
+  accessToken,
+  memoryId,
+) {
+  const data = await request(
+    `/${encodeURIComponent(memoryId)}/digital-persona/consent`,
+    accessToken,
+    {
+      method: 'DELETE',
+    },
+  )
+
+  return data.digitalPersona
+}
+
+export async function initializeDigitalPersonaMockProfiles(
+  accessToken,
+  memoryId,
+) {
+  const data = await request(
+    `/${encodeURIComponent(memoryId)}/digital-persona/mock-profiles`,
+    accessToken,
+    {
+      method: 'POST',
+    },
+  )
+
+  return data.digitalPersona
+}
+
+export async function activateDigitalPersonaVoiceClone(
+  accessToken,
+  memoryId,
+  input,
+) {
+  const data = await request(
+    `/${encodeURIComponent(memoryId)}/digital-persona/voice-clone`,
+    accessToken,
+    {
+      method: 'PUT',
+      body: input,
+    },
+  )
+
+  return data.digitalPersona
+}
+
+export async function activateDigitalPersonaChatVoiceInput(
+  accessToken,
+  memoryId,
+  input,
+) {
+  const data = await request(
+    `/${encodeURIComponent(memoryId)}/digital-persona/chat-voice-input`,
+    accessToken,
+    {
+      method: 'PUT',
+      body: input,
+    },
+  )
+
+  return data.digitalPersona
+}
+
+export async function activateDigitalPersonaDIDAvatar(
+  accessToken,
+  memoryId,
+  input,
+) {
+  const data = await request(
+    `/${encodeURIComponent(memoryId)}/digital-persona/avatar`,
+    accessToken,
+    {
+      method: 'PUT',
+      body: input,
+    },
+  )
+
+  return data.digitalPersona
+}
