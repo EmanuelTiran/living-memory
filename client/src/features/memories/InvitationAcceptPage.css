@@ -1,0 +1,130 @@
+.invitation-page {
+  width: min(760px, 100%);
+}
+
+.invitation-heading {
+  margin-block-start: 28px;
+}
+
+.invitation-heading h1,
+.invitation-summary h2,
+.invitation-auth-actions h2,
+.participation-consent h2 {
+  margin: 0;
+  color: #33413d;
+}
+
+.invitation-heading > p:last-child {
+  max-width: 620px;
+  margin: 12px 0 0;
+  color: #66706c;
+  line-height: 1.75;
+}
+
+.invitation-loading {
+  display: flex;
+  min-height: 240px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #68706c;
+}
+
+.invitation-summary {
+  margin-block-start: 26px;
+  padding: 22px;
+  color: #315f4d;
+  background: #e7f1ec;
+  border: 1px solid rgba(77, 123, 104, 0.2);
+  border-radius: 16px;
+}
+
+.invitation-summary > p {
+  margin: 0 0 6px;
+}
+
+.invitation-summary dl {
+  display: grid;
+  margin: 20px 0 0;
+  gap: 12px;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+.invitation-summary dl > div {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.52);
+  border-radius: 10px;
+}
+
+.invitation-summary dt {
+  color: #68706c;
+  font-size: 0.76rem;
+}
+
+.invitation-summary dd {
+  margin: 4px 0 0;
+  font-weight: 700;
+}
+
+.invitation-auth-actions,
+.participation-consent {
+  margin-block-start: 26px;
+  padding-block-start: 24px;
+  border-top: 1px solid rgba(83, 98, 91, 0.14);
+}
+
+.invitation-auth-actions > p,
+.participation-consent > div > p:last-child {
+  margin: 10px 0 0;
+  color: #68706c;
+  line-height: 1.7;
+}
+
+.invitation-auth-actions > div {
+  display: flex;
+  margin-block-start: 18px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.participation-consent {
+  display: grid;
+  gap: 14px;
+}
+
+.participation-consent > label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 15px;
+  color: #46524e;
+  line-height: 1.65;
+  background: #f8f5ed;
+  border: 1px solid rgba(83, 98, 91, 0.14);
+  border-radius: 12px;
+}
+
+.participation-consent input {
+  width: 20px;
+  height: 20px;
+  margin-block-start: 2px;
+  accent-color: #4d7b68;
+}
+
+.participation-consent .primary-button {
+  justify-self: start;
+  margin-block-start: 4px;
+}
+
+@media (max-width: 560px) {
+  .invitation-summary dl {
+    grid-template-columns: 1fr;
+  }
+
+  .invitation-auth-actions > div,
+  .invitation-auth-actions a,
+  .participation-consent .primary-button {
+    width: 100%;
+  }
+}

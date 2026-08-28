@@ -1,5 +1,11 @@
 import 'dotenv/config'
+import path from 'node:path'
 import { z } from 'zod'
+
+const optionalBooleanSchema = z
+  .enum(['true', 'false'])
+  .transform((value) => value === 'true')
+  .optional()
 
 export const OPENAI_SPEECH_VOICES =
   Object.freeze([
@@ -73,6 +79,25 @@ const envSchema = z.object({
     .min(1)
     .max(90)
     .default(30),
+
+  PILOT_INVITE_ONLY:
+    optionalBooleanSchema,
+
+  PILOT_AVATAR_ENABLED:
+    optionalBooleanSchema,
+
+  SERVE_CLIENT_BUILD:
+    optionalBooleanSchema,
+
+  PERSISTENT_STORAGE_REQUIRED:
+    optionalBooleanSchema,
+
+  TRUST_PROXY_HOPS: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(2)
+    .optional(),
 
   OPENAI_API_KEY: z
     .string()
@@ -312,6 +337,27 @@ if (!result.success) {
   )
 }
 
+const isProduction =
+  result.data.NODE_ENV === 'production'
+
+const persistentStorageRequired =
+  result.data.PERSISTENT_STORAGE_REQUIRED ??
+  isProduction
+
+if (
+  persistentStorageRequired &&
+  (!path.isAbsolute(
+    result.data.RECORDING_STORAGE_ROOT,
+  ) ||
+    !path.isAbsolute(
+      result.data.MEMORY_ASSET_STORAGE_ROOT,
+    ))
+) {
+  throw new Error(
+    'Invalid environment configuration: production storage roots must be absolute paths when PERSISTENT_STORAGE_REQUIRED=true',
+  )
+}
+
 export const env = Object.freeze({
   nodeEnv: result.data.NODE_ENV,
   port: result.data.PORT,
@@ -325,6 +371,19 @@ export const env = Object.freeze({
   refreshTokenTtlDays:
     result.data
       .REFRESH_TOKEN_TTL_DAYS,
+  pilotInviteOnly:
+    result.data.PILOT_INVITE_ONLY ??
+    isProduction,
+  pilotAvatarEnabled:
+    result.data.PILOT_AVATAR_ENABLED ??
+    !isProduction,
+  serveClientBuild:
+    result.data.SERVE_CLIENT_BUILD ??
+    isProduction,
+  persistentStorageRequired,
+  trustProxyHops:
+    result.data.TRUST_PROXY_HOPS ??
+    (isProduction ? 1 : 0),
   openaiApiKey:
     result.data.OPENAI_API_KEY,
   openaiModel:

@@ -125,6 +125,8 @@ import {
             approvedAt,
             sourceVersion:
               'revision:2',
+            sourceRoute:
+              `/app/memories/${memoryId}#guided-interview`,
           },
         ])
       })

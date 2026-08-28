@@ -199,6 +199,20 @@ export const createMemoryStorySchema =
 export const updateMemoryStorySchema =
   z
     .strictObject({
+      expectedRevision: z
+        .number({
+          error:
+            'Expected story revision must be a number.',
+        })
+        .int({
+          error:
+            'Expected story revision must be an integer.',
+        })
+        .positive({
+          error:
+            'Expected story revision must be positive.',
+        })
+        .optional(),
       title: storyTitleSchema.optional(),
       content:
         storyContentSchema.optional(),
@@ -206,7 +220,10 @@ export const updateMemoryStorySchema =
     })
     .refine(
       (data) =>
-        Object.keys(data).length > 0,
+        Object.keys(data).some(
+          (key) =>
+            key !== 'expectedRevision',
+        ),
       {
         error:
           'At least one story field must be provided.',

@@ -13,6 +13,8 @@ import {
       vi.fn(),
     listApprovedRecordingTranscriptSources:
       vi.fn(),
+    listApprovedProfileSources:
+      vi.fn(),
   }))
 
   vi.mock(
@@ -47,6 +49,19 @@ import {
         listApprovedSources:
           mocks
             .listApprovedRecordingTranscriptSources,
+      },
+    }),
+  )
+
+  vi.mock(
+    '../src/modules/chat/approvedProfileSourceProvider.js',
+    () => ({
+      approvedProfileSourceProvider: {
+        sourceType:
+          'memory_profile',
+        listApprovedSources:
+          mocks
+            .listApprovedProfileSources,
       },
     }),
   )
@@ -101,6 +116,18 @@ import {
       'revision:2:chunk:1',
   }
 
+  const profileSource = {
+    sourceType: 'memory_profile',
+    sourceId: memoryId,
+    title:
+      'שם האדם בפרופיל הארכיון',
+    content:
+      'שם האדם המתועד בארכיון הוא שרה.',
+    approvedAt: null,
+    sourceVersion:
+      '2026-07-28T12:00:00.000Z',
+  }
+
   beforeEach(() => {
     vi.resetAllMocks()
 
@@ -119,6 +146,11 @@ import {
       .mockResolvedValue([
         transcriptSource,
       ])
+
+    mocks.listApprovedProfileSources
+      .mockResolvedValue([
+        profileSource,
+      ])
   })
 
   describe(
@@ -129,7 +161,7 @@ import {
           await buildChatContext({
             memoryId,
             message:
-              'איפה שרה נולדה ומה היא סיפרה על עבודתה?',
+              'איך קוראים לה, איפה שרה נולדה ומה היא סיפרה על עבודתה?',
           })
 
         expect(
@@ -164,6 +196,16 @@ import {
         )
 
         expect(
+          mocks.listApprovedProfileSources,
+        ).toHaveBeenCalledWith(
+          memoryId,
+          {
+            limit:
+              CHAT_SOURCE_CANDIDATE_LIMIT,
+          },
+        )
+
+        expect(
           result.groundingStatus,
         ).toBe('grounded')
 
@@ -177,6 +219,7 @@ import {
             'memory_story',
             'biography_answer',
             'recording_transcript',
+            'memory_profile',
           ]),
         )
       })
@@ -190,6 +233,9 @@ import {
 
         mocks
           .listApprovedRecordingTranscriptSources
+          .mockResolvedValue([])
+
+        mocks.listApprovedProfileSources
           .mockResolvedValue([])
 
         const result =

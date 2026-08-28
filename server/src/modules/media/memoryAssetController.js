@@ -1,8 +1,11 @@
 import {
   archiveMemoryAsset,
+  createMemoryAssetAccessLink,
   createMemoryAsset,
   getMemoryAssetFile,
+  getMemoryAssetFileWithAccessToken,
   listMemoryAssets,
+  updateMemoryAssetMetadata,
 } from './memoryAssetService.js'
 
 function encodeFileName(fileName) {
@@ -56,6 +59,7 @@ function sendPrivateFile(
     'Content-Length':
       buffer.length.toString(),
     'Content-Type': asset.mimeType,
+    'Referrer-Policy': 'no-referrer',
     'X-Content-Type-Options': 'nosniff',
   })
 
@@ -136,6 +140,69 @@ export async function downloadAssetFile(
     buffer,
     'attachment',
   )
+}
+
+export async function createAssetAccessLink(
+  req,
+  res,
+) {
+  const access =
+    await createMemoryAssetAccessLink(
+      req.auth.userId,
+      req.validatedParams.memoryId,
+      req.validatedParams.assetId,
+      req.validatedBody,
+    )
+
+  res.status(200).json({
+    success: true,
+    data: {
+      access,
+    },
+  })
+}
+
+export async function accessAssetFile(
+  req,
+  res,
+) {
+  const {
+    asset,
+    buffer,
+    disposition,
+  } =
+    await getMemoryAssetFileWithAccessToken(
+      req.validatedParams.memoryId,
+      req.validatedParams.assetId,
+      req.validatedQuery.token,
+    )
+
+  sendPrivateFile(
+    res,
+    asset,
+    buffer,
+    disposition,
+  )
+}
+
+export async function updateAssetMetadata(
+  req,
+  res,
+) {
+  const asset =
+    await updateMemoryAssetMetadata(
+      req.auth.userId,
+      req.validatedParams.memoryId,
+      req.validatedParams.assetId,
+      req.validatedBody,
+    )
+
+  res.status(200).json({
+    success: true,
+    data: {
+      asset,
+    },
+  })
 }
 
 export async function archiveAsset(

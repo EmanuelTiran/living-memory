@@ -7,10 +7,10 @@ import {
 import { ApiError } from '../../api/authApi.js'
 import {
   archiveMemoryAsset,
-  downloadMemoryAssetFile,
+  createMemoryAssetAccessLink,
   listMemoryAssets,
+  updateMemoryAssetMetadata,
   uploadMemoryAsset,
-  viewMemoryAssetFile,
 } from '../../api/assetApi.js'
 import './MemoryAssets.css'
 
@@ -30,6 +30,18 @@ const SUPPORTED_MIME_TYPES = new Set(
   Object.values(MIME_TYPES_BY_EXTENSION),
 )
 
+const PROCESSING_STATUS_LABELS =
+  Object.freeze({
+    queued:
+      'ממתין לעיבוד מאובטח',
+    processing:
+      'מעבד את פרטי הקובץ',
+    completed:
+      'עיבוד הקובץ הושלם',
+    failed:
+      'עיבוד הפרטים נכשל',
+  })
+
 function getAssetErrorMessage(error) {
   if (!(error instanceof ApiError)) {
     return 'אירעה שגיאה בלתי צפויה.'
@@ -46,6 +58,10 @@ function getAssetErrorMessage(error) {
       'בדיקת תקינות הקובץ נכשלה. הקובץ לא נפתח.',
     MEMORY_ASSET_FILE_EMPTY:
       'השרת החזיר קובץ ריק.',
+    MEMORY_ASSET_ACCESS_INVALID:
+      'הקישור הפרטי פג או אינו תקין. נסו לפתוח את הקובץ מחדש.',
+    MEMORY_ASSET_STORAGE_PROVIDER_UNAVAILABLE:
+      'שירות אחסון הקבצים אינו זמין כרגע.',
     MEMORY_ASSET_FILE_TOO_LARGE:
       'אפשר להעלות קובץ בגודל של עד 10MB.',
     MEMORY_ASSET_FILE_REQUIRED:
@@ -161,6 +177,34 @@ function formatDate(value) {
   ).format(date)
 }
 
+function getTechnicalMetadataLabel(asset) {
+  const metadata =
+    asset.technicalMetadata
+
+  if (
+    Number.isInteger(
+      metadata?.widthPixels,
+    ) &&
+    Number.isInteger(
+      metadata?.heightPixels,
+    )
+  ) {
+    return `${metadata.widthPixels} × ${metadata.heightPixels} פיקסלים`
+  }
+
+  if (
+    Number.isInteger(
+      metadata?.pageCount,
+    )
+  ) {
+    return metadata.pageCount === 1
+      ? 'עמוד אחד'
+      : `${metadata.pageCount} עמודים`
+  }
+
+  return ''
+}
+
 function MemoryAssetPreview({
   asset,
   memoryId,
@@ -173,17 +217,17 @@ function MemoryAssetPreview({
 
   useEffect(() => {
     let isActive = true
-    let objectUrl = ''
 
     async function loadPreview() {
       try {
-        const blob =
+        const access =
           await runAuthenticatedRequest(
             (accessToken) =>
-              viewMemoryAssetFile(
+              createMemoryAssetAccessLink(
                 accessToken,
                 memoryId,
                 asset.id,
+                'inline',
               ),
           )
 
@@ -191,8 +235,7 @@ function MemoryAssetPreview({
           return
         }
 
-        objectUrl = URL.createObjectURL(blob)
-        setPreviewUrl(objectUrl)
+        setPreviewUrl(access.url)
       } catch {
         if (isActive) {
           setFailed(true)
@@ -204,10 +247,6 @@ function MemoryAssetPreview({
 
     return () => {
       isActive = false
-
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl)
-      }
     }
   }, [
     asset.id,
@@ -260,6 +299,13 @@ function MemoryAssets({
     useState(false)
   const [busyAssetId, setBusyAssetId] =
     useState('')
+  const [editingAssetId, setEditingAssetId] =
+    useState('')
+  const [metadataDraft, setMetadataDraft] =
+    useState({
+      displayName: '',
+      description: '',
+    })
   const [errorMessage, setErrorMessage] =
     useState('')
   const [successMessage, setSuccessMessage] =
@@ -309,6 +355,48 @@ function MemoryAssets({
       isActive = false
     }
   }, [fetchAssets])
+
+  const hasActiveProcessingAssets =
+    assets.some((asset) =>
+      [
+        'queued',
+        'processing',
+      ].includes(
+        asset.processingStatus,
+      ),
+    )
+
+  useEffect(() => {
+    if (!hasActiveProcessingAssets) {
+      return undefined
+    }
+
+    let isActive = true
+
+    const interval = setInterval(
+      async () => {
+        try {
+          const loadedAssets =
+            await fetchAssets()
+
+          if (isActive) {
+            setAssets(loadedAssets)
+          }
+        } catch {
+          // Manual refresh remains available if polling fails.
+        }
+      },
+      2_500,
+    )
+
+    return () => {
+      isActive = false
+      clearInterval(interval)
+    }
+  }, [
+    fetchAssets,
+    hasActiveProcessingAssets,
+  ])
 
   function handleFormChange(event) {
     const { name, value } = event.target
@@ -413,7 +501,7 @@ function MemoryAssets({
       }
 
       setSuccessMessage(
-        'הקובץ נשמר באחסון הפרטי בהצלחה.',
+        'הקובץ נשמר באחסון הפרטי ונשלח לעיבוד מאובטח ברקע.',
       )
     } catch (error) {
       setErrorMessage(
@@ -433,32 +521,25 @@ function MemoryAssets({
     setSuccessMessage('')
 
     try {
-      const blob =
+      const access =
         await runAuthenticatedRequest(
           (accessToken) =>
-            action === 'download'
-              ? downloadMemoryAssetFile(
-                accessToken,
-                memoryId,
-                asset.id,
-              )
-              : viewMemoryAssetFile(
-                accessToken,
-                memoryId,
-                asset.id,
-              ),
+            createMemoryAssetAccessLink(
+              accessToken,
+              memoryId,
+              asset.id,
+              action === 'download'
+                ? 'attachment'
+                : 'inline',
+            ),
         )
 
-      const objectUrl =
-        URL.createObjectURL(blob)
       const anchor =
         document.createElement('a')
 
-      anchor.href = objectUrl
+      anchor.href = access.url
 
-      if (action === 'download') {
-        anchor.download = asset.originalFileName
-      } else {
+      if (action !== 'download') {
         anchor.target = '_blank'
         anchor.rel = 'noopener noreferrer'
       }
@@ -466,10 +547,79 @@ function MemoryAssets({
       document.body.append(anchor)
       anchor.click()
       anchor.remove()
+    } catch (error) {
+      setErrorMessage(
+        getAssetErrorMessage(error),
+      )
+    } finally {
+      setBusyAssetId('')
+    }
+  }
 
-      window.setTimeout(
-        () => URL.revokeObjectURL(objectUrl),
-        60000,
+  function startEditingMetadata(asset) {
+    setEditingAssetId(asset.id)
+    setMetadataDraft({
+      displayName: asset.displayName,
+      description:
+        asset.description ?? '',
+    })
+    setErrorMessage('')
+    setSuccessMessage('')
+  }
+
+  function cancelEditingMetadata() {
+    setEditingAssetId('')
+    setMetadataDraft({
+      displayName: '',
+      description: '',
+    })
+  }
+
+  function handleMetadataChange(event) {
+    const { name, value } = event.target
+
+    setMetadataDraft((current) => ({
+      ...current,
+      [name]: value,
+    }))
+  }
+
+  async function handleMetadataSubmit(
+    event,
+    asset,
+  ) {
+    event.preventDefault()
+    setBusyAssetId(asset.id)
+    setErrorMessage('')
+    setSuccessMessage('')
+
+    try {
+      const updatedAsset =
+        await runAuthenticatedRequest(
+          (accessToken) =>
+            updateMemoryAssetMetadata(
+              accessToken,
+              memoryId,
+              asset.id,
+              {
+                displayName:
+                  metadataDraft.displayName.trim(),
+                description:
+                  metadataDraft.description.trim(),
+              },
+            ),
+        )
+
+      setAssets((current) =>
+        current.map((item) =>
+          item.id === updatedAsset.id
+            ? updatedAsset
+            : item,
+        ),
+      )
+      cancelEditingMetadata()
+      setSuccessMessage(
+        'פרטי הקובץ עודכנו בהצלחה.',
       )
     } catch (error) {
       setErrorMessage(
@@ -612,8 +762,9 @@ function MemoryAssets({
           </label>
 
           <p className="memory-assets-privacy-note">
-            הצפייה וההורדה מחייבות התחברות והרשאה
-            לזיכרון. העברה לארכיון אינה מוחקת את הקובץ.
+            הצפייה וההורדה יוצרות קישור פרטי קצר־מועד
+            רק לאחר בדיקת הרשאה לזיכרון. העברה לארכיון
+            אינה מוחקת את הקובץ.
           </p>
 
           <button
@@ -641,8 +792,14 @@ function MemoryAssets({
             </div>
           ) : (
             <div className="memory-assets-grid">
-              {assets.map((asset) => (
-                <article
+              {assets.map((asset) => {
+                const technicalMetadataLabel =
+                  getTechnicalMetadataLabel(
+                    asset,
+                  )
+
+                return (
+                  <article
                   className="memory-asset-card"
                   key={asset.id}
                 >
@@ -662,10 +819,72 @@ function MemoryAssets({
                   </div>
 
                   <div className="memory-asset-card-body">
-                    <h4>{asset.displayName}</h4>
+                    {editingAssetId === asset.id ? (
+                      <form
+                        className="memory-asset-metadata-form"
+                        onSubmit={(event) =>
+                          handleMetadataSubmit(
+                            event,
+                            asset,
+                          )
+                        }
+                      >
+                        <label>
+                          <span>שם שיוצג בזיכרון</span>
+                          <input
+                            type="text"
+                            name="displayName"
+                            value={metadataDraft.displayName}
+                            minLength={2}
+                            maxLength={120}
+                            disabled={busyAssetId === asset.id}
+                            onChange={handleMetadataChange}
+                            required
+                          />
+                        </label>
 
-                    {asset.description && (
-                      <p>{asset.description}</p>
+                        <label>
+                          <span>תיאור קצר</span>
+                          <textarea
+                            name="description"
+                            value={metadataDraft.description}
+                            maxLength={500}
+                            rows={3}
+                            disabled={busyAssetId === asset.id}
+                            onChange={handleMetadataChange}
+                          />
+                        </label>
+
+                        <div>
+                          <button
+                            type="submit"
+                            disabled={
+                              busyAssetId === asset.id ||
+                              metadataDraft.displayName.trim().length < 2
+                            }
+                          >
+                            {busyAssetId === asset.id
+                              ? 'שומרים...'
+                              : 'שמירת הפרטים'}
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={busyAssetId === asset.id}
+                            onClick={cancelEditingMetadata}
+                          >
+                            ביטול
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <>
+                        <h4>{asset.displayName}</h4>
+
+                        {asset.description && (
+                          <p>{asset.description}</p>
+                        )}
+                      </>
                     )}
 
                     <dl>
@@ -688,55 +907,116 @@ function MemoryAssets({
                           </dd>
                         </div>
                       )}
+
+                      {technicalMetadataLabel && (
+                        <div>
+                          <dt>פרטים טכניים</dt>
+                          <dd>
+                            {technicalMetadataLabel}
+                          </dd>
+                        </div>
+                      )}
                     </dl>
 
-                    <div className="memory-asset-actions">
-                      <button
-                        type="button"
-                        disabled={
-                          busyAssetId === asset.id
-                        }
-                        onClick={() =>
-                          handleFileAction(
-                            asset,
-                            'view',
-                          )
+                    {PROCESSING_STATUS_LABELS[
+                      asset.processingStatus
+                    ] && (
+                      <div
+                        className={`memory-asset-processing memory-asset-processing-${asset.processingStatus}`}
+                        role={
+                          asset.processingStatus === 'failed'
+                            ? 'alert'
+                            : 'status'
                         }
                       >
-                        צפייה
-                      </button>
+                        <span>
+                          {
+                            PROCESSING_STATUS_LABELS[
+                              asset.processingStatus
+                            ]
+                          }
+                        </span>
 
-                      <button
-                        type="button"
-                        disabled={
-                          busyAssetId === asset.id
-                        }
-                        onClick={() =>
-                          handleFileAction(
-                            asset,
-                            'download',
-                          )
-                        }
-                      >
-                        הורדה
-                      </button>
+                        {[
+                          'queued',
+                          'processing',
+                        ].includes(
+                          asset.processingStatus,
+                        ) && (
+                          <progress
+                            max="100"
+                            value={
+                              asset.processingProgress ??
+                              0
+                            }
+                            aria-label="התקדמות עיבוד הקובץ"
+                          />
+                        )}
+                      </div>
+                    )}
 
-                      <button
-                        className="memory-asset-archive-button"
-                        type="button"
-                        disabled={
-                          busyAssetId === asset.id
-                        }
-                        onClick={() =>
-                          handleArchive(asset)
-                        }
-                      >
-                        העברה לארכיון
-                      </button>
-                    </div>
+                    {editingAssetId !== asset.id && (
+                      <div className="memory-asset-actions">
+                        <button
+                          type="button"
+                          disabled={
+                            busyAssetId === asset.id
+                          }
+                          onClick={() =>
+                            startEditingMetadata(asset)
+                          }
+                        >
+                          עריכת פרטים
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={
+                            busyAssetId === asset.id
+                          }
+                          onClick={() =>
+                            handleFileAction(
+                              asset,
+                              'view',
+                            )
+                          }
+                        >
+                          צפייה
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={
+                            busyAssetId === asset.id
+                          }
+                          onClick={() =>
+                            handleFileAction(
+                              asset,
+                              'download',
+                            )
+                          }
+                        >
+                          הורדה
+                        </button>
+
+                        <button
+                          className="memory-asset-archive-button"
+                          type="button"
+                          disabled={
+                            busyAssetId === asset.id
+                          }
+                          onClick={() =>
+                            handleArchive(asset)
+                          }
+                        >
+                          העברה לארכיון
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </article>
-              ))}
+                  </article>
+                )
+              })}
             </div>
           )}
         </div>

@@ -3,6 +3,9 @@ import {
   MEMORY_PERMISSIONS,
   requireMemoryPermission,
 } from '../memories/memoryAccessService.js'
+import {
+  completeInterviewSession,
+} from '../memories/interviewSessionService.js'
 import MemoryRecording, {
   MAX_RECORDING_SIZE_BYTES,
   RECORDING_MIME_TYPES,
@@ -315,6 +318,21 @@ export async function storeMemoryRecordingFile(
         userId,
         file,
       )
+
+    try {
+      await completeInterviewSession({
+        sessionId:
+          storedRecording
+            .interviewContext
+            ?.sessionId,
+        memoryId:
+          validatedIds.memoryId,
+        userId,
+      })
+    } catch {
+      // The recording is already stored safely;
+      // session reconciliation can retry later.
+    }
 
     return storedRecording.toJSON()
   } finally {

@@ -91,6 +91,49 @@ const approvedSourceSchema = z
           'Source version must not exceed 100 characters.',
       })
       .default(''),
+
+    sourceRoute: z
+      .string({
+        error:
+          'Source route must be a string.',
+      })
+      .trim()
+      .max(500, {
+        error:
+          'Source route must not exceed 500 characters.',
+      })
+      .startsWith('/app/memories/', {
+        error:
+          'Source route must point to a memory profile.',
+      })
+      .optional(),
+
+    recordingId: z
+      .string({
+        error:
+          'Recording ID must be a string.',
+      })
+      .trim()
+      .regex(/^[0-9a-f]{24}$/i, {
+        error:
+          'Recording ID must be valid.',
+      })
+      .optional(),
+
+    recordedAt: z
+      .date({
+        error:
+          'Recording timestamp must be a date.',
+      })
+      .nullable()
+      .optional(),
+
+    canPlayOriginalAudio: z
+      .boolean({
+        error:
+          'Original audio availability must be a boolean.',
+      })
+      .optional(),
   })
   .refine(
     (source) =>

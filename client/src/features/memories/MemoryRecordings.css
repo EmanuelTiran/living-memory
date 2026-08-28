@@ -254,6 +254,26 @@
   border-radius: 15px;
 }
 
+.recording-interview-context {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: rgba(127, 146, 125, 0.13);
+  color: #1d2a36;
+}
+
+.recording-interview-context span {
+  color: #60745f;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.recording-interview-context strong {
+  line-height: 1.55;
+}
+
 .recording-card-header {
   display: flex;
   align-items: flex-start;
@@ -345,6 +365,51 @@
   flex-wrap: wrap;
   margin-block-start: 15px;
   gap: 9px;
+}
+
+.recording-audio-panel {
+  display: grid;
+  margin-block-start: 16px;
+  padding: 14px;
+  gap: 12px;
+  background: rgba(127, 146, 125, 0.09);
+  border: 1px solid rgba(127, 146, 125, 0.2);
+  border-radius: 12px;
+}
+
+.recording-audio-heading {
+  display: grid;
+  gap: 4px;
+}
+
+.recording-audio-heading strong {
+  color: #33413d;
+  font-size: 0.86rem;
+}
+
+.recording-audio-heading span,
+.recording-audio-unavailable {
+  color: #69736e;
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.recording-audio-panel .secondary-button {
+  justify-self: start;
+}
+
+.recording-audio-panel audio {
+  width: 100%;
+}
+
+.recording-audio-unavailable,
+.recording-audio-error {
+  margin: 0;
+}
+
+.recording-audio-panel audio:focus-visible {
+  outline: 3px solid rgba(77, 123, 104, 0.35);
+  outline-offset: 3px;
 }
 
 .recording-retry-panel {
@@ -440,7 +505,19 @@
 
 .recording-transcript-actions {
   display: flex;
+  flex-wrap: wrap;
   margin-block-start: 12px;
+  gap: 9px;
+}
+
+.approved-source-edit-notice {
+  margin: 15px 0 0;
+  padding: 12px 14px;
+  color: #765d36;
+  font-size: 0.78rem;
+  line-height: 1.65;
+  background: #f5ead7;
+  border-radius: 11px;
 }
 
 .recording-source-approval {
@@ -510,9 +587,81 @@
   line-height: 1.6;
 }
 
+.approved-transcript-note +
+.story-action-button {
+  margin-block-start: 12px;
+}
+
+.transcript-revision-history {
+  margin-block-start: 15px;
+  padding: 12px 14px;
+  background: rgba(127, 146, 125, 0.08);
+  border: 1px solid rgba(83, 98, 91, 0.14);
+  border-radius: 11px;
+}
+
+.transcript-revision-history summary {
+  color: #4d675c;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.transcript-revision-history summary:focus-visible {
+  outline: 3px solid rgba(77, 123, 104, 0.3);
+  outline-offset: 4px;
+}
+
+.transcript-revision-list {
+  display: grid;
+  margin-block-start: 12px;
+  gap: 9px;
+}
+
+.transcript-revision-item {
+  padding: 11px;
+  background: #fffefa;
+  border: 1px solid rgba(83, 98, 91, 0.12);
+  border-radius: 10px;
+}
+
+.transcript-revision-item > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.transcript-revision-item strong {
+  color: #394b44;
+  font-size: 0.78rem;
+}
+
+.transcript-revision-item span {
+  color: #7d837e;
+  font-size: 0.69rem;
+}
+
+.transcript-revision-item p {
+  max-height: 180px;
+  margin: 9px 0 0;
+  overflow-y: auto;
+  color: #626b67;
+  font-size: 0.76rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 900px) {
   .recordings-layout {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .recording-audio-panel .secondary-button {
+    width: 100%;
   }
 }
 

@@ -14,6 +14,12 @@ export const RECORDING_TRANSCRIPT_LIFECYCLE_STATUSES =
     'archived',
   ])
 
+export const RECORDING_TRANSCRIPT_SOURCE_INDEX_STATUSES =
+  Object.freeze([
+    'not_indexed',
+    'indexed',
+  ])
+
 export const RECORDING_TRANSCRIPT_MAX_LENGTH =
   500_000
 
@@ -23,6 +29,58 @@ function isPositiveInteger(value) {
     value > 0
   )
 }
+
+const transcriptRevisionSchema =
+  new Schema(
+    {
+      revision: {
+        type: Number,
+        required: true,
+        min: 1,
+      },
+
+      content: {
+        type: String,
+        required: true,
+        trim: true,
+        minlength: 1,
+        maxlength:
+          RECORDING_TRANSCRIPT_MAX_LENGTH,
+      },
+
+      reviewStatus: {
+        type: String,
+        enum:
+          RECORDING_TRANSCRIPT_REVIEW_STATUSES,
+        required: true,
+      },
+
+      approvedAt: {
+        type: Date,
+        default: null,
+      },
+
+      approvedByUserId: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+      },
+
+      changedAt: {
+        type: Date,
+        required: true,
+      },
+
+      changedByUserId: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+      },
+    },
+    {
+      _id: false,
+    },
+  )
 
 const memoryRecordingTranscriptSchema =
   new Schema(
@@ -131,6 +189,24 @@ const memoryRecordingTranscriptSchema =
         default: null,
       },
 
+      sourceIndexStatus: {
+        type: String,
+        enum:
+          RECORDING_TRANSCRIPT_SOURCE_INDEX_STATUSES,
+        default: 'not_indexed',
+      },
+
+      sourceIndexedAt: {
+        type: Date,
+        default: null,
+      },
+
+      sourceIndexRevision: {
+        type: Number,
+        min: 1,
+        default: null,
+      },
+
       revision: {
         type: Number,
         min: 1,
@@ -140,6 +216,22 @@ const memoryRecordingTranscriptSchema =
           message:
             'Transcript revision must be a positive integer.',
         },
+      },
+
+      revisionHistory: {
+        type: [transcriptRevisionSchema],
+        default: [],
+      },
+
+      lastEditedAt: {
+        type: Date,
+        default: null,
+      },
+
+      lastEditedByUserId: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
       },
 
       lifecycleStatus: {
@@ -233,6 +325,37 @@ memoryRecordingTranscriptSchema.pre(
         )
       }
     }
+
+    if (
+      this.sourceIndexStatus ===
+        'indexed' &&
+      (
+        this.reviewStatus !==
+          'approved' ||
+        !this.sourceIndexedAt ||
+        this.sourceIndexRevision !==
+          this.revision
+      )
+    ) {
+      this.invalidate(
+        'sourceIndexStatus',
+        'Indexed transcript sources must match the current approved revision.',
+      )
+    }
+
+    if (
+      this.sourceIndexStatus ===
+        'not_indexed' &&
+      (
+        this.sourceIndexedAt ||
+        this.sourceIndexRevision
+      )
+    ) {
+      this.invalidate(
+        'sourceIndexStatus',
+        'A transcript outside the source index cannot keep index metadata.',
+      )
+    }
   },
 )
 
@@ -287,6 +410,20 @@ memoryRecordingTranscriptSchema.index(
     name:
       'memory_recording_transcripts_unique_recording',
     unique: true,
+  },
+)
+
+memoryRecordingTranscriptSchema.index(
+  {
+    memoryId: 1,
+    lifecycleStatus: 1,
+    reviewStatus: 1,
+    sourceIndexStatus: 1,
+    updatedAt: -1,
+  },
+  {
+    name:
+      'memory_recording_transcripts_source_index',
   },
 )
 

@@ -10,7 +10,7 @@ import { AppError } from '../src/errors/AppError.js'
 
 const mocks = vi.hoisted(() => ({
   verifyAccessToken: vi.fn(),
-  transcribeMemoryRecording:
+  enqueueMemoryRecordingTranscription:
     vi.fn(),
 }))
 
@@ -23,10 +23,10 @@ vi.mock(
 )
 
 vi.mock(
-  '../src/modules/media/recordingTranscriptionService.js',
+  '../src/modules/media/recordingTranscriptionQueueService.js',
   () => ({
-    transcribeMemoryRecording:
-      mocks.transcribeMemoryRecording,
+    enqueueMemoryRecordingTranscription:
+      mocks.enqueueMemoryRecordingTranscription,
   }),
 )
 
@@ -77,17 +77,18 @@ beforeEach(() => {
       authentication,
     )
 
-  mocks.transcribeMemoryRecording
+  mocks.enqueueMemoryRecordingTranscription
     .mockResolvedValue({
-      transcript,
-      created: true,
+      transcript: null,
+      created: false,
+      queued: true,
     })
 })
 
 describe(
   'Recording transcription route',
   () => {
-    it('creates a draft transcript for an authenticated user', async () => {
+    it('queues transcription for an authenticated user', async () => {
       const response =
         await request(app)
           .post(
@@ -102,10 +103,10 @@ describe(
               '  he-IL  ',
           })
 
-      expect(response.status).toBe(201)
+      expect(response.status).toBe(202)
 
       expect(
-        mocks.transcribeMemoryRecording,
+        mocks.enqueueMemoryRecordingTranscription,
       ).toHaveBeenCalledWith(
         userId,
         memoryId,
@@ -118,17 +119,19 @@ describe(
       expect(response.body).toEqual({
         success: true,
         data: {
-          transcript,
-          created: true,
+          transcript: null,
+          created: false,
+          queued: true,
         },
       })
     })
 
     it('returns an existing transcript without creating another one', async () => {
-      mocks.transcribeMemoryRecording
+      mocks.enqueueMemoryRecordingTranscription
         .mockResolvedValue({
           transcript,
           created: false,
+          queued: false,
         })
 
       const response =
@@ -148,6 +151,7 @@ describe(
         .toEqual({
           transcript,
           created: false,
+          queued: false,
         })
     })
 
@@ -174,7 +178,7 @@ describe(
       expect(response.status).toBe(401)
 
       expect(
-        mocks.transcribeMemoryRecording,
+        mocks.enqueueMemoryRecordingTranscription,
       ).not.toHaveBeenCalled()
     })
 
@@ -193,7 +197,7 @@ describe(
       expect(response.status).toBe(400)
 
       expect(
-        mocks.transcribeMemoryRecording,
+        mocks.enqueueMemoryRecordingTranscription,
       ).not.toHaveBeenCalled()
     })
 
@@ -215,12 +219,12 @@ describe(
       expect(response.status).toBe(400)
 
       expect(
-        mocks.transcribeMemoryRecording,
+        mocks.enqueueMemoryRecordingTranscription,
       ).not.toHaveBeenCalled()
     })
 
     it('returns a safe response when transcription consent is missing', async () => {
-      mocks.transcribeMemoryRecording
+      mocks.enqueueMemoryRecordingTranscription
         .mockRejectedValue(
           new AppError(
             'Transcription consent was not granted for this recording.',

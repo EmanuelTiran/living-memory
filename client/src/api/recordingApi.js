@@ -51,6 +51,19 @@ export async function listMemoryRecordings(accessToken, memoryId) {
   return data.recordings
 }
 
+export async function listGuidedMemoryStories(
+  accessToken,
+  memoryId,
+) {
+  const data = await request(
+    memoryId,
+    '/stories',
+    accessToken,
+  )
+
+  return data.stories
+}
+
 export async function createMemoryRecording(accessToken, memoryId, input) {
   const data = await request(memoryId, '', accessToken, {
     method: 'POST',
@@ -127,6 +140,87 @@ export async function updateMemoryRecordingTranscript(
   )
 
   return data.transcript
+}
+
+export async function reviseApprovedMemoryRecordingTranscript(
+  accessToken,
+  memoryId,
+  recordingId,
+  input,
+) {
+  const data = await request(
+    memoryId,
+    `/${encodeURIComponent(recordingId)}/transcript/revision`,
+    accessToken,
+    {
+      method: 'PATCH',
+      body: input,
+    },
+  )
+
+  return data.transcript
+}
+
+export async function getMemoryRecordingAudio(
+  accessToken,
+  memoryId,
+  recordingId,
+) {
+  let response
+
+  try {
+    response = await fetch(
+      `${createRecordingBasePath(memoryId)}/${encodeURIComponent(recordingId)}/audio`,
+      {
+        credentials: 'include',
+        headers: {
+          Accept: 'audio/*',
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+      },
+    )
+  } catch {
+    throw new ApiError(
+      'Unable to connect to the server.',
+      {
+        code: 'NETWORK_ERROR',
+      },
+    )
+  }
+
+  if (!response.ok) {
+    const payload = await response
+      .json()
+      .catch(() => null)
+
+    throw new ApiError(
+      payload?.error?.message ??
+        'The recording could not be loaded.',
+      {
+        statusCode: response.status,
+        code:
+          payload?.error?.code ??
+          'REQUEST_FAILED',
+        details:
+          payload?.error?.details ?? [],
+      },
+    )
+  }
+
+  const audioBlob = await response.blob()
+
+  if (audioBlob.size === 0) {
+    throw new ApiError(
+      'The recording is empty.',
+      {
+        code:
+          'RECORDING_FILE_UNAVAILABLE',
+      },
+    )
+  }
+
+  return audioBlob
 }
 
 export async function approveMemoryRecordingTranscript(

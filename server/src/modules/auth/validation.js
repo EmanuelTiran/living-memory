@@ -52,6 +52,16 @@ export const registerSchema = z.strictObject({
 
   email: emailSchema,
   password: registrationPasswordSchema,
+  invitationToken: z
+    .string({
+      error: 'Invitation token must be a string.',
+    })
+    .trim()
+    .regex(
+      /^[A-Za-z0-9_-]{43}$/,
+      'Invitation token is invalid.',
+    )
+    .optional(),
 })
 
 export const loginSchema = z.strictObject({

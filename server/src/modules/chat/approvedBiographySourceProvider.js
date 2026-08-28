@@ -19,6 +19,7 @@ function resolveCandidateLimit(limit) {
 
 function createBiographySource(
   biographyAnswer,
+  memoryId,
 ) {
   const title =
     biographyAnswer.question
@@ -39,6 +40,8 @@ function createBiographySource(
       biographyAnswer.approvedAt,
     sourceVersion:
       `revision:${biographyAnswer.revision}`,
+    sourceRoute:
+      `/app/memories/${memoryId}#guided-interview`,
   })
 }
 
@@ -72,7 +75,11 @@ export async function listApprovedBiographySources(
       .lean()
 
   return biographyAnswers.map(
-    createBiographySource,
+    (biographyAnswer) =>
+      createBiographySource(
+        biographyAnswer,
+        memoryId,
+      ),
   )
 }
 

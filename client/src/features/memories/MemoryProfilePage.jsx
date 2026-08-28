@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router'
 import { ApiError, refreshSession } from '../../api/authApi.js'
+import {
+  createMemoryAssetAccessLink,
+  listMemoryAssets,
+} from '../../api/assetApi.js'
+import {
+  pilotAvatarEnabled,
+} from '../../config/pilotFeatures.js'
 import {
   approveMemoryStory,
   archiveMemoryProfile,
@@ -14,8 +26,13 @@ import {
 import MemoryChatLauncher from '../chat/MemoryChatLauncher.jsx'
 import BiographyQuestionnaire from './BiographyQuestionnaire.jsx'
 import DigitalPersonaSetup from './DigitalPersonaSetup.jsx'
+import FamilyQuestions from './FamilyQuestions.jsx'
+import GuidedLivingJourney from './GuidedLivingJourney.jsx'
+import GuidedStoryMap from './GuidedStoryMap.jsx'
 import MemoryAssets from './MemoryAssets.jsx'
+import MemoryArchiveSearch from './MemoryArchiveSearch.jsx'
 import MemoryRecordings from './MemoryRecordings.jsx'
+import MemoryTimeline from './MemoryTimeline.jsx'
 import './MemoryProfilePage.css'
 import './MemoryProfileManagement.css'
 
@@ -27,6 +44,8 @@ function getErrorMessage(error) {
   const messages = {
     MEMORY_NOT_FOUND: 'הזיכרון לא נמצא או שאין לכם הרשאה לצפות בו.',
     STORY_NOT_FOUND: 'הסיפור לא נמצא או שאינו זמין יותר.',
+    STORY_REVISION_CONFLICT:
+      'הסיפור השתנה מאז שפתחתם אותו. רעננו את הדף לפני שמירה נוספת.',
     VALIDATION_ERROR: 'חלק מהפרטים אינם תקינים. בדקו את הטופס ונסו שוב.',
     AUTHENTICATION_REQUIRED: 'החיבור לחשבון הסתיים. יש להתחבר מחדש.',
     NETWORK_ERROR: 'לא הצלחנו להתחבר לשרת.',
@@ -69,12 +88,29 @@ function getStoryStatusLabel(status) {
   return status === 'approved' ? 'מאושר' : 'טיוטה'
 }
 
+function notifyArchiveSourcesUpdated(
+  memoryId,
+) {
+  window.dispatchEvent(
+    new CustomEvent(
+      'living-memory:recordings-updated',
+      {
+        detail: {
+          memoryId,
+        },
+      },
+    ),
+  )
+}
+
 function MemoryProfilePage({ authentication, onAuthenticationChange }) {
   const { memoryId } = useParams()
+  const location = useLocation()
   const navigate = useNavigate()
 
   const [memoryProfile, setMemoryProfile] = useState(null)
   const [memoryStories, setMemoryStories] = useState([])
+  const [profileHeroImageUrl, setProfileHeroImageUrl] = useState('')
 
   const [profileForm, setProfileForm] = useState({
     subjectName: '',
@@ -171,6 +207,49 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
     }
 
     loadMemory()
+
+    return () => {
+      isActive = false
+    }
+  }, [memoryId, runAuthenticatedRequest])
+
+  useEffect(() => {
+    let isActive = true
+
+    async function loadProfileHeroImage() {
+      setProfileHeroImageUrl('')
+
+      try {
+        const assets = await runAuthenticatedRequest((accessToken) =>
+          listMemoryAssets(accessToken, memoryId),
+        )
+
+        const heroAsset = assets.find(
+          (asset) => asset.assetType === 'image',
+        )
+
+        if (!heroAsset) {
+          return
+        }
+
+        const access = await runAuthenticatedRequest((accessToken) =>
+          createMemoryAssetAccessLink(
+            accessToken,
+            memoryId,
+            heroAsset.id,
+            'inline',
+          ),
+        )
+
+        if (isActive) {
+          setProfileHeroImageUrl(access.url)
+        }
+      } catch {
+        // The portrait is an enhancement. The archive remains usable without it.
+      }
+    }
+
+    void loadProfileHeroImage()
 
     return () => {
       isActive = false
@@ -351,6 +430,10 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
         ),
       )
 
+      notifyArchiveSourcesUpdated(
+        memoryId,
+      )
+
       setStoryActionSuccessMessage('הסיפור אושר בהצלחה.')
     } catch (error) {
       setStoryActionErrorMessage(getErrorMessage(error))
@@ -372,6 +455,11 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
           title: editForm.title,
           content: editForm.content,
           occurredOn: editForm.occurredOn,
+          expectedRevision:
+            memoryStories.find(
+              (story) =>
+                story.id === storyId,
+            )?.revision ?? 1,
         }),
       )
 
@@ -383,8 +471,12 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
 
       cancelEditingStory()
 
+      notifyArchiveSourcesUpdated(
+        memoryId,
+      )
+
       setStoryActionSuccessMessage(
-        'הסיפור עודכן וחזר למצב טיוטה לצורך אישור מחדש.',
+        'הגרסה הקודמת נשמרה בהיסטוריה, והסיפור חזר לטיוטה לצורך אישור מחדש.',
       )
     } catch (error) {
       setStoryActionErrorMessage(getErrorMessage(error))
@@ -463,6 +555,15 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
   }
 
   const isProfileBusy = isUpdatingProfile || isArchivingProfile
+  const authorizationRole =
+    memoryProfile.authorization?.role ?? 'owner'
+  const canContribute = authorizationRole !== 'viewer'
+  const approvedStoryCount = memoryStories.filter(
+    (story) => story.status === 'approved',
+  ).length
+  const profileDescription =
+    memoryProfile.description?.trim() ||
+    'הסיפורים, הקול והרגעים שהמשפחה בוחרת לשמור יחד.'
 
   return (
     <main className="page-shell">
@@ -498,13 +599,16 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
           </div>
         </div>
 
-        <header className="memory-profile-header">
-          <span className="profile-initial" aria-hidden="true">
-            {memoryProfile.subjectName.trim().charAt(0)}
-          </span>
+        <header className="memory-profile-hero">
+          <div className="memory-profile-hero-copy">
+            <p className="memory-privacy">
+              <span aria-hidden="true" />
+              זיכרון פרטי
+            </p>
 
-          <div>
-            <p className="memory-privacy">זיכרון פרטי</p>
+            <p className="memory-profile-hero-kicker">
+              הארכיון המשפחתי
+            </p>
 
             <h1 id="memory-profile-title" className="memory-profile-title">
               {memoryProfile.subjectName}
@@ -515,6 +619,67 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
                 {memoryProfile.relationship}
               </p>
             )}
+
+            <p className="memory-profile-hero-description">
+              {profileDescription}
+            </p>
+
+            <div className="memory-profile-hero-actions">
+              <a
+                className="primary-button"
+                href={canContribute ? '#guided-interview' : '#guided-story-map'}
+              >
+                {canContribute ? 'המשך השיחה המשפחתית' : 'צפייה בסיפורים'}
+              </a>
+
+              <Link
+                className="secondary-button"
+                to={`/app/memories/${encodeURIComponent(memoryProfile.id)}/chat`}
+                state={{ subjectName: memoryProfile.subjectName }}
+              >
+                שאלו את הסיפור
+              </Link>
+            </div>
+
+            <dl className="memory-profile-hero-metadata">
+              <div>
+                <dt>סיפורים כתובים מאושרים</dt>
+                <dd>{approvedStoryCount}</dd>
+              </div>
+
+              {memoryProfile.createdAt && (
+                <div>
+                  <dt>הארכיון נפתח</dt>
+                  <dd>
+                    <time dateTime={memoryProfile.createdAt}>
+                      {formatDate(memoryProfile.createdAt)}
+                    </time>
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </div>
+
+          <div
+            className={`memory-profile-hero-visual ${
+              profileHeroImageUrl ? 'memory-profile-hero-visual-has-image' : ''
+            }`}
+          >
+            {profileHeroImageUrl ? (
+              <img
+                src={profileHeroImageUrl}
+                alt={`תמונה מהארכיון של ${memoryProfile.subjectName}`}
+                onError={() => setProfileHeroImageUrl('')}
+              />
+            ) : (
+              <span className="profile-initial" aria-hidden="true">
+                {memoryProfile.subjectName.trim().charAt(0)}
+              </span>
+            )}
+
+            <span className="memory-profile-hero-visual-label">
+              {profileHeroImageUrl ? 'תמונה מהארכיון' : 'הזיכרון המשפחתי'}
+            </span>
           </div>
         </header>
 
@@ -602,54 +767,84 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
           </section>
         )}
 
-        <section className="profile-overview">
-          <div>
-            <p className="panel-kicker">על האדם</p>
-            <h2>הסיפור שמאחורי הזיכרון</h2>
-            <p>{memoryProfile.description || 'עדיין לא נוסף תיאור לזיכרון הזה.'}</p>
-          </div>
-
-          {memoryProfile.createdAt && (
-            <dl className="profile-metadata">
-              <div>
-                <dt>נוצר בתאריך</dt>
-                <dd>{formatDate(memoryProfile.createdAt)}</dd>
-              </div>
-
-              <div>
-                <dt>פרטיות</dt>
-                <dd>פרטי לחשבון שלך</dd>
-              </div>
-            </dl>
-          )}
-        </section>
+        <GuidedLivingJourney
+          memoryId={memoryProfile.id}
+          subjectName={memoryProfile.subjectName}
+          authorizationRole={authorizationRole}
+        />
 
         <BiographyQuestionnaire
           key={memoryProfile.id}
           memoryId={memoryProfile.id}
           subjectName={memoryProfile.subjectName}
           runAuthenticatedRequest={runAuthenticatedRequest}
+          initiallyExpanded={
+            location.state?.startGuidedInterview === true
+          }
         />
 
-        <MemoryRecordings
+        <GuidedStoryMap
           memoryId={memoryProfile.id}
           subjectName={memoryProfile.subjectName}
           runAuthenticatedRequest={runAuthenticatedRequest}
         />
 
-        <MemoryAssets
+        <FamilyQuestions
           memoryId={memoryProfile.id}
           subjectName={memoryProfile.subjectName}
           runAuthenticatedRequest={runAuthenticatedRequest}
         />
 
-        <DigitalPersonaSetup
-          memoryId={memoryProfile.id}
-          subjectName={memoryProfile.subjectName}
-          runAuthenticatedRequest={runAuthenticatedRequest}
-        />
+        <section className="profile-features" aria-label="שאלה עם מקור">
+          <MemoryChatLauncher
+            memoryId={memoryProfile.id}
+            subjectName={memoryProfile.subjectName}
+          />
+        </section>
 
-        <section className="story-workspace" aria-labelledby="stories-title">
+        <details className="archive-library">
+          <summary>
+            <span>
+              <strong>כל חומרי הארכיון וכלי הניהול</strong>
+              <small>
+                חיפוש, ציר זמן, הקלטות, קבצים וסיפורים כתובים
+              </small>
+            </span>
+
+            <span aria-hidden="true">+</span>
+          </summary>
+
+          <div className="archive-library-content">
+            <MemoryArchiveSearch
+              memoryId={memoryProfile.id}
+              subjectName={memoryProfile.subjectName}
+              runAuthenticatedRequest={runAuthenticatedRequest}
+            />
+
+            <MemoryTimeline
+              memoryId={memoryProfile.id}
+              subjectName={memoryProfile.subjectName}
+              runAuthenticatedRequest={runAuthenticatedRequest}
+              refreshKey={memoryStories
+                .map((story) =>
+                  `${story.id}:${story.status}:${story.updatedAt ?? ''}`,
+                )
+                .join('|')}
+            />
+
+            <MemoryRecordings
+              memoryId={memoryProfile.id}
+              subjectName={memoryProfile.subjectName}
+              runAuthenticatedRequest={runAuthenticatedRequest}
+            />
+
+            <MemoryAssets
+              memoryId={memoryProfile.id}
+              subjectName={memoryProfile.subjectName}
+              runAuthenticatedRequest={runAuthenticatedRequest}
+            />
+
+            <section className="story-workspace" aria-labelledby="stories-title">
           <div className="story-form-panel">
             <div className="story-section-header">
               <p className="panel-kicker">מקור כתוב</p>
@@ -838,6 +1033,10 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
                               {story.createdAt && (
                                 <span>נוסף: {formatDate(story.createdAt)}</span>
                               )}
+
+                              <span>
+                                גרסה {story.revision ?? 1}
+                              </span>
                             </div>
                           </div>
 
@@ -847,6 +1046,51 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
                         </div>
 
                         <p className="story-content">{story.content}</p>
+
+                        {story.revisionHistory?.length > 0 && (
+                          <details className="source-revision-history">
+                            <summary>
+                              היסטוריית עריכות
+                              {' · '}
+                              {story.revisionHistory.length}
+                              {' '}
+                              גרסאות קודמות
+                            </summary>
+
+                            <div className="source-revision-list">
+                              {story.revisionHistory
+                                .slice()
+                                .reverse()
+                                .map((revision) => (
+                                  <article
+                                    className="source-revision-item"
+                                    key={`${story.id}-${revision.revision}-${revision.changedAt}`}
+                                  >
+                                    <div>
+                                      <strong>
+                                        גרסה {revision.revision}
+                                      </strong>
+
+                                      <span>
+                                        {revision.reviewStatus === 'approved'
+                                          ? 'הייתה מאושרת'
+                                          : 'הייתה טיוטה'}
+                                      </span>
+
+                                      {revision.changedAt && (
+                                        <span>
+                                          נשמרה עד {formatDate(revision.changedAt)}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <h4>{revision.title}</h4>
+                                    <p>{revision.content}</p>
+                                  </article>
+                                ))}
+                            </div>
+                          </details>
+                        )}
 
                         <div className="story-card-actions">
                           {story.status === 'draft' && (
@@ -889,14 +1133,35 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
               </div>
             )}
           </div>
-        </section>
+            </section>
+          </div>
+        </details>
 
-        <section className="profile-features" aria-label="אפשרויות הזיכרון">
-          <MemoryChatLauncher
-            memoryId={memoryProfile.id}
-            subjectName={memoryProfile.subjectName}
-          />
-        </section>
+        {pilotAvatarEnabled && (
+          <section
+            className="optional-ai-layer"
+            aria-labelledby="optional-ai-layer-title"
+          >
+            <div className="optional-ai-layer-introduction">
+              <p className="panel-kicker">שכבה אופציונלית</p>
+
+              <h2 id="optional-ai-layer-title">
+                קול ואווטאר — רק לאחר שהסיפורים נשמרו
+              </h2>
+
+              <p>
+                אפשר להוסיף קול מלאכותי או חוויית וידאו בהמשך.
+                הם אינם נדרשים כדי לתעד, לאשר או לשאול את הארכיון.
+              </p>
+            </div>
+
+            <DigitalPersonaSetup
+              memoryId={memoryProfile.id}
+              subjectName={memoryProfile.subjectName}
+              runAuthenticatedRequest={runAuthenticatedRequest}
+            />
+          </section>
+        )}
       </section>
     </main>
   )

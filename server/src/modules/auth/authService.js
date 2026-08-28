@@ -8,6 +8,9 @@ import {
 import { createRefreshSession } from './sessionService.js'
 import { createAccessToken } from './tokens.js'
 import {
+  requireRegistrationInvitation,
+} from './registrationAccessService.js'
+import {
   loginSchema,
   registerSchema,
 } from './validation.js'
@@ -44,6 +47,12 @@ function createSuspendedAccountError() {
 
 export async function registerUser(input) {
   const registrationData = registerSchema.parse(input)
+
+  await requireRegistrationInvitation({
+    email: registrationData.email,
+    invitationToken:
+      registrationData.invitationToken,
+  })
 
   const existingUser = await User.exists({
     email: registrationData.email,

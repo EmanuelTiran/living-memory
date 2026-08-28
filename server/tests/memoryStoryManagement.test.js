@@ -8,6 +8,7 @@ import {
 
   const mocks = vi.hoisted(() => ({
     memoryProfileExists: vi.fn(),
+    memoryStoryFindOne: vi.fn(),
     memoryStoryFindOneAndUpdate:
       vi.fn(),
   }))
@@ -25,6 +26,8 @@ import {
     '../src/modules/memories/MemoryStory.js',
     () => ({
       default: {
+        findOne:
+          mocks.memoryStoryFindOne,
         findOneAndUpdate:
           mocks.memoryStoryFindOneAndUpdate,
       },
@@ -51,6 +54,20 @@ import {
 
       mocks.memoryProfileExists.mockResolvedValue({
         _id: memoryId,
+      })
+
+      mocks.memoryStoryFindOne.mockResolvedValue({
+        _id: storyId,
+        title: 'כותרת קיימת',
+        content:
+          'זהו התוכן הקיים של הסיפור המשפחתי.',
+        occurredOn: '1998-04-12',
+        status: 'approved',
+        approvedAt: new Date(
+          '2026-08-23T08:00:00.000Z',
+        ),
+        approvedByUserId: userId,
+        revision: 1,
       })
     })
 
@@ -84,13 +101,23 @@ import {
       expect(
         mocks.memoryStoryFindOneAndUpdate,
       ).toHaveBeenCalledWith(
-        {
+        expect.objectContaining({
           _id: storyId,
           memoryId,
           status: {
             $in: ['draft', 'approved'],
           },
-        },
+          $or: [
+            {
+              revision: 1,
+            },
+            {
+              revision: {
+                $exists: false,
+              },
+            },
+          ],
+        }),
         {
           $set: {
             title: 'כותרת מעודכנת',
@@ -98,10 +125,36 @@ import {
               'זהו התוכן המעודכן של הסיפור המשפחתי.',
             occurredOn: '1999-06-20',
             status: 'draft',
+            approvedAt: null,
+            approvedByUserId: null,
+            lastEditedAt:
+              expect.any(Date),
+            lastEditedByUserId: userId,
+            revision: 2,
+          },
+          $push: {
+            revisionHistory: {
+              $each: [
+                expect.objectContaining({
+                  revision: 1,
+                  title: 'כותרת קיימת',
+                  content:
+                    'זהו התוכן הקיים של הסיפור המשפחתי.',
+                  occurredOn:
+                    '1998-04-12',
+                  reviewStatus:
+                    'approved',
+                  changedByUserId:
+                    userId,
+                }),
+              ],
+              $slice: -20,
+            },
           },
         },
         {
           returnDocument: 'after',
+          runValidators: true,
         },
       )
 
@@ -131,14 +184,24 @@ import {
         mocks.memoryStoryFindOneAndUpdate,
       ).toHaveBeenCalledWith(
         expect.any(Object),
-        {
-          $set: {
+        expect.objectContaining({
+          $set: expect.objectContaining({
             occurredOn: '',
             status: 'draft',
-          },
-        },
+            approvedAt: null,
+            approvedByUserId: null,
+            revision: 2,
+          }),
+          $push: expect.objectContaining({
+            revisionHistory:
+              expect.objectContaining({
+                $slice: -20,
+              }),
+          }),
+        }),
         {
           returnDocument: 'after',
+          runValidators: true,
         },
       )
     })

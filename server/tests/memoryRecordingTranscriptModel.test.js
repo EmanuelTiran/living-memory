@@ -71,6 +71,10 @@ import {
           lifecycleStatus: 'active',
           approvedAt: null,
           approvedByUserId: null,
+          sourceIndexStatus:
+            'not_indexed',
+          sourceIndexedAt: null,
+          sourceIndexRevision: null,
           archivedAt: null,
           archivedByUserId: null,
         })
@@ -105,6 +109,37 @@ import {
         await expect(
           transcript.validate(),
         ).resolves.toBeUndefined()
+      })
+
+      it('accepts only the current approved revision in the source index', async () => {
+        const approvedAt =
+          new Date(
+            '2026-07-28T11:00:00.000Z',
+          )
+        const transcript =
+          createTranscript({
+            reviewStatus: 'approved',
+            approvedAt,
+            approvedByUserId:
+              secondUserId,
+            sourceIndexStatus:
+              'indexed',
+            sourceIndexedAt:
+              approvedAt,
+            sourceIndexRevision: 1,
+          })
+
+        await expect(
+          transcript.validate(),
+        ).resolves.toBeUndefined()
+
+        transcript.sourceIndexRevision = 2
+
+        await expect(
+          transcript.validate(),
+        ).rejects.toThrow(
+          'Indexed transcript sources must match the current approved revision.',
+        )
       })
 
       it('rejects an approved transcript without approval metadata', async () => {

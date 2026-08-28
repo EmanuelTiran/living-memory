@@ -175,6 +175,46 @@ export async function uploadMemoryAsset(
   return data.asset
 }
 
+export async function createMemoryAssetAccessLink(
+  accessToken,
+  memoryId,
+  assetId,
+  disposition,
+) {
+  const data = await request(
+    memoryId,
+    `/${encodeURIComponent(assetId)}/access-link`,
+    accessToken,
+    {
+      method: 'POST',
+      body: {
+        disposition,
+      },
+    },
+  )
+
+  return data.access
+}
+
+export async function updateMemoryAssetMetadata(
+  accessToken,
+  memoryId,
+  assetId,
+  input,
+) {
+  const data = await request(
+    memoryId,
+    `/${encodeURIComponent(assetId)}`,
+    accessToken,
+    {
+      method: 'PATCH',
+      body: input,
+    },
+  )
+
+  return data.asset
+}
+
 export function viewMemoryAssetFile(
   accessToken,
   memoryId,

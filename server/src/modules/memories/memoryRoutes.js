@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { requireAuth } from '../../middleware/requireAuth.js'
 import { validateBody } from '../../middleware/validateBody.js'
 import { validateParams } from '../../middleware/validateParams.js'
+import { validateQuery } from '../../middleware/validateQuery.js'
 import digitalPersonaRoutes from '../digitalPersona/digitalPersonaRoutes.js'
 import {
   archiveMemory,
@@ -17,6 +18,15 @@ import {
   listStories,
   updateStory,
 } from './memoryStoryController.js'
+import {
+  getMemoryTimeline,
+} from './memoryTimelineController.js'
+import {
+  searchArchive,
+} from './archiveSearchController.js'
+import {
+  archiveSearchQuerySchema,
+} from './archiveSearchValidation.js'
 import {
   createMemoryProfileSchema,
   createMemoryStorySchema,
@@ -47,6 +57,19 @@ memoryRoutes.get(
   '/:memoryId/stories',
   validateParams(memoryProfileParamsSchema),
   listStories,
+)
+
+memoryRoutes.get(
+  '/:memoryId/timeline',
+  validateParams(memoryProfileParamsSchema),
+  getMemoryTimeline,
+)
+
+memoryRoutes.get(
+  '/:memoryId/archive-search',
+  validateParams(memoryProfileParamsSchema),
+  validateQuery(archiveSearchQuerySchema),
+  searchArchive,
 )
 
 memoryRoutes.post(

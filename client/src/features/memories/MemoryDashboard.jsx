@@ -60,12 +60,32 @@ import {
   }
 
   function MemoryCard({ memoryProfile }) {
+    const authorizationRole =
+      memoryProfile.authorization?.role ?? 'owner'
+
     return (
       <article className="memory-card">
         <div className="memory-card-header">
           <div>
             <p className="memory-privacy">
-              זיכרון פרטי
+              {memoryProfile.authorization
+                ?.role === 'viewer'
+                ? 'שותף לצפייה'
+                : memoryProfile.authorization
+                    ?.role ===
+                    'contributor'
+                  ? 'שותף לתיעוד'
+                  : memoryProfile
+                        .authorization
+                        ?.role ===
+                      'editor'
+                    ? 'שותף לעריכה'
+                    : memoryProfile
+                          .authorization
+                          ?.role ===
+                        'steward'
+                      ? 'נאמן משפחתי'
+                      : 'זיכרון פרטי'}
             </p>
 
             <h3>
@@ -108,12 +128,48 @@ import {
           </p>
         )}
 
-        <Link
-          className="dashboard-home-link"
-          to={`/app/memories/${memoryProfile.id}`}
-        >
-          פתיחת הזיכרון
-        </Link>
+        <div className="memory-card-actions">
+          <Link
+            className="memory-card-primary-action"
+            to={`/app/memories/${memoryProfile.id}`}
+          >
+            פתיחת המסלול של {memoryProfile.subjectName}
+          </Link>
+
+          <details className="memory-card-more-actions">
+            <summary>פעולות נוספות</summary>
+
+            <div>
+              <Link
+                className="dashboard-home-link"
+                to={`/app/memories/${memoryProfile.id}/pilot`}
+              >
+                פיילוט משפחתי בן 4 שבועות
+              </Link>
+
+              {authorizationRole === 'owner' && (
+                <Link
+                  className="dashboard-home-link"
+                  to={`/app/memories/${memoryProfile.id}/pricing-pilot`}
+                >
+                  הצעת קבוצת המייסדים
+                </Link>
+              )}
+
+              {[
+                'owner',
+                'steward',
+              ].includes(authorizationRole) && (
+                <Link
+                  className="dashboard-home-link"
+                  to={`/app/memories/${memoryProfile.id}/family`}
+                >
+                  הזמנת המשפחה וניהול גישה
+                </Link>
+              )}
+            </div>
+          </details>
+        </div>
       </article>
     )
   }
@@ -263,6 +319,15 @@ import {
         setSuccessMessage(
           `הזיכרון של ${memoryProfile.subjectName} נוצר בהצלחה.`,
         )
+
+        navigate(
+          `/app/memories/${memoryProfile.id}`,
+          {
+            state: {
+              startGuidedInterview: true,
+            },
+          },
+        )
       } catch (error) {
         setErrorMessage(
           getMemoryErrorMessage(error),
@@ -344,14 +409,45 @@ import {
             </div>
           </div>
 
+          {user.systemRole === 'admin' && (
+            <Link
+              className="secondary-button admin-dashboard-link"
+              to="/app/admin"
+            >
+              פתיחת לוח הניהול
+            </Link>
+          )}
+
+          <section
+            className="guided-living-dashboard-intro"
+            aria-labelledby="guided-living-dashboard-title"
+          >
+            <p className="panel-kicker">זיכרון חי למשפחה</p>
+
+            <h2 id="guided-living-dashboard-title">
+              הסיפורים של המשפחה שלכם. בקולם. מוכנים לשאלה הבאה.
+            </h2>
+
+            <p>
+              מתעדים בשיחות קצרות וטבעיות, שומרים את הסיפור ואת הקול
+              המקורי, ומקבלים תשובות שמראות על מה הן מבוססות.
+            </p>
+
+            <ol aria-label="איך המסלול עובד">
+              <li><span>1</span> מדברים</li>
+              <li><span>2</span> שומרים מקור</li>
+              <li><span>3</span> המשפחה שואלת</li>
+            </ol>
+          </section>
+
           <div className="memory-toolbar">
             <div>
               <p className="panel-kicker">
-                הזיכרונות שלי
+                הארכיונים המשפחתיים
               </p>
 
               <h2>
-                סיפורי החיים המשפחתיים
+                של מי הסיפורים שנרצה לשמור?
               </h2>
             </div>
 
@@ -370,8 +466,8 @@ import {
               {showCreateForm
                 ? 'סגירת הטופס'
                 : memoryProfiles.length > 0
-                  ? 'יצירת זיכרון נוסף'
-                  : 'יצירת זיכרון ראשון'}
+                  ? 'התחלת ארכיון נוסף'
+                  : 'התחלת ארכיון ראשון'}
             </button>
           </div>
 
@@ -382,18 +478,20 @@ import {
               aria-busy={isSubmitting}
             >
               <div className="memory-form-heading">
-                <h2>יצירת זיכרון חדש</h2>
+                <h2>
+                  של מי את הסיפורים היית רוצה לשמור?
+                </h2>
 
                 <p>
-                  התחילו בפרטים הבסיסיים.
-                  סיפורים, תמונות והקלטות
-                  יתווספו בשלבים הבאים.
+                  מתחילים בשם ובקשר המשפחתי,
+                  וממשיכים מיד לשאלה אנושית
+                  אחת מתוך ראיון קצר ומודרך.
                 </p>
               </div>
 
               <div className="memory-form-grid">
                 <label className="form-field">
-                  <span>שם האדם</span>
+                  <span>שם המספר או המספרת</span>
 
                   <input
                     type="text"
@@ -411,7 +509,7 @@ import {
 
                 <label className="form-field">
                   <span>
-                    הקשר שלך לאדם
+                    מה הקשר שלך אליו או אליה?
                   </span>
 
                   <input
@@ -427,19 +525,23 @@ import {
                 </label>
               </div>
 
-              <label className="form-field">
-                <span>תיאור קצר</span>
+              <details className="memory-optional-context">
+                <summary>רוצים להוסיף מעט הקשר? לא חובה</summary>
 
-                <textarea
-                  className="memory-textarea"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleFormChange}
-                  maxLength={1000}
-                  rows={5}
-                  placeholder="כמה מילים על האדם ועל הזיכרון שתרצו לשמר"
-                />
-              </label>
+                <label className="form-field">
+                  <span>מה חשוב למשפחה לשמור?</span>
+
+                  <textarea
+                    className="memory-textarea"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleFormChange}
+                    maxLength={1000}
+                    rows={5}
+                    placeholder="כמה מילים שיעזרו לנו להציע שאלות מתאימות"
+                  />
+                </label>
+              </details>
 
               <div className="memory-form-actions">
                 <button
@@ -449,7 +551,7 @@ import {
                 >
                   {isSubmitting
                     ? 'שומרים...'
-                    : 'שמירת הזיכרון'}
+                    : 'יצירת הארכיון והתחלת הראיון'}
                 </button>
 
                 <button
@@ -507,13 +609,13 @@ import {
               </div>
 
               <h2>
-                עדיין לא יצרתם זיכרון
+                עדיין לא התחלתם ארכיון משפחתי
               </h2>
 
               <p>
-                לחצו על “יצירת זיכרון ראשון”
-                והתחילו בשם האדם ובכמה מילים
-                עליו.
+                לחצו על “התחלת ארכיון ראשון”,
+                בחרו את האדם שאת סיפוריו תרצו
+                לשמור וקבלו שאלה ראשונה.
               </p>
             </section>
           ) : (

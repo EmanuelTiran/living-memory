@@ -1,0 +1,155 @@
+.guided-living-journey {
+  margin-block-start: var(--space-24);
+  padding-block: var(--space-8) var(--space-4);
+  color: var(--color-ink);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.guided-living-journey-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+.guided-living-journey-heading h2 {
+  max-width: 720px;
+  margin: 0;
+  color: var(--color-ink);
+  font-size: clamp(1.9rem, 4vw, 2.65rem);
+  font-weight: 600;
+  line-height: 1.18;
+}
+
+.guided-living-journey-heading p:last-child {
+  max-width: 700px;
+  margin: 14px 0 0;
+  color: var(--color-ink-muted);
+  line-height: 1.75;
+}
+
+.guided-living-primary-action {
+  flex: 0 0 auto;
+  min-width: 178px;
+  text-decoration: none;
+}
+
+.guided-living-steps {
+  position: relative;
+  display: grid;
+  margin: 48px 0 0;
+  padding: 0;
+  gap: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+}
+
+.guided-living-steps::before {
+  position: absolute;
+  inset-block-start: 18px;
+  inset-inline: 12.5%;
+  height: 2px;
+  background: var(--color-border);
+  content: '';
+}
+
+.guided-living-step {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  justify-items: start;
+  padding-inline: 16px;
+  gap: 16px;
+  background: transparent;
+}
+
+.guided-living-step-number {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  color: var(--color-ink-muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+}
+
+.guided-living-step-primary .guided-living-step-number {
+  color: var(--color-surface);
+  background: var(--color-olive);
+  border-color: var(--color-olive);
+  box-shadow: 0 0 0 6px rgb(72 107 93 / 10%);
+}
+
+.guided-living-step strong {
+  display: block;
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 1.16rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.guided-living-step p {
+  margin: 7px 0 12px;
+  color: var(--color-ink-muted);
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.guided-living-step a {
+  color: var(--color-olive);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-underline-offset: 4px;
+}
+
+.guided-living-step a:focus-visible {
+  outline: 3px solid rgb(72 107 93 / 28%);
+  outline-offset: 4px;
+}
+
+@media (max-width: 920px) {
+  .guided-living-steps {
+    gap: 28px 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .guided-living-steps::before {
+    display: none;
+  }
+
+  .guided-living-step {
+    grid-template-columns: auto minmax(0, 1fr);
+    justify-items: stretch;
+  }
+}
+
+@media (max-width: 680px) {
+  .guided-living-journey-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .guided-living-primary-action {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .guided-living-journey {
+    margin-block-start: var(--space-16);
+  }
+
+  .guided-living-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .guided-living-step {
+    padding-inline: 0;
+  }
+}

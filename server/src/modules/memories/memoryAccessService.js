@@ -41,6 +41,14 @@ const rolePermissions = Object.freeze({
     MEMORY_PERMISSIONS.CONTRIBUTE,
     MEMORY_PERMISSIONS.EDIT,
   ]),
+
+  steward: Object.freeze([
+    MEMORY_PERMISSIONS.VIEW,
+    MEMORY_PERMISSIONS.CHAT,
+    MEMORY_PERMISSIONS.CONTRIBUTE,
+    MEMORY_PERMISSIONS.EDIT,
+    MEMORY_PERMISSIONS.MANAGE,
+  ]),
 })
 
 function createMemoryUnavailableError() {

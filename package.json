@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.0",
     "concurrently": "^10.0.4",
     "eslint": "^10.8.0",
     "eslint-plugin-react-hooks": "^7.1.1",
@@ -25,7 +26,11 @@
     "dev:server": "npm run dev --workspace server",
     "dev:client": "npm run dev --workspace client",
     "build": "npm run build --workspace client",
+    "start": "npm run start --workspace server",
     "test": "npm test --workspace server",
+    "test:e2e": "playwright test --config server/playwright.config.js",
+    "test:e2e:pilot": "playwright test memoryPilot.e2e.js --config server/playwright.config.js",
+    "test:e2e:pricing": "playwright test pricingPilot.e2e.js --config server/playwright.config.js",
     "check": "npm run lint && npm test && npm run build",
     "dev": "concurrently -n server,client -c blue,green npm:dev:server npm:dev:client"
   }

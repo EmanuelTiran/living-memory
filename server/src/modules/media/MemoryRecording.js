@@ -130,6 +130,68 @@ const recordingConsentSchema = new Schema(
   },
 )
 
+const interviewContextSchema = new Schema(
+  {
+    sessionId: {
+      type: Schema.Types.ObjectId,
+      ref: 'InterviewSession',
+      required: true,
+      immutable: true,
+    },
+
+    promptKey: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 80,
+      immutable: true,
+    },
+
+    promptCategory: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 80,
+      immutable: true,
+    },
+
+    promptText: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 500,
+      immutable: true,
+    },
+  },
+  {
+    _id: false,
+  },
+)
+
+const familyQuestionContextSchema =
+  new Schema(
+    {
+      questionId: {
+        type: Schema.Types.ObjectId,
+        ref: 'FamilyQuestion',
+        required: true,
+        immutable: true,
+      },
+
+      questionText: {
+        type: String,
+        required: true,
+        trim: true,
+        minlength: 5,
+        maxlength: 500,
+        immutable: true,
+      },
+    },
+    {
+      _id: false,
+    },
+  )
+
 const memoryRecordingSchema = new Schema(
   {
     memoryId: {
@@ -212,6 +274,17 @@ const memoryRecordingSchema = new Schema(
       required: true,
     },
 
+    interviewContext: {
+      type: interviewContextSchema,
+      default: null,
+    },
+
+    familyQuestionContext: {
+      type:
+        familyQuestionContextSchema,
+      default: null,
+    },
+
     storageStatus: {
       type: String,
       enum:
@@ -259,6 +332,27 @@ const memoryRecordingSchema = new Schema(
       enum:
         RECORDING_TRANSCRIPTION_STATUSES,
       default: 'not_requested',
+    },
+
+    transcriptionProgress: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0,
+    },
+
+    transcriptionJobId: {
+      type: Schema.Types.ObjectId,
+      ref: 'ProcessingJob',
+      default: null,
+      select: false,
+    },
+
+    transcriptionRequestSequence: {
+      type: Number,
+      min: 0,
+      default: 0,
+      select: false,
     },
 
     transcriptionProvider: {
@@ -325,6 +419,10 @@ const memoryRecordingSchema = new Schema(
         delete safeObject.storageFailureCode
         delete safeObject
           .transcriptionFailureCode
+        delete safeObject
+          .transcriptionJobId
+        delete safeObject
+          .transcriptionRequestSequence
 
         if (safeObject.consent) {
           const safeConsent = {
@@ -341,6 +439,21 @@ const memoryRecordingSchema = new Schema(
         return safeObject
       },
     },
+  },
+)
+
+memoryRecordingSchema.pre(
+  'validate',
+  function validatePromptContext() {
+    if (
+      this.interviewContext &&
+      this.familyQuestionContext
+    ) {
+      this.invalidate(
+        'familyQuestionContext',
+        'A recording cannot answer two prompt sources.',
+      )
+    }
   },
 )
 
@@ -499,6 +612,7 @@ memoryRecordingSchema.pre(
         'A transcription failure code is only allowed for failed transcription.',
       )
     }
+
   },
 )
 
@@ -543,6 +657,19 @@ memoryRecordingSchema.index(
 
 memoryRecordingSchema.index(
   {
+    memoryId: 1,
+    lifecycleStatus: 1,
+    storageStatus: 1,
+    'familyQuestionContext.questionId': 1,
+  },
+  {
+    name:
+      'memory_recordings_family_question',
+  },
+)
+
+memoryRecordingSchema.index(
+  {
     uploadedByUserId: 1,
     createdAt: -1,
   },
@@ -561,6 +688,19 @@ memoryRecordingSchema.index(
   {
     name:
       'memory_recordings_transcription_queue',
+  },
+)
+
+memoryRecordingSchema.index(
+  {
+    memoryId: 1,
+    lifecycleStatus: 1,
+    storageStatus: 1,
+    'interviewContext.promptKey': 1,
+  },
+  {
+    name:
+      'memory_recordings_guided_prompt',
   },
 )
 

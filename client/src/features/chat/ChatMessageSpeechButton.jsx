@@ -46,7 +46,7 @@ function ChatMessageSpeechButton({
       'realtime-speaking'
 
   let buttonLabel =
-    'השמעה מיידית בקול'
+    'השמעה בקול AI כללי'
 
   if (isLoading) {
     buttonLabel = 'מכינים את הקול...'

@@ -57,6 +57,11 @@ import {
       '2026-07-28T20:00:00.000Z',
     )
 
+  const recordedAt =
+    new Date(
+      '2026-07-28T19:00:00.000Z',
+    )
+
   function createTranscript(
     overrides = {},
   ) {
@@ -78,6 +83,13 @@ import {
       _id: recordingId,
       displayName:
         'הקלטת סיפור החיים',
+      createdAt: recordedAt,
+      consent: {
+        permittedUses: [
+          'memory_grounding',
+          'recording_playback',
+        ],
+      },
       ...overrides,
     }
   }
@@ -147,6 +159,17 @@ import {
           memoryId,
           reviewStatus: 'approved',
           lifecycleStatus: 'active',
+          $or: [
+            {
+              sourceIndexStatus:
+                'indexed',
+            },
+            {
+              sourceIndexStatus: {
+                $exists: false,
+              },
+            },
+          ],
         })
 
         expect(
@@ -164,6 +187,15 @@ import {
             'memory_grounding',
         })
 
+        expect(
+          mocks.selectRecordings,
+        ).toHaveBeenCalledWith({
+          _id: 1,
+          displayName: 1,
+          createdAt: 1,
+          'consent.permittedUses': 1,
+        })
+
         expect(result).toEqual([
           {
             sourceType:
@@ -177,8 +209,40 @@ import {
             approvedAt,
             sourceVersion:
               'revision:2:chunk:1',
+            sourceRoute:
+              `/app/memories/${memoryId}#recordings-title`,
+            recordingId,
+            recordedAt,
+            canPlayOriginalAudio:
+              true,
           },
         ])
+      })
+
+      it('does not offer original audio without playback consent', async () => {
+        mocks.leanRecordings
+          .mockResolvedValue([
+            createRecording({
+              consent: {
+                permittedUses: [
+                  'memory_grounding',
+                ],
+              },
+            }),
+          ])
+
+        const result =
+          await listApprovedRecordingTranscriptSources(
+            memoryId,
+          )
+
+        expect(result[0])
+          .toMatchObject({
+            recordingId,
+            recordedAt,
+            canPlayOriginalAudio:
+              false,
+          })
       })
 
       it('excludes transcripts whose recordings are not authorized for grounding', async () => {

@@ -26,11 +26,17 @@ import {
   refreshSession,
 } from '../../api/authApi.js'
 import {
+  pilotAvatarEnabled,
+} from '../../config/pilotFeatures.js'
+import {
   promoteCreativeChatReply,
 } from '../../api/biographyApi.js'
 import {
   getDigitalPersonaSetup,
 } from '../../api/memoryApi.js'
+import {
+  getMemoryRecordingAudio,
+} from '../../api/recordingApi.js'
 import {
   createMemoryChatConversation,
   getMemoryChatHistory,
@@ -56,15 +62,15 @@ const initialPagination = {
 const answerClassifications =
   Object.freeze({
     grounded: {
-      label: 'מבוסס על מקורות',
+      label: 'VERIFIED · מאומת',
       description:
-        'התשובה נתמכת ישירות במקורות מאושרים.',
+        'התשובה נאמרה במפורש במקור מאושר.',
     },
 
     inferred: {
-      label: 'הסקה ממקורות',
+      label: 'INFERRED · הסקה זהירה',
       description:
-        'זוהי הסקה זהירה המבוססת על מקורות מאושרים.',
+        'זוהי סינתזה זהירה של מקורות מאושרים, ולא ציטוט ישיר.',
     },
 
     general_knowledge: {
@@ -80,10 +86,22 @@ const answerClassifications =
     },
 
     insufficient_context: {
-      label: 'אין מידע מספיק',
+      label: 'UNKNOWN · אין מידע בארכיון',
       description:
-        'במקורות המאושרים אין מידע שמאפשר לענות בוודאות.',
+        'הארכיון אינו מכיל מידע מאושר שמאפשר לענות בלי להמציא.',
     },
+  })
+
+const sourceTypeLabels =
+  Object.freeze({
+    recording_transcript:
+      'הקלטה ותמלול מאושרים',
+    memory_story:
+      'סיפור כתוב מאושר',
+    biography_answer:
+      'תשובה ביוגרפית מאושרת',
+    memory_profile:
+      'פרטי הארכיון',
   })
 
 function getErrorMessage(error) {
@@ -162,6 +180,16 @@ function getErrorMessage(error) {
       'שירות הבינה המלאכותית אינו זמין כרגע. נסו שוב מאוחר יותר.',
     AI_INVALID_RESPONSE:
       'התקבלה תשובה לא תקינה משירות הבינה המלאכותית.',
+    RECORDING_NOT_FOUND:
+      'ההקלטה המקורית אינה זמינה יותר.',
+    RECORDING_PLAYBACK_NOT_CONSENTED:
+      'לא ניתנה הרשאה להשמעת ההקלטה המקורית.',
+    RECORDING_FILE_UNAVAILABLE:
+      'קובץ ההקלטה המקורית אינו זמין כרגע.',
+    RECORDING_FILE_NOT_FOUND:
+      'קובץ ההקלטה המקורית לא נמצא.',
+    RECORDING_INTEGRITY_FAILED:
+      'בדיקת תקינות ההקלטה נכשלה ולכן היא לא הושמעה.',
     VALIDATION_ERROR:
       'המידע שנשלח אינו תקין.',
     AUTHENTICATION_REQUIRED:
@@ -188,6 +216,21 @@ function formatMessageTime(value) {
     {
       dateStyle: 'short',
       timeStyle: 'short',
+    },
+  ).format(date)
+}
+
+function formatSourceDate(value) {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  return new Intl.DateTimeFormat(
+    'he-IL',
+    {
+      dateStyle: 'medium',
     },
   ).format(date)
 }
@@ -315,6 +358,8 @@ function MemoryChatPage({
 
   const messageEndRef = useRef(null)
   const composerRef = useRef(null)
+  const citationAudioUrlRegistryRef =
+    useRef(new Map())
 
   const conversationCreationRef =
     useRef({
@@ -346,16 +391,6 @@ function MemoryChatPage({
   ] = useState(false)
 
   const [
-    creativeRequestMessageId,
-    setCreativeRequestMessageId,
-  ] = useState(null)
-
-  const [
-    creativeRequestError,
-    setCreativeRequestError,
-  ] = useState(null)
-
-  const [
     promotionForm,
     setPromotionForm,
   ] = useState(null)
@@ -374,11 +409,26 @@ function MemoryChatPage({
   const [
     liveConversationEnabled,
     setLiveConversationEnabled,
-  ] = useState(true)
+  ] = useState(false)
 
   const [
     sendErrorMessage,
     setSendErrorMessage,
+  ] = useState('')
+
+  const [
+    citationAudioUrls,
+    setCitationAudioUrls,
+  ] = useState({})
+
+  const [
+    citationAudioErrors,
+    setCitationAudioErrors,
+  ] = useState({})
+
+  const [
+    loadingCitationRecordingId,
+    setLoadingCitationRecordingId,
   ] = useState('')
 
   const subjectName =
@@ -387,6 +437,12 @@ function MemoryChatPage({
       location.state.subjectName.trim()
       ? location.state.subjectName.trim()
       : 'הזיכרון'
+
+  const starterQuestions = [
+    `מה מספרים המקורות על הילדות של ${subjectName}?`,
+    `מי האנשים שהשפיעו במיוחד על ${subjectName}?`,
+    `איזה רגע מכונן כבר נשמר בסיפור של ${subjectName}?`,
+  ]
 
   const runAuthenticatedRequest = useCallback(
     async (operation) => {
@@ -468,6 +524,7 @@ function MemoryChatPage({
         digitalPersonaSetup?.avatar
           ?.realtime,
       enabled:
+        pilotAvatarEnabled &&
         liveConversationEnabled &&
         digitalPersonaSetup?.avatar
           ?.active === true,
@@ -539,6 +596,19 @@ function MemoryChatPage({
       isActive = false
     }
   }, [memoryId, runAuthenticatedRequest])
+
+  useEffect(() => {
+    const registry =
+      citationAudioUrlRegistryRef.current
+
+    return () => {
+      for (const url of registry.values()) {
+        URL.revokeObjectURL(url)
+      }
+
+      registry.clear()
+    }
+  }, [])
 
   useEffect(() => {
     let isActive = true
@@ -743,6 +813,9 @@ function MemoryChatPage({
               memoryId,
               conversation.id,
               normalizedMessage,
+              {
+                responseMode: 'archive',
+              },
             ),
         )
 
@@ -757,72 +830,6 @@ function MemoryChatPage({
         getErrorMessage(error),
       )
     } finally {
-      setIsSending(false)
-    }
-  }
-
-  async function handleCreativeRequest(
-    insufficientMessage,
-    question,
-  ) {
-    if (
-      !conversation ||
-      !question ||
-      isSending
-    ) {
-      return
-    }
-
-    const availableQuestionLength =
-      CHAT_MESSAGE_MAX_LENGTH -
-      CREATIVE_REQUEST_PREFIX.length
-
-    const boundedQuestion =
-      question
-        .slice(
-          0,
-          availableQuestionLength,
-        )
-        .trim()
-
-    if (!boundedQuestion) {
-      return
-    }
-
-    setIsSending(true)
-    stopSpeech()
-    setCreativeRequestMessageId(
-      insufficientMessage.id,
-    )
-    setCreativeRequestError(null)
-
-    try {
-      const exchange =
-        await runAuthenticatedRequest(
-          (accessToken) =>
-            sendMemoryChatMessage(
-              accessToken,
-              memoryId,
-              conversation.id,
-              `${CREATIVE_REQUEST_PREFIX}${boundedQuestion}`,
-              {
-                responseMode: 'creative',
-              },
-            ),
-        )
-
-      appendExchange(exchange)
-      startLiveAssistantResponse(
-        exchange.assistantMessage,
-      )
-    } catch (error) {
-      setCreativeRequestError({
-        messageId:
-          insufficientMessage.id,
-        text: getErrorMessage(error),
-      })
-    } finally {
-      setCreativeRequestMessageId(null)
       setIsSending(false)
     }
   }
@@ -974,6 +981,76 @@ function MemoryChatPage({
     }
   }
 
+  async function handleLoadCitationAudio(
+    citation,
+  ) {
+    const recordingId =
+      citation.recordingId
+
+    if (
+      !recordingId ||
+      citationAudioUrls[recordingId]
+    ) {
+      return
+    }
+
+    setLoadingCitationRecordingId(
+      recordingId,
+    )
+    setCitationAudioErrors(
+      (current) => ({
+        ...current,
+        [recordingId]: '',
+      }),
+    )
+
+    try {
+      const audioBlob =
+        await runAuthenticatedRequest(
+          (accessToken) =>
+            getMemoryRecordingAudio(
+              accessToken,
+              memoryId,
+              recordingId,
+            ),
+        )
+
+      const previousUrl =
+        citationAudioUrlRegistryRef
+          .current.get(recordingId)
+
+      if (previousUrl) {
+        URL.revokeObjectURL(previousUrl)
+      }
+
+      const audioUrl =
+        URL.createObjectURL(audioBlob)
+
+      citationAudioUrlRegistryRef
+        .current.set(
+          recordingId,
+          audioUrl,
+        )
+
+      setCitationAudioUrls(
+        (current) => ({
+          ...current,
+          [recordingId]: audioUrl,
+        }),
+      )
+    } catch (error) {
+      setCitationAudioErrors(
+        (current) => ({
+          ...current,
+          [recordingId]:
+            getErrorMessage(error),
+        }),
+      )
+    } finally {
+      setLoadingCitationRecordingId('')
+    }
+  }
+
   async function handleLoadEarlier() {
     if (
       !conversation ||
@@ -1102,19 +1179,16 @@ function MemoryChatPage({
             </Link>
 
             <p className="chat-eyebrow">
-              זיכרון חי
+              שאלו את הסיפור · עם מקור
             </p>
 
             <h1 id="memory-chat-title">
-              שיחה עם {subjectName}
+              מה תרצו לשאול על הסיפור של {subjectName}?
             </h1>
           </div>
 
           <span className="chat-text-badge">
-            {digitalPersonaSetup?.avatar
-              ?.localFallbackAvailable
-              ? 'טקסט, קול ואווטאר AI'
-              : 'טקסט וקול AI'}
+            תשובה + מקור
           </span>
         </header>
 
@@ -1125,41 +1199,50 @@ function MemoryChatPage({
           <span aria-hidden="true">AI</span>
 
           <p>
-            זוהי הדמיה מבוססת בינה מלאכותית
-            הנשענת על חומרים שנמסרו ואושרו.
-            אין מדובר באדם עצמו. אפשר להשמיע
-            בקול AI כללי או בשכפול קול שאושר
-            מפורשות. אם נבחר D‑ID, גם הווידאו
-            והתנועות הם יצירת AI ולא תיעוד אמיתי.
-            תשובות המסומנות כהדמיה
-            יצירתית אינן עובדות עד שהמשתמש
-            בודק ומאשר אותן.
+            התשובה נוצרת בידי AI מתוך חומרים
+            שנמסרו ואושרו בלבד. כל תשובה מסומנת
+            כמאומתת, כהסקה זהירה או כמידע שאינו
+            קיים בארכיון. המערכת לא תשלים פרטים
+            מהדמיון ואינה האדם עצמו.
           </p>
         </aside>
 
-        <ChatAvatarStage
-          subjectName={subjectName}
-          avatar={digitalPersonaSetup?.avatar}
-          speechState={speechState}
-          avatarState={avatarState}
-          voiceInputPhase={
-            voiceInputState.phase
-          }
-          isSending={isSending}
-          liveConversationAvailable={
-            digitalPersonaSetup?.voiceClone
-              ?.active === true
-          }
-          liveConversationEnabled={
-            liveConversationEnabled
-          }
-          onLiveConversationChange={
-            setLiveConversationEnabled
-          }
-          realtimeAvatar={
-            realtimeAvatar
-          }
-        />
+        {pilotAvatarEnabled && (
+          <details className="optional-avatar-experience">
+            <summary>
+              פתיחת אפשרויות קול ושיחת וידאו
+            </summary>
+
+            <p>
+              שכבה אופציונלית: אפשר לקרוא ולבדוק
+              את התשובות גם בלי קול משוכפל או אווטאר.
+            </p>
+
+            <ChatAvatarStage
+              subjectName={subjectName}
+              avatar={digitalPersonaSetup?.avatar}
+              speechState={speechState}
+              avatarState={avatarState}
+              voiceInputPhase={
+                voiceInputState.phase
+              }
+              isSending={isSending}
+              liveConversationAvailable={
+                digitalPersonaSetup?.voiceClone
+                  ?.active === true
+              }
+              liveConversationEnabled={
+                liveConversationEnabled
+              }
+              onLiveConversationChange={
+                setLiveConversationEnabled
+              }
+              realtimeAvatar={
+                realtimeAvatar
+              }
+            />
+          </details>
+        )}
 
         <section
           className="chat-window"
@@ -1187,11 +1270,32 @@ function MemoryChatPage({
               <h2>אפשר להתחיל לשאול</h2>
 
               <p>
-                המערכת תבחין בין מידע
-                המבוסס על מקורות, הסקה
-                זהירה, מידע כללי והדמיה
-                יצירתית.
+                שאלו על אירוע, אדם או תקופה.
+                תשובה מבוססת תציג מיד את המקורות
+                המאושרים ואת ההקלטה המקורית,
+                כאשר ניתנה הרשאת השמעה.
               </p>
+
+              <div
+                className="chat-starter-questions"
+                aria-label="הצעות לשאלה ראשונה"
+              >
+                {starterQuestions.map((starterQuestion) => (
+                  <button
+                    type="button"
+                    key={starterQuestion}
+                    onClick={() => {
+                      setMessage(starterQuestion)
+
+                      window.requestAnimationFrame(() => {
+                        composerRef.current?.focus()
+                      })
+                    }}
+                  >
+                    {starterQuestion}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             <ol
@@ -1222,14 +1326,6 @@ function MemoryChatPage({
                       messages,
                       messageIndex,
                     )
-
-                  const canRequestCreative =
-                    chatMessage.role ===
-                    'assistant' &&
-                    chatMessage
-                      .groundingStatus ===
-                    'insufficient_context' &&
-                    previousQuestion.length > 0
 
                   const isCreative =
                     chatMessage.role ===
@@ -1312,11 +1408,13 @@ function MemoryChatPage({
                               avatarState
                             }
                             didAvatarActive={
+                              pilotAvatarEnabled &&
                               digitalPersonaSetup
                                 ?.avatar?.active ===
                               true
                             }
                             didRealtimeAvailable={
+                              pilotAvatarEnabled &&
                               digitalPersonaSetup
                                 ?.avatar
                                 ?.realtime
@@ -1333,81 +1431,138 @@ function MemoryChatPage({
                         'assistant' &&
                         chatMessage.citations
                           ?.length > 0 && (
-                          <details className="chat-citations">
-                            <summary>
-                              המקורות לתשובה
-                            </summary>
+                          <section
+                            className="chat-citations"
+                            aria-label="מקורות מאושרים לתשובה"
+                          >
+                            <h3>
+                              על מה התשובה מבוססת
+                            </h3>
 
                             <ul>
                               {chatMessage.citations.map(
                                 (
                                   citation,
                                   index,
-                                ) => (
-                                  <li
-                                    key={`${citation.sourceType}:${citation.sourceId}:${index}`}
-                                  >
-                                    <strong>
-                                      {
-                                        citation.title
-                                      }
-                                    </strong>
+                                ) => {
+                                  const audioUrl =
+                                    citationAudioUrls[
+                                      citation
+                                        .recordingId
+                                    ] ?? ''
 
-                                    {citation.excerpt && (
-                                      <p>
+                                  const audioError =
+                                    citationAudioErrors[
+                                      citation
+                                        .recordingId
+                                    ] ?? ''
+
+                                  const isLoadingAudio =
+                                    loadingCitationRecordingId ===
+                                    citation.recordingId
+
+                                  return (
+                                    <li
+                                      key={`${citation.sourceType}:${citation.sourceId}:${index}`}
+                                    >
+                                      <span className="chat-citation-type">
+                                        {sourceTypeLabels[
+                                          citation
+                                            .sourceType
+                                        ] ??
+                                          'מקור מאושר'}
+                                      </span>
+
+                                      <strong>
                                         {
-                                          citation.excerpt
+                                          citation.title
                                         }
-                                      </p>
-                                    )}
-                                  </li>
-                                ),
+                                      </strong>
+
+                                      {citation.recordedAt && (
+                                        <time
+                                          dateTime={
+                                            citation.recordedAt
+                                          }
+                                        >
+                                          הוקלט בתאריך{' '}
+                                          {formatSourceDate(
+                                            citation.recordedAt,
+                                          )}
+                                        </time>
+                                      )}
+
+                                      {citation.excerpt && (
+                                        <p>
+                                          “{
+                                            citation.excerpt
+                                          }”
+                                        </p>
+                                      )}
+
+                                      {(citation.sourceRoute ||
+                                        (citation.canPlayOriginalAudio &&
+                                          citation.recordingId)) && (
+                                        <div className="chat-citation-actions">
+                                          {citation.sourceRoute && (
+                                            <Link
+                                              to={
+                                                citation.sourceRoute
+                                              }
+                                              state={{
+                                                subjectName,
+                                              }}
+                                            >
+                                              פתיחת המקור בארכיון
+                                            </Link>
+                                          )}
+
+                                          {citation.canPlayOriginalAudio &&
+                                            citation.recordingId &&
+                                            !audioUrl && (
+                                              <button
+                                                type="button"
+                                                disabled={
+                                                  isLoadingAudio
+                                                }
+                                                onClick={() =>
+                                                  handleLoadCitationAudio(
+                                                    citation,
+                                                  )
+                                                }
+                                              >
+                                                {isLoadingAudio
+                                                  ? 'טוענים את המקור...'
+                                                  : 'השמעת ההקלטה המקורית'}
+                                              </button>
+                                            )}
+                                        </div>
+                                      )}
+
+                                      {audioUrl && (
+                                        <audio
+                                          controls
+                                          preload="metadata"
+                                          src={audioUrl}
+                                          aria-label={`ההקלטה המקורית של המקור: ${citation.title}`}
+                                        />
+                                      )}
+
+                                      {audioError && (
+                                        <p
+                                          className="chat-citation-error"
+                                          role="alert"
+                                        >
+                                          {audioError}
+                                        </p>
+                                      )}
+                                    </li>
+                                  )
+                                },
                               )}
                             </ul>
-                          </details>
+                          </section>
                         )}
-
-                      {canRequestCreative && (
-                        <div className="chat-message-actions">
-                          <p className="chat-action-note">
-                            אפשר לבקש אפשרות
-                            דמיונית. היא לא
-                            תיחשב לעובדה ולא
-                            תשמש כמקור בלי
-                            אישור מפורש.
-                          </p>
-
-                          <button
-                            className="chat-action-button"
-                            type="button"
-                            disabled={isSending}
-                            onClick={() =>
-                              handleCreativeRequest(
-                                chatMessage,
-                                previousQuestion,
-                              )
-                            }
-                          >
-                            {creativeRequestMessageId ===
-                              chatMessage.id
-                              ? 'יוצרים הדמיה...'
-                              : 'הצגת הדמיה יצירתית'}
-                          </button>
-
-                          {creativeRequestError
-                            ?.messageId ===
-                            chatMessage.id && (
-                              <p
-                                className="chat-action-error"
-                                role="alert"
-                              >
-                                {
-                                  creativeRequestError.text
-                                }
-                              </p>
-                            )}
-                        </div>
-                      )}
 
                       {isCreative &&
                         !isPromoted &&
@@ -1610,7 +1765,7 @@ function MemoryChatPage({
           aria-busy={isSending}
         >
           <label htmlFor="chat-message">
-            כתיבת הודעה
+            שאלה לארכיון
           </label>
 
           <textarea
@@ -1621,7 +1776,7 @@ function MemoryChatPage({
             maxLength={
               CHAT_MESSAGE_MAX_LENGTH
             }
-            placeholder="כתבו שאלה על הזיכרונות והסיפורים המאושרים..."
+            placeholder={`מה תרצו לדעת על ${subjectName} מתוך הזיכרונות המאושרים?`}
             dir="auto"
             disabled={isSending}
             onChange={(event) =>
@@ -1795,8 +1950,8 @@ function MemoryChatPage({
               }
             >
               {isSending
-                ? 'שולחים...'
-                : 'שליחת הודעה'}
+                ? 'מחפשים במקורות...'
+                : 'שאלת הארכיון'}
             </button>
           </div>
 

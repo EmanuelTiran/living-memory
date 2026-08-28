@@ -25,6 +25,15 @@ export const MEMORY_ASSET_LIFECYCLE_STATUSES =
     'archived',
   ])
 
+export const MEMORY_ASSET_PROCESSING_STATUSES =
+  Object.freeze([
+    'not_requested',
+    'queued',
+    'processing',
+    'completed',
+    'failed',
+  ])
+
 export function getMemoryAssetType(
   mimeType,
 ) {
@@ -36,6 +45,42 @@ export function getMemoryAssetType(
 function isPositiveInteger(value) {
   return Number.isInteger(value) && value > 0
 }
+
+const technicalMetadataSchema =
+  new Schema(
+    {
+      parserVersion: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: 80,
+      },
+
+      widthPixels: {
+        type: Number,
+        min: 1,
+        max: 100_000,
+        default: null,
+      },
+
+      heightPixels: {
+        type: Number,
+        min: 1,
+        max: 100_000,
+        default: null,
+      },
+
+      pageCount: {
+        type: Number,
+        min: 1,
+        max: 100_000,
+        default: null,
+      },
+    },
+    {
+      _id: false,
+    },
+  )
 
 const memoryAssetSchema = new Schema(
   {
@@ -126,6 +171,44 @@ const memoryAssetSchema = new Schema(
       select: false,
     },
 
+    processingJobId: {
+      type: Schema.Types.ObjectId,
+      ref: 'ProcessingJob',
+      default: null,
+      select: false,
+    },
+
+    processingStatus: {
+      type: String,
+      enum:
+        MEMORY_ASSET_PROCESSING_STATUSES,
+      default: 'not_requested',
+    },
+
+    processingProgress: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0,
+    },
+
+    processingFailureCode: {
+      type: String,
+      trim: true,
+      maxlength: 100,
+      default: null,
+    },
+
+    technicalMetadata: {
+      type: technicalMetadataSchema,
+      default: null,
+    },
+
+    processedAt: {
+      type: Date,
+      default: null,
+    },
+
     lifecycleStatus: {
       type: String,
       enum:
@@ -161,6 +244,7 @@ const memoryAssetSchema = new Schema(
         delete safeObject.uploadedByUserId
         delete safeObject.storageKey
         delete safeObject.checksumSha256
+        delete safeObject.processingJobId
 
         return safeObject
       },

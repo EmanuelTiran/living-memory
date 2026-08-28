@@ -1,6 +1,7 @@
 import {
     approveMemoryRecordingTranscript,
     getMemoryRecordingTranscript,
+    reviseApprovedMemoryRecordingTranscript,
     updateMemoryRecordingTranscript,
   } from './recordingTranscriptManagementService.js'
 
@@ -62,6 +63,26 @@ import {
           result.transcript,
         approved:
           result.approved,
+      },
+    })
+  }
+
+  export async function reviseApprovedRecordingTranscript(
+    req,
+    res,
+  ) {
+    const transcript =
+      await reviseApprovedMemoryRecordingTranscript(
+        req.auth.userId,
+        req.validatedParams.memoryId,
+        req.validatedParams.recordingId,
+        req.validatedBody,
+      )
+
+    res.status(200).json({
+      success: true,
+      data: {
+        transcript,
       },
     })
   }

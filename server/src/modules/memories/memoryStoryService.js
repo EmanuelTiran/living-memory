@@ -2,6 +2,10 @@ import { AppError } from '../../errors/AppError.js'
 import MemoryProfile from './MemoryProfile.js'
 import MemoryStory from './MemoryStory.js'
 import {
+  createStoryRevisionSnapshot,
+  MAX_SOURCE_REVISION_HISTORY,
+} from './sourceRevisionHistory.js'
+import {
   createMemoryStorySchema,
   memoryProfileParamsSchema,
   memoryStoryParamsSchema,
@@ -35,6 +39,16 @@ function createStoryNotFoundError() {
     {
       statusCode: 404,
       code: 'STORY_NOT_FOUND',
+    },
+  )
+}
+
+function createStoryConflictError() {
+  return new AppError(
+    'The story could not be changed because it was updated by another request.',
+    {
+      statusCode: 409,
+      code: 'STORY_REVISION_CONFLICT',
     },
   )
 }
@@ -183,10 +197,69 @@ export async function updateMemoryStory(
   const storyData =
     updateMemoryStorySchema.parse(input)
 
+  const {
+    expectedRevision,
+    ...storyChanges
+  } = storyData
+
   await verifyMemoryOwnership(
     userId,
     validatedParams.memoryId,
   )
+
+  const currentStory =
+    await MemoryStory.findOne({
+      _id: validatedParams.storyId,
+      memoryId:
+        validatedParams.memoryId,
+      status: {
+        $in: ['draft', 'approved'],
+      },
+    })
+
+  if (!currentStory) {
+    throw createStoryNotFoundError()
+  }
+
+  const currentRevision =
+    Number.isInteger(
+      currentStory.revision,
+    )
+      ? currentStory.revision
+      : 1
+
+  if (
+    expectedRevision !== undefined &&
+    expectedRevision !== currentRevision
+  ) {
+    throw createStoryConflictError()
+  }
+
+  const changedAt = new Date()
+  const revisionSnapshot =
+    createStoryRevisionSnapshot(
+      currentStory,
+      userId,
+      changedAt,
+    )
+
+  const revisionQuery =
+    currentRevision === 1
+      ? {
+          $or: [
+            {
+              revision: 1,
+            },
+            {
+              revision: {
+                $exists: false,
+              },
+            },
+          ],
+        }
+      : {
+          revision: currentRevision,
+        }
 
   const memoryStory =
     await MemoryStory.findOneAndUpdate(
@@ -197,20 +270,35 @@ export async function updateMemoryStory(
         status: {
           $in: ['draft', 'approved'],
         },
+        ...revisionQuery,
       },
       {
         $set: {
-          ...storyData,
+          ...storyChanges,
           status: 'draft',
+          approvedAt: null,
+          approvedByUserId: null,
+          lastEditedAt: changedAt,
+          lastEditedByUserId: userId,
+          revision:
+            currentRevision + 1,
+        },
+        $push: {
+          revisionHistory: {
+            $each: [revisionSnapshot],
+            $slice:
+              -MAX_SOURCE_REVISION_HISTORY,
+          },
         },
       },
       {
         returnDocument: 'after',
+        runValidators: true,
       },
     )
 
   if (!memoryStory) {
-    throw createStoryNotFoundError()
+    throw createStoryConflictError()
   }
 
   return memoryStory.toJSON()

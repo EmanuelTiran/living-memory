@@ -1,4 +1,13 @@
 import { ApiError } from './authApi.js'
+import {
+  approveAccessibleMemoryStory,
+  archiveAccessibleMemoryStory,
+  createAccessibleMemoryStory,
+  getAccessibleMemoryProfile,
+  listAccessibleMemoryStories,
+  listSharedMemoryProfiles,
+  updateAccessibleMemoryStory,
+} from './familyAccessApi.js'
 
 async function request(
   path,
@@ -65,12 +74,29 @@ async function request(
 export async function listMemoryProfiles(
   accessToken,
 ) {
-  const data = await request(
-    '',
-    accessToken,
-  )
+  const [data, sharedProfiles] =
+    await Promise.all([
+      request('', accessToken),
+      listSharedMemoryProfiles(
+        accessToken,
+      ),
+    ])
 
-  return data.memoryProfiles
+  return [
+    ...data.memoryProfiles.map(
+      (memoryProfile) => ({
+        ...memoryProfile,
+        authorization: {
+          accessType: 'owner',
+          role: 'owner',
+        },
+      }),
+    ),
+    ...sharedProfiles,
+  ].sort((first, second) =>
+    new Date(second.createdAt).getTime() -
+    new Date(first.createdAt).getTime(),
+  )
 }
 
 export async function createMemoryProfile(
@@ -93,12 +119,10 @@ export async function getMemoryProfile(
   accessToken,
   memoryId,
 ) {
-  const data = await request(
-    `/${encodeURIComponent(memoryId)}`,
+  return getAccessibleMemoryProfile(
     accessToken,
+    memoryId,
   )
-
-  return data.memoryProfile
 }
 
 export async function updateMemoryProfile(
@@ -135,12 +159,48 @@ export async function listMemoryStories(
   accessToken,
   memoryId,
 ) {
+  return listAccessibleMemoryStories(
+    accessToken,
+    memoryId,
+  )
+}
+
+export async function getMemoryTimeline(
+  accessToken,
+  memoryId,
+) {
   const data = await request(
-    `/${encodeURIComponent(memoryId)}/stories`,
+    `/${encodeURIComponent(memoryId)}/timeline`,
     accessToken,
   )
 
-  return data.memoryStories
+  return data.timeline
+}
+
+export async function searchMemoryArchive(
+  accessToken,
+  memoryId,
+  {
+    query = '',
+    sourceType = 'all',
+    audioFilter = 'all',
+    limit = 30,
+  } = {},
+) {
+  const searchParams =
+    new URLSearchParams({
+      q: query,
+      sourceType,
+      audioFilter,
+      limit: String(limit),
+    })
+
+  const data = await request(
+    `/${encodeURIComponent(memoryId)}/archive-search?${searchParams.toString()}`,
+    accessToken,
+  )
+
+  return data.search
 }
 
 export async function createMemoryStory(
@@ -148,16 +208,11 @@ export async function createMemoryStory(
   memoryId,
   input,
 ) {
-  const data = await request(
-    `/${encodeURIComponent(memoryId)}/stories`,
+  return createAccessibleMemoryStory(
     accessToken,
-    {
-      method: 'POST',
-      body: input,
-    },
+    memoryId,
+    input,
   )
-
-  return data.memoryStory
 }
 
 export async function approveMemoryStory(
@@ -165,15 +220,11 @@ export async function approveMemoryStory(
   memoryId,
   storyId,
 ) {
-  const data = await request(
-    `/${encodeURIComponent(memoryId)}/stories/${encodeURIComponent(storyId)}/approve`,
+  return approveAccessibleMemoryStory(
     accessToken,
-    {
-      method: 'PATCH',
-    },
+    memoryId,
+    storyId,
   )
-
-  return data.memoryStory
 }
 
 export async function updateMemoryStory(
@@ -182,16 +233,12 @@ export async function updateMemoryStory(
   storyId,
   input,
 ) {
-  const data = await request(
-    `/${encodeURIComponent(memoryId)}/stories/${encodeURIComponent(storyId)}`,
+  return updateAccessibleMemoryStory(
     accessToken,
-    {
-      method: 'PATCH',
-      body: input,
-    },
+    memoryId,
+    storyId,
+    input,
   )
-
-  return data.memoryStory
 }
 
 export async function archiveMemoryStory(
@@ -199,12 +246,10 @@ export async function archiveMemoryStory(
   memoryId,
   storyId,
 ) {
-  await request(
-    `/${encodeURIComponent(memoryId)}/stories/${encodeURIComponent(storyId)}`,
+  await archiveAccessibleMemoryStory(
     accessToken,
-    {
-      method: 'DELETE',
-    },
+    memoryId,
+    storyId,
   )
 }
 

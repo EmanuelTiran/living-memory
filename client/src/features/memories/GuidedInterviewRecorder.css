@@ -1,0 +1,203 @@
+.guided-recorder {
+  display: grid;
+  gap: 1rem;
+  margin-block: 1.25rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid rgba(127, 146, 125, 0.38);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(127, 146, 125, 0.13), rgba(251, 247, 241, 0.96));
+}
+
+.guided-recorder-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.guided-recorder-heading h3 {
+  margin: 0.15rem 0 0;
+  color: #1d2a36;
+  font-size: clamp(1.1rem, 3vw, 1.35rem);
+}
+
+.guided-recorder-kicker {
+  margin: 0;
+  color: #60745f;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.guided-recorder-guidance,
+.guided-recorder-status,
+.guided-recorder-live p {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.guided-recorder-timer {
+  min-width: 4.4rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(29, 42, 54, 0.08);
+  color: #1d2a36;
+  direction: ltr;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  text-align: center;
+}
+
+.guided-recorder-timer-active {
+  background: rgba(185, 111, 84, 0.16);
+  color: #8f4935;
+}
+
+.guided-recorder-start,
+.guided-recorder-stop {
+  min-height: 52px;
+  border: 0;
+  border-radius: 16px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.guided-recorder-start {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 0.85rem 1.2rem;
+  background: #b96f54;
+  color: #fff;
+}
+
+.guided-recorder-start span {
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 3px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  background: #fff;
+}
+
+.guided-recorder-stop {
+  padding: 0.85rem 1.2rem;
+  background: #1d2a36;
+  color: #fff;
+}
+
+.guided-recorder-live,
+.guided-recorder-review,
+.guided-recorder-consent {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.guided-recorder-live-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.guided-recorder-review {
+  padding: 1rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.guided-recorder-review > div {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.guided-recorder-review audio {
+  width: 100%;
+}
+
+.guided-recorder-again {
+  justify-self: start;
+}
+
+.guided-recorder-consent {
+  padding-top: 0.25rem;
+}
+
+.guided-recorder-consent > label:first-child {
+  display: grid;
+  gap: 0.45rem;
+  font-weight: 700;
+}
+
+.guided-recorder-consent select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(29, 42, 54, 0.22);
+  border-radius: 12px;
+  background: #fff;
+  color: #1d2a36;
+  font: inherit;
+}
+
+.guided-recorder-checkbox {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(29, 42, 54, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.66);
+  line-height: 1.55;
+}
+
+.guided-recorder-checkbox input {
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-top: 0.15rem;
+  accent-color: #7f927d;
+}
+
+.guided-recorder-save,
+.guided-recorder-review-link {
+  width: 100%;
+  justify-content: center;
+}
+
+.guided-recorder-message {
+  margin: 0;
+}
+
+.guided-recorder-unavailable {
+  margin-block: 1rem;
+  padding: 1rem;
+  border-radius: 16px;
+  background: rgba(185, 111, 84, 0.1);
+}
+
+.guided-recorder-unavailable p {
+  margin: 0.35rem 0 0;
+  line-height: 1.6;
+}
+
+.guided-recorder button:focus-visible,
+.guided-recorder select:focus-visible,
+.guided-recorder input:focus-visible,
+.guided-recorder a:focus-visible {
+  outline: 3px solid rgba(185, 111, 84, 0.42);
+  outline-offset: 3px;
+}
+
+@media (min-width: 680px) {
+  .guided-recorder-save,
+  .guided-recorder-review-link {
+    width: auto;
+    justify-self: start;
+  }
+
+  .guided-recorder-review {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+}

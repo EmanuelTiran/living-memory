@@ -64,6 +64,44 @@ export const memoryAssetMetadataSchema =
       .default(''),
   })
 
+export const updateMemoryAssetMetadataSchema =
+  memoryAssetMetadataSchema
+
+export const memoryAssetAccessLinkSchema =
+  z.strictObject({
+    disposition: z.enum([
+      'inline',
+      'attachment',
+    ], {
+      error:
+        'Asset access disposition is invalid.',
+    }),
+  })
+
+export const memoryAssetAccessQuerySchema =
+  z.strictObject({
+    token: z
+      .string({
+        error:
+          'Asset access token must be a string.',
+      })
+      .min(20, {
+        error:
+          'Asset access token is invalid.',
+      })
+      .max(1000, {
+        error:
+          'Asset access token is invalid.',
+      })
+      .regex(
+        /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/,
+        {
+          error:
+            'Asset access token is invalid.',
+        },
+      ),
+  })
+
 export const memoryAssetFileNameSchema =
   z
     .string({

@@ -8,6 +8,12 @@ import {
   listRecordings,
 } from './recordingController.js'
 import {
+  streamRecordingAudio,
+} from './recordingAudioController.js'
+import {
+  listStories,
+} from './guidedStoryController.js'
+import {
   createMemoryRecordingSchema,
   memoryRecordingMemoryParamsSchema,
   memoryRecordingParamsSchema,
@@ -18,6 +24,7 @@ import {
 import {
   approveRecordingTranscript,
   getRecordingTranscript,
+  reviseApprovedRecordingTranscript,
   updateRecordingTranscript,
 } from './recordingTranscriptManagementController.js'
 import {
@@ -61,6 +68,14 @@ recordingRoutes.post(
   createRecording,
 )
 
+recordingRoutes.get(
+  '/stories',
+  validateParams(
+    memoryRecordingMemoryParamsSchema,
+  ),
+  listStories,
+)
+
 recordingRoutes.put(
   '/:recordingId/file',
   validateParams(
@@ -90,6 +105,14 @@ recordingRoutes.get(
   getRecordingTranscript,
 )
 
+recordingRoutes.get(
+  '/:recordingId/audio',
+  validateParams(
+    memoryRecordingParamsSchema,
+  ),
+  streamRecordingAudio,
+)
+
 recordingRoutes.patch(
   '/:recordingId/transcript',
   validateParams(
@@ -99,6 +122,17 @@ recordingRoutes.patch(
     updateMemoryRecordingTranscriptSchema,
   ),
   updateRecordingTranscript,
+)
+
+recordingRoutes.patch(
+  '/:recordingId/transcript/revision',
+  validateParams(
+    memoryRecordingTranscriptionParamsSchema,
+  ),
+  validateBody(
+    updateMemoryRecordingTranscriptSchema,
+  ),
+  reviseApprovedRecordingTranscript,
 )
 
 recordingRoutes.post(

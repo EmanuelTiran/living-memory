@@ -167,6 +167,9 @@ export async function generateMemoryChatAvatarSpeech(
       memoryId,
       conversationId,
       messageId,
+      {
+        preferClonedVoice: true,
+      },
     )
 
   const avatarAudioBuffer = Buffer.from(
@@ -215,6 +218,9 @@ export async function generateMemoryChatRealtimeAvatarSpeech(
       memoryId,
       conversationId,
       messageId,
+      {
+        preferClonedVoice: true,
+      },
     )
 
   const realtimeAudio =
@@ -278,6 +284,9 @@ export async function generateMemoryChatRealtimeAvatarSpeechChunk(
       conversationId,
       messageId,
       chunkIndex,
+      {
+        preferClonedVoice: true,
+      },
     )
 
   const realtimeAudio =

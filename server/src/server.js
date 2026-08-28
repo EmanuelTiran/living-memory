@@ -4,6 +4,13 @@ import {
   disconnectFromDatabase,
 } from './config/database.js'
 import { env } from './config/env.js'
+import {
+  startProcessingWorker,
+  stopProcessingWorker,
+} from './platform/jobs/processingWorkerRuntime.js'
+import {
+  ensurePersistentStorageReady,
+} from './platform/storage/persistentStorageReadiness.js'
 import { logger } from './utils/logger.js'
 
 let httpServer
@@ -21,7 +28,9 @@ function startHttpServer() {
 }
 
 async function startServer() {
+  await ensurePersistentStorageReady()
   await connectToDatabase()
+  startProcessingWorker()
   httpServer = await startHttpServer()
 
   logger.info('Living Memory API started', {
@@ -57,6 +66,8 @@ async function shutdown(signal) {
       logger.info('HTTP server closed')
     }
 
+    await stopProcessingWorker()
+
     await disconnectFromDatabase()
     process.exit(0)
   } catch (error) {
@@ -78,6 +89,7 @@ startServer().catch(async (error) => {
     errorCode: error.code ?? null,
   })
 
+  await stopProcessingWorker().catch(() => {})
   await disconnectFromDatabase().catch(() => {})
   process.exit(1)
 })

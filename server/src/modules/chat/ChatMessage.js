@@ -75,6 +75,34 @@ const citationSchema = new Schema(
       maxlength: 100,
       default: '',
     },
+
+    sourceRoute: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      match: [
+        /^\/app\/memories\//,
+        'Citation source route is invalid.',
+      ],
+    },
+
+    recordingId: {
+      type: String,
+      trim: true,
+      maxlength: 100,
+      match: [
+        /^[0-9a-f]{24}$/i,
+        'Citation recording ID is invalid.',
+      ],
+    },
+
+    recordedAt: {
+      type: Date,
+    },
+
+    canPlayOriginalAudio: {
+      type: Boolean,
+    },
   },
   {
     _id: false,

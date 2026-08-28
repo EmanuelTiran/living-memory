@@ -13,14 +13,15 @@
   }
 
   .profile-management-button {
-    padding: 9px 13px;
-    color: #46534f;
+    padding: 8px 4px;
+    color: var(--color-ink-muted);
     font: inherit;
     font-size: 0.78rem;
     font-weight: 800;
     background: transparent;
-    border: 1px solid rgba(83, 98, 91, 0.2);
-    border-radius: 10px;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
     cursor: pointer;
     transition:
       background-color 160ms ease,
@@ -34,13 +35,12 @@
   }
 
   .profile-edit-button {
-    color: #69563d;
-    background: #f5ead7;
-    border-color: rgba(128, 99, 61, 0.18);
+    color: var(--color-olive);
   }
 
   .profile-edit-button:hover:not(:disabled) {
-    background: #ecddc4;
+    background: transparent;
+    border-bottom-color: currentColor;
   }
 
   .profile-archive-button {
@@ -49,7 +49,8 @@
   }
 
   .profile-archive-button:hover:not(:disabled) {
-    background: rgba(139, 69, 69, 0.08);
+    background: transparent;
+    border-bottom-color: currentColor;
   }
 
   .profile-action-message {

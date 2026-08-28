@@ -249,6 +249,100 @@
   margin: 0;
 }
 
+.memory-asset-processing {
+  display: grid;
+  margin-block-start: 13px;
+  padding: 10px 11px;
+  gap: 7px;
+  color: #53615c;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: #f0eee7;
+  border-radius: 9px;
+}
+
+.memory-asset-processing progress {
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+  accent-color: #4d7b68;
+  border: 0;
+  border-radius: 999px;
+}
+
+.memory-asset-processing-completed {
+  color: #315f4d;
+  background: #e7f1ec;
+}
+
+.memory-asset-processing-failed {
+  color: #8b4545;
+  background: #f8e9e5;
+}
+
+.memory-asset-metadata-form {
+  display: grid;
+  gap: 12px;
+}
+
+.memory-asset-metadata-form label {
+  display: grid;
+  gap: 7px;
+}
+
+.memory-asset-metadata-form label > span {
+  color: #46534f;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.memory-asset-metadata-form input,
+.memory-asset-metadata-form textarea {
+  width: 100%;
+  padding: 10px 11px;
+  color: #26302d;
+  font: inherit;
+  font-size: 0.8rem;
+  background: #fff;
+  border: 1px solid rgba(83, 98, 91, 0.24);
+  border-radius: 10px;
+  outline: none;
+}
+
+.memory-asset-metadata-form textarea {
+  resize: vertical;
+}
+
+.memory-asset-metadata-form input:focus-visible,
+.memory-asset-metadata-form textarea:focus-visible {
+  border-color: #80633d;
+  box-shadow:
+    0 0 0 4px rgba(128, 99, 61, 0.1);
+}
+
+.memory-asset-metadata-form > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.memory-asset-metadata-form button {
+  padding: 8px 11px;
+  color: #315f4d;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: #e1eee8;
+  border: 1px solid rgba(49, 95, 77, 0.18);
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.memory-asset-metadata-form button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .memory-asset-actions {
   display: flex;
   flex-wrap: wrap;

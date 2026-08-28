@@ -172,15 +172,18 @@ async function generateSpeechForText({
   userId,
   memoryId,
   text,
+  preferClonedVoice = false,
 }) {
-  const clonedSpeech =
-    await tryGenerateClonedSpeech({
-      memoryId,
-      text,
-    })
+  if (preferClonedVoice) {
+    const clonedSpeech =
+      await tryGenerateClonedSpeech({
+        memoryId,
+        text,
+      })
 
-  if (clonedSpeech) {
-    return clonedSpeech
+    if (clonedSpeech) {
+      return clonedSpeech
+    }
   }
 
   return generateSpeechAudio({
@@ -194,6 +197,9 @@ export async function generateMemoryChatMessageSpeech(
   memoryId,
   conversationId,
   messageId,
+  {
+    preferClonedVoice = false,
+  } = {},
 ) {
   validateUserId(userId)
 
@@ -215,6 +221,7 @@ export async function generateMemoryChatMessageSpeech(
     memoryId:
       validatedIdentifiers.memoryId,
     text,
+    preferClonedVoice,
   })
 }
 
@@ -224,6 +231,9 @@ export async function generateMemoryChatMessageSpeechChunk(
   conversationId,
   messageId,
   chunkIndex,
+  {
+    preferClonedVoice = false,
+  } = {},
 ) {
   validateUserId(userId)
 
@@ -255,6 +265,7 @@ export async function generateMemoryChatMessageSpeechChunk(
       memoryId:
         validatedIdentifiers.memoryId,
       text: chunkText,
+      preferClonedVoice,
     })
 
   return {

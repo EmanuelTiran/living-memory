@@ -1,5 +1,6 @@
 .memory-profile-page {
-    width: min(1080px, 100%);
+    width: min(1180px, 100%);
+    overflow: hidden;
   }
 
   .profile-error-card {
@@ -12,93 +13,197 @@
     justify-self: start;
   }
 
-  .memory-profile-header {
-    display: flex;
-    align-items: center;
+  .memory-profile-hero {
+    position: relative;
+    display: grid;
+    min-height: 500px;
     margin-block-start: 34px;
-    gap: 22px;
+    overflow: hidden;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-hero);
+    box-shadow: var(--shadow-hero);
+    grid-template-columns: minmax(0, 1.08fr) minmax(330px, 0.92fr);
   }
 
-  .profile-initial {
-    display: grid;
-    flex: 0 0 76px;
-    width: 76px;
-    height: 76px;
-    place-items: center;
-    color: #fffdf8;
-    font-size: 2rem;
-    font-weight: 700;
-    background: #80633d;
-    border-radius: 22px;
-    box-shadow:
-      0 12px 28px rgba(128, 99, 61, 0.2);
+  .memory-profile-hero-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(36px, 6vw, 72px);
+  }
+
+  .memory-privacy {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    margin: 0 0 28px;
+    gap: 8px;
+    color: var(--color-olive);
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  .memory-privacy span {
+    width: 7px;
+    height: 7px;
+    background: currentColor;
+    border-radius: 50%;
+  }
+
+  .memory-profile-hero-kicker {
+    margin: 0;
+    color: var(--color-clay);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
   }
 
   .memory-profile-title {
-    margin: 0;
-    color: #26302d;
-    font-size: clamp(2rem, 5vw, 3.6rem);
-    line-height: 1.15;
-    letter-spacing: -0.04em;
+    margin: 8px 0 0;
+    color: var(--color-ink);
+    font-size: clamp(2.7rem, 6vw, 4.5rem);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.045em;
   }
 
   .profile-relationship {
-    display: inline-block;
     margin: 12px 0 0;
-    padding: 7px 12px;
-    color: #69563d;
-    font-size: 0.85rem;
-    background: #f2e9db;
-    border-radius: 999px;
+    color: var(--color-ink-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
   }
 
-  .profile-overview {
-    display: grid;
-    margin-block-start: 36px;
-    padding: clamp(22px, 4vw, 34px);
-    gap: 34px;
-    background: #f7f4ec;
-    border: 1px solid rgba(83, 98, 91, 0.14);
-    border-radius: 20px;
-    grid-template-columns:
-      minmax(0, 1fr) minmax(190px, 0.35fr);
-  }
-
-  .profile-overview h2 {
-    margin: 0;
-    color: #33413d;
-    font-size: 1.4rem;
-  }
-
-  .profile-overview > div > p:last-child {
-    margin: 14px 0 0;
-    color: #626965;
-    line-height: 1.8;
+  .memory-profile-hero-description {
+    position: relative;
+    max-width: 590px;
+    margin: 32px 0 0;
+    padding-block-start: 28px;
+    color: var(--color-ink);
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2.6vw, 1.65rem);
+    font-weight: 500;
+    line-height: 1.55;
     white-space: pre-wrap;
   }
 
-  .profile-metadata {
+  .memory-profile-hero-description::before {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    width: 82px;
+    height: 2px;
+    background: var(--color-amber);
+    content: '';
+  }
+
+  .memory-profile-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    margin-block-start: 30px;
+    gap: 12px;
+  }
+
+  .memory-profile-hero-metadata {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 34px 0 0;
+    gap: 16px 34px;
+  }
+
+  .memory-profile-hero-metadata div {
     display: grid;
-    align-content: start;
+    gap: 4px;
+  }
+
+  .memory-profile-hero-metadata dt {
+    color: var(--color-ink-muted);
+    font-size: 0.72rem;
+  }
+
+  .memory-profile-hero-metadata dd {
     margin: 0;
-    gap: 18px;
+    color: var(--color-ink);
+    font-size: 0.86rem;
+    font-weight: 600;
   }
 
-  .profile-metadata div {
-    padding-block-end: 16px;
-    border-bottom: 1px solid rgba(83, 98, 91, 0.12);
+  .memory-profile-hero-visual {
+    position: relative;
+    display: grid;
+    min-height: 500px;
+    place-items: center;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 72% 22%, rgb(255 252 246 / 72%), transparent 30%),
+      linear-gradient(145deg, #ead3aa, #d7a24c 48%, #879b83);
   }
 
-  .profile-metadata dt {
-    color: #858985;
-    font-size: 0.78rem;
+  .memory-profile-hero-visual::before,
+  .memory-profile-hero-visual::after {
+    position: absolute;
+    border: 1px solid rgb(255 252 246 / 45%);
+    border-radius: 50%;
+    content: '';
   }
 
-  .profile-metadata dd {
-    margin: 6px 0 0;
-    color: #3d4b46;
-    font-size: 0.9rem;
-    font-weight: 700;
+  .memory-profile-hero-visual::before {
+    width: 360px;
+    height: 360px;
+  }
+
+  .memory-profile-hero-visual::after {
+    width: 430px;
+    height: 430px;
+  }
+
+  .memory-profile-hero-visual img {
+    position: absolute;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .profile-initial {
+    position: relative;
+    z-index: 1;
+    color: var(--color-surface);
+    font-family: var(--font-display);
+    font-size: clamp(7rem, 15vw, 11rem);
+    font-weight: 600;
+    line-height: 1;
+    text-shadow: 0 16px 40px rgb(36 51 46 / 18%);
+  }
+
+  .memory-profile-hero-visual-label {
+    position: absolute;
+    z-index: 2;
+    inset-block-end: 24px;
+    inset-inline-start: 24px;
+    padding: 8px 12px;
+    color: var(--color-ink);
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: rgb(255 252 246 / 88%);
+    border: 1px solid rgb(255 252 246 / 62%);
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+  }
+
+  .optional-ai-layer-introduction h2 {
+    margin: 0;
+    color: #1d2a36;
+    font-size: clamp(1.35rem, 3vw, 1.85rem);
+  }
+
+  .optional-ai-layer-introduction p:last-child {
+    max-width: 680px;
+    margin: 10px 0 0;
+    color: #596761;
+    line-height: 1.75;
   }
 
   .story-workspace {
@@ -310,6 +415,72 @@
     overflow-wrap: anywhere;
   }
 
+  .source-revision-history {
+    margin-block-start: 16px;
+    padding: 12px 14px;
+    background: rgba(127, 146, 125, 0.08);
+    border: 1px solid rgba(83, 98, 91, 0.14);
+    border-radius: 12px;
+  }
+
+  .source-revision-history summary {
+    color: #4d675c;
+    font-size: 0.8rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .source-revision-history summary:focus-visible {
+    outline: 3px solid rgba(77, 123, 104, 0.3);
+    outline-offset: 4px;
+  }
+
+  .source-revision-list {
+    display: grid;
+    margin-block-start: 13px;
+    gap: 10px;
+  }
+
+  .source-revision-item {
+    padding: 12px;
+    background: #fffefa;
+    border: 1px solid rgba(83, 98, 91, 0.12);
+    border-radius: 10px;
+  }
+
+  .source-revision-item > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+  }
+
+  .source-revision-item strong,
+  .source-revision-item h4 {
+    color: #394b44;
+  }
+
+  .source-revision-item span {
+    color: #7d837e;
+    font-size: 0.7rem;
+  }
+
+  .source-revision-item h4 {
+    margin: 10px 0 0;
+    font-size: 0.84rem;
+  }
+
+  .source-revision-item p {
+    max-height: 180px;
+    margin: 7px 0 0;
+    overflow-y: auto;
+    color: #626b67;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
   .story-card-actions,
   .story-edit-actions {
     display: flex;
@@ -379,7 +550,7 @@
 
   .profile-features {
     display: grid;
-    margin-block-start: 26px;
+    margin-block-start: var(--space-24);
     gap: 16px;
     grid-template-columns: minmax(0, 1fr);
   }
@@ -392,6 +563,71 @@
     background: #fffefa;
     border: 1px solid rgba(83, 98, 91, 0.14);
     border-radius: 18px;
+  }
+
+  .archive-library {
+    margin-block-start: var(--space-16);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-compact);
+  }
+
+  .archive-library > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 22px;
+    gap: 20px;
+    color: var(--color-ink);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .archive-library > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .archive-library > summary > span:first-child {
+    display: grid;
+    gap: 5px;
+  }
+
+  .archive-library > summary strong {
+    font-size: 1rem;
+  }
+
+  .archive-library > summary small {
+    color: var(--color-ink-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  .archive-library > summary > span:last-child {
+    display: grid;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    color: #fffdf8;
+    font-size: 1.25rem;
+    font-weight: 500;
+    background: var(--color-olive);
+    border-radius: 50%;
+    transition: transform 180ms ease;
+  }
+
+  .archive-library[open] > summary > span:last-child {
+    transform: rotate(45deg);
+  }
+
+  .archive-library > summary:focus-visible {
+    outline: 3px solid rgba(77, 123, 104, 0.3);
+    outline-offset: 4px;
+  }
+
+  .archive-library-content {
+    padding: 0 clamp(16px, 3vw, 24px) clamp(20px, 4vw, 30px);
+    border-top: 1px solid rgba(83, 98, 91, 0.12);
   }
 
   .profile-features article > span {
@@ -420,14 +656,36 @@
     font-size: 0.78rem;
   }
 
+  .optional-ai-layer {
+    margin-block-start: 36px;
+    padding-block-start: 30px;
+    border-top: 1px solid rgba(83, 98, 91, 0.16);
+  }
+
+  .optional-ai-layer-introduction {
+    padding-inline: 4px;
+  }
+
   @media (max-width: 860px) {
+    .memory-profile-hero {
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 0.8fr);
+    }
+
     .story-workspace {
       grid-template-columns: 1fr;
     }
   }
 
   @media (max-width: 760px) {
-    .profile-overview,
+    .memory-profile-hero {
+      grid-template-columns: 1fr;
+    }
+
+    .memory-profile-hero-visual {
+      min-height: 360px;
+      order: -1;
+    }
+
     .profile-features {
       grid-template-columns: 1fr;
     }
@@ -438,16 +696,31 @@
   }
 
   @media (max-width: 520px) {
-    .memory-profile-header {
-      align-items: flex-start;
+    .memory-profile-hero {
+      min-height: auto;
+      border-radius: 26px;
     }
 
-    .profile-initial {
-      flex-basis: 58px;
-      width: 58px;
-      height: 58px;
-      font-size: 1.5rem;
-      border-radius: 17px;
+    .memory-profile-hero-copy {
+      padding: 30px 24px 34px;
+    }
+
+    .memory-profile-hero-visual {
+      min-height: 300px;
+    }
+
+    .memory-profile-hero-actions {
+      display: grid;
+    }
+
+    .memory-profile-hero-actions .primary-button,
+    .memory-profile-hero-actions .secondary-button {
+      width: 100%;
+    }
+
+    .memory-profile-hero-metadata {
+      display: grid;
+      gap: 14px;
     }
 
     .story-card-header {

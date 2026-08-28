@@ -35,8 +35,8 @@
 .surface-card {
   width: min(960px, 100%);
   padding: clamp(32px, 6vw, 72px);
-  background: rgba(255, 253, 248, 0.92);
-  border: 1px solid rgba(130, 111, 80, 0.2);
+  background: rgb(255 252 246 / 94%);
+  border: 1px solid var(--color-border);
   border-radius: 32px;
   box-shadow:
     0 28px 80px rgba(59, 52, 40, 0.1),
@@ -99,10 +99,18 @@
   flex-wrap: wrap;
 }
 
+.private-pilot-notice {
+  max-width: 620px;
+  margin: 18px auto 0;
+  color: #5e7169;
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
 .primary-button,
 .secondary-button {
   display: inline-flex;
-  min-height: 48px;
+  min-height: 52px;
   align-items: center;
   justify-content: center;
   padding: 0 24px;
@@ -120,14 +128,14 @@
 
 .primary-button {
   color: #fffdf8;
-  background: #80633d;
-  box-shadow: 0 8px 20px rgba(128, 99, 61, 0.2);
+  background: var(--color-olive);
+  box-shadow: 0 8px 20px rgb(72 107 93 / 20%);
 }
 
 .secondary-button {
-  color: #42534d;
-  background: #f7f4ec;
-  border-color: rgba(66, 83, 77, 0.2);
+  color: var(--color-olive);
+  background: transparent;
+  border-color: var(--color-olive);
 }
 
 .primary-button:hover,
@@ -135,12 +143,20 @@
   transform: translateY(-1px);
 }
 
+.primary-button:hover {
+  background: var(--color-olive-strong);
+}
+
+.secondary-button:hover {
+  background: rgb(72 107 93 / 7%);
+}
+
 .primary-button:focus-visible,
 .secondary-button:focus-visible,
 .back-link:focus-visible,
 .auth-switch a:focus-visible,
 .dashboard-home-link:focus-visible {
-  outline: 3px solid rgba(128, 99, 61, 0.3);
+  outline: 3px solid rgb(72 107 93 / 32%);
   outline-offset: 3px;
 }
 
@@ -247,6 +263,10 @@
 .auth-card {
   width: min(540px, 100%);
   text-align: right;
+}
+
+.registration-closed-card .primary-button {
+  margin-block-start: 28px;
 }
 
 .auth-card .brand-line {

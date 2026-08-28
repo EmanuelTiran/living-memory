@@ -16,26 +16,35 @@ import {
   refreshSession,
   registerAccount,
 } from './api/authApi.js'
+import {
+  pilotAvatarEnabled,
+  pilotInviteOnly,
+} from './config/pilotFeatures.js'
+import AdminDashboard from './features/admin/AdminDashboard.jsx'
 import MemoryChatPage from './features/chat/MemoryChatPage.jsx'
+import FamilyAccessPage from './features/memories/FamilyAccessPage.jsx'
+import InvitationAcceptPage from './features/memories/InvitationAcceptPage.jsx'
 import MemoryDashboard from './features/memories/MemoryDashboard.jsx'
+import MemoryPilotPage from './features/memories/MemoryPilotPage.jsx'
+import MemoryPricingPilotPage from './features/memories/MemoryPricingPilotPage.jsx'
 import MemoryProfilePage from './features/memories/MemoryProfilePage.jsx'
 import './App.css'
 
 const principles = [
   {
-    title: 'מבוסס מקורות',
+    title: 'הסיפור קודם לטכנולוגיה',
     description:
-      'הדמות תשתמש רק בחומרים שנמסרו, נבדקו ואושרו.',
+      'מתחילים בשיחה קצרה, שומרים את הקול ובודקים את הסיפור לפני שהוא נכנס לארכיון.',
   },
   {
-    title: 'פרטי ומאובטח',
+    title: 'מקור שאפשר לחזור אליו',
     description:
-      'כל זיכרון יהיה פרטי כברירת מחדל ומופרד מזיכרונות אחרים.',
+      'תשובות הארכיון נשענות על סיפורים מאושרים ומפנות בחזרה למקור המשפחתי.',
   },
   {
-    title: 'אנושי ומכבד',
+    title: 'בשליטה משפחתית',
     description:
-      'המערכת תשמור על גבולות ברורים ולא תציג את הדמות כאדם עצמו.',
+      'החומרים נשארים פרטיים כברירת מחדל, והמשפחה מחליטה מה לאשר ולשתף.',
   },
 ]
 
@@ -51,6 +60,12 @@ function getErrorMessage(error) {
       'כתובת האימייל או הסיסמה אינם נכונים.',
     ACCOUNT_SUSPENDED:
       'החשבון הזה הושעה ואינו יכול להתחבר.',
+    REGISTRATION_INVITATION_REQUIRED:
+      'ההרשמה לפיילוט זמינה דרך קישור הזמנה אישי בלבד.',
+    REGISTRATION_INVITATION_INVALID:
+      'ההזמנה אינה תקינה, פגה או מיועדת לכתובת אימייל אחרת.',
+    AUTH_RATE_LIMITED:
+      'בוצעו יותר מדי ניסיונות בזמן קצר. המתינו מעט ונסו שוב.',
     VALIDATION_ERROR:
       'חלק מהפרטים אינם תקינים. בדקו את הטופס ונסו שוב.',
     NETWORK_ERROR:
@@ -61,6 +76,18 @@ function getErrorMessage(error) {
     messages[error.code] ??
     'לא הצלחנו להשלים את הפעולה. נסו שוב.'
   )
+}
+
+function getSafeReturnTo(value) {
+  if (
+    typeof value !== 'string' ||
+    !value.startsWith('/') ||
+    value.startsWith('//')
+  ) {
+    return '/app'
+  }
+
+  return value
 }
 
 function PageShell({ children }) {
@@ -105,23 +132,22 @@ function HomePage({
           aria-hidden="true"
         />
 
-        <p className="eyebrow">זיכרון חי</p>
+        <p className="eyebrow">Living Memory · זיכרון חי</p>
 
         <h1
           className="hero-title"
           id="welcome-title"
         >
-          שומרים סיפורי חיים
+          הסיפורים של המשפחה שלכם.
           <span>
-            בכבוד, באחריות ובאמינות
+            בקולם. מוכנים לשאלה הבאה.
           </span>
         </h1>
 
         <p className="lead">
-          מקום משפחתי לשימור זיכרונות,
-          סיפורים ומורשת — וליצירת שיחה
-          אינטראקטיבית המבוססת על מקורות
-          מאושרים.
+          תעדו אותם בשיחות קצרות וטבעיות,
+          בנו ארכיון משפחתי חי ושאלו אותו
+          שאלות שמבוססות על מה שנאמר באמת.
         </p>
 
         <div className="hero-actions">
@@ -130,26 +156,42 @@ function HomePage({
               className="primary-button"
               to="/app"
             >
-              כניסה לאזור האישי
+              פתיחת הארכיון המשפחתי
             </Link>
           ) : (
-            <>
+            pilotInviteOnly ? (
               <Link
                 className="primary-button"
-                to="/register"
-              >
-                יצירת חשבון
-              </Link>
-
-              <Link
-                className="secondary-button"
                 to="/login"
               >
-                כניסה לחשבון
+                כניסה לפיילוט הפרטי
               </Link>
-            </>
+            ) : (
+              <>
+                <Link
+                  className="primary-button"
+                  to="/register"
+                >
+                  התחלת ארכיון משפחתי
+                </Link>
+
+                <Link
+                  className="secondary-button"
+                  to="/login"
+                >
+                  כניסה לחשבון
+                </Link>
+              </>
+            )
           )}
         </div>
+
+        {pilotInviteOnly && !user && (
+          <p className="private-pilot-notice">
+            הפיילוט נפתח כעת למספר מצומצם של
+            משפחות ובהזמנה אישית בלבד.
+          </p>
+        )}
 
         <aside
           className="ai-disclosure"
@@ -163,10 +205,14 @@ function HomePage({
           </span>
 
           <p>
-            זו תהיה דמות AI המבוססת על
-            חומרים שנמסרו ואושרו. היא אינה
-            האדם עצמו, ותשובותיה עשויות
-            לכלול הסקות או טעויות.
+            ה־AI אינו מחליף את האדם ואינו
+            ממציא מה הוא היה אומר. התשובות
+            מסומנות לפי רמת הביסוס שלהן;
+            שכבות קול מלאכותי
+            {pilotAvatarEnabled
+              ? ' ואווטאר'
+              : ''}{' '}
+            הן אפשרויות נפרדות בלבד.
           </p>
         </aside>
 
@@ -211,6 +257,16 @@ function AuthPage({
 
   const navigate = useNavigate()
   const location = useLocation()
+  const returnTo = getSafeReturnTo(
+    location.state?.returnTo,
+  )
+  const registrationTokenCandidate =
+    location.state?.invitationToken
+  const invitationToken =
+    typeof registrationTokenCandidate ===
+    'string'
+      ? registrationTokenCandidate
+      : ''
 
   const [formData, setFormData] = useState({
     displayName: '',
@@ -252,6 +308,8 @@ function AuthPage({
           displayName: formData.displayName,
           email: formData.email,
           password: formData.password,
+          invitationToken:
+            invitationToken || undefined,
         })
 
         navigate('/login', {
@@ -259,6 +317,7 @@ function AuthPage({
           state: {
             registrationCompleted: true,
             email: formData.email.trim(),
+            returnTo,
           },
         })
 
@@ -273,7 +332,7 @@ function AuthPage({
 
       onAuthenticated(authentication)
 
-      navigate('/app', {
+      navigate(returnTo, {
         replace: true,
       })
     } catch (error) {
@@ -283,6 +342,39 @@ function AuthPage({
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (
+    isRegistration &&
+    pilotInviteOnly &&
+    !invitationToken
+  ) {
+    return (
+      <PageShell>
+        <section
+          className="surface-card auth-card registration-closed-card"
+          aria-labelledby="auth-title"
+        >
+          <Link className="back-link" to="/">
+            חזרה לעמוד הראשי
+          </Link>
+
+          <div className="brand-line" aria-hidden="true" />
+          <p className="eyebrow">פיילוט פרטי</p>
+          <h1 className="auth-title" id="auth-title">
+            ההרשמה נפתחת בהזמנה בלבד
+          </h1>
+          <p className="auth-description">
+            כדי ליצור חשבון חדש יש לפתוח את קישור
+            ההזמנה האישי שקיבלתם ממנהל הארכיון
+            המשפחתי. אם כבר נרשמתם, אפשר להתחבר.
+          </p>
+          <Link className="primary-button" to="/login">
+            כניסה לחשבון קיים
+          </Link>
+        </section>
+      </PageShell>
+    )
   }
 
   return (
@@ -422,23 +514,29 @@ function AuthPage({
           </button>
         </form>
 
-        <p className="auth-switch">
-          {isRegistration
-            ? 'כבר יש לכם חשבון?'
-            : 'עדיין אין לכם חשבון?'}
-
-          <Link
-            to={
-              isRegistration
-                ? '/login'
-                : '/register'
-            }
-          >
+        {(!pilotInviteOnly || isRegistration) && (
+          <p className="auth-switch">
             {isRegistration
-              ? 'כניסה לחשבון'
-              : 'יצירת חשבון'}
-          </Link>
-        </p>
+              ? 'כבר יש לכם חשבון?'
+              : 'עדיין אין לכם חשבון?'}
+
+            <Link
+              to={
+                isRegistration
+                  ? '/login'
+                  : '/register'
+              }
+              state={{
+                returnTo,
+                invitationToken,
+              }}
+            >
+              {isRegistration
+                ? 'כניסה לחשבון'
+                : 'יצירת חשבון'}
+            </Link>
+          </p>
+        )}
       </section>
     </PageShell>
   )
@@ -561,6 +659,24 @@ function App() {
       />
 
       <Route
+        path="/invitation"
+        element={
+          initializing ? (
+            <LoadingScreen />
+          ) : (
+            <InvitationAcceptPage
+              authentication={
+                authentication
+              }
+              onAuthenticationChange={
+                setAuthentication
+              }
+            />
+          )
+        }
+      />
+
+      <Route
         path="/app"
         element={
           initializing ? (
@@ -584,12 +700,104 @@ function App() {
       />
 
       <Route
+        path="/app/admin"
+        element={
+          initializing ? (
+            <LoadingScreen />
+          ) : authentication?.user?.systemRole ===
+            'admin' ? (
+            <AdminDashboard
+              authentication={
+                authentication
+              }
+              onAuthenticationChange={
+                setAuthentication
+              }
+            />
+          ) : authentication?.user ? (
+            <Navigate to="/app" replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+
+      <Route
         path="/app/memories/:memoryId"
         element={
           initializing ? (
             <LoadingScreen />
           ) : authentication?.user ? (
             <MemoryProfilePage
+              authentication={
+                authentication
+              }
+              onAuthenticationChange={
+                setAuthentication
+              }
+            />
+          ) : (
+            <Navigate
+              to="/login"
+              replace
+            />
+          )
+        }
+      />
+
+      <Route
+        path="/app/memories/:memoryId/family"
+        element={
+          initializing ? (
+            <LoadingScreen />
+          ) : authentication?.user ? (
+            <FamilyAccessPage
+              authentication={
+                authentication
+              }
+              onAuthenticationChange={
+                setAuthentication
+              }
+            />
+          ) : (
+            <Navigate
+              to="/login"
+              replace
+            />
+          )
+        }
+      />
+
+      <Route
+        path="/app/memories/:memoryId/pilot"
+        element={
+          initializing ? (
+            <LoadingScreen />
+          ) : authentication?.user ? (
+            <MemoryPilotPage
+              authentication={
+                authentication
+              }
+              onAuthenticationChange={
+                setAuthentication
+              }
+            />
+          ) : (
+            <Navigate
+              to="/login"
+              replace
+            />
+          )
+        }
+      />
+
+      <Route
+        path="/app/memories/:memoryId/pricing-pilot"
+        element={
+          initializing ? (
+            <LoadingScreen />
+          ) : authentication?.user ? (
+            <MemoryPricingPilotPage
               authentication={
                 authentication
               }

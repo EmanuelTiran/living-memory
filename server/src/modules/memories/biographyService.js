@@ -1,5 +1,6 @@
 import { AppError } from '../../errors/AppError.js'
 import ChatMessage from '../chat/ChatMessage.js'
+import MemoryRecording from '../media/MemoryRecording.js'
 import MemoryBiographyAnswer from './MemoryBiographyAnswer.js'
 import {
   BIOGRAPHY_QUESTION_BATCH_SIZE,
@@ -177,15 +178,35 @@ async function loadQuestionnaireAnswers(
   })
 }
 
-function createQuestionnaireResult(
+async function loadStoredInterviewPromptKeys(
+  memoryId,
+) {
+  return MemoryRecording.distinct(
+    'interviewContext.promptKey',
+    {
+      memoryId,
+      lifecycleStatus: 'active',
+      storageStatus: 'stored',
+      'interviewContext.promptKey': {
+        $exists: true,
+        $ne: '',
+      },
+    },
+  )
+}
+
+export function createQuestionnaireResult(
   biographyAnswers,
+  storedInterviewPromptKeys = [],
 ) {
   const knownQuestionKeys = new Set(
-    biographyAnswers
-      .map(
+    [
+      ...biographyAnswers.map(
         (answer) =>
           answer.questionKey,
-      )
+      ),
+      ...storedInterviewPromptKeys,
+    ]
       .filter((questionKey) =>
         Boolean(
           getBiographyQuestion(
@@ -222,6 +243,15 @@ function createQuestionnaireResult(
         serializeBiographyAnswer,
       ),
 
+    answeredQuestions:
+      BIOGRAPHY_QUESTIONS
+        .filter((question) =>
+          knownQuestionKeys.has(
+            question.key,
+          ),
+        )
+        .map(serializeQuestion),
+
     progress: {
       totalCount,
       completedCount,
@@ -253,13 +283,21 @@ export async function getBiographyQuestionnaire(
     MEMORY_PERMISSIONS.MANAGE,
   )
 
-  const biographyAnswers =
-    await loadQuestionnaireAnswers(
+  const [
+    biographyAnswers,
+    storedInterviewPromptKeys,
+  ] = await Promise.all([
+    loadQuestionnaireAnswers(
       validatedParams.memoryId,
-    )
+    ),
+    loadStoredInterviewPromptKeys(
+      validatedParams.memoryId,
+    ),
+  ])
 
   return createQuestionnaireResult(
     biographyAnswers,
+    storedInterviewPromptKeys,
   )
 }
 

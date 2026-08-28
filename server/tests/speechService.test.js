@@ -203,10 +203,7 @@ import {
 
       expect(
         mocks.tryGenerateClonedSpeech,
-      ).toHaveBeenCalledWith({
-        memoryId,
-        text: assistantContent,
-      })
+      ).not.toHaveBeenCalled()
 
       expect(
         mocks.generateSpeechAudio,
@@ -226,6 +223,41 @@ import {
           result.audioBuffer,
         ),
       ).toBe(true)
+    })
+
+    it('uses a cloned voice only when an avatar flow requests it explicitly', async () => {
+      const clonedSpeech = {
+        ...createSpeechResult(),
+        provider: 'elevenlabs',
+        voiceType: 'custom_clone',
+      }
+
+      mocks.tryGenerateClonedSpeech
+        .mockResolvedValue(
+          clonedSpeech,
+        )
+
+      const result =
+        await generateMemoryChatMessageSpeech(
+          userId,
+          memoryId,
+          conversationId,
+          messageId,
+          {
+            preferClonedVoice: true,
+          },
+        )
+
+      expect(
+        mocks.tryGenerateClonedSpeech,
+      ).toHaveBeenCalledWith({
+        memoryId,
+        text: assistantContent,
+      })
+      expect(
+        mocks.generateSpeechAudio,
+      ).not.toHaveBeenCalled()
+      expect(result).toBe(clonedSpeech)
     })
 
     it('rejects invalid identifiers before authorization or database access', async () => {

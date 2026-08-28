@@ -12,22 +12,33 @@ import {
   loginSchema,
   registerSchema,
 } from './validation.js'
+import {
+  loginRateLimiter,
+  refreshRateLimiter,
+  registrationRateLimiter,
+} from './authRateLimiters.js'
 
 const authRoutes = Router()
 
 authRoutes.post(
   '/register',
+  registrationRateLimiter,
   validateBody(registerSchema),
   register,
 )
 
 authRoutes.post(
   '/login',
+  loginRateLimiter,
   validateBody(loginSchema),
   login,
 )
 
-authRoutes.post('/refresh', refresh)
+authRoutes.post(
+  '/refresh',
+  refreshRateLimiter,
+  refresh,
+)
 authRoutes.post('/logout', logout)
 
 authRoutes.get(

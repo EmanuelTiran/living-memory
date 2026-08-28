@@ -4,6 +4,9 @@ import { validateBody } from '../../middleware/validateBody.js'
 import { validateParams } from '../../middleware/validateParams.js'
 import { validateQuery } from '../../middleware/validateQuery.js'
 import {
+  requirePilotAvatarFeature,
+} from '../../middleware/requirePilotAvatarFeature.js'
+import {
   createChatConversation,
   getChatHistory,
   sendChatMessage,
@@ -88,6 +91,7 @@ chatRoutes.post(
 
 chatRoutes.post(
   '/conversations/:conversationId/messages/:messageId/avatar-speech',
+  requirePilotAvatarFeature,
   validateParams(
     chatSpeechParamsSchema,
   ),
@@ -97,6 +101,7 @@ chatRoutes.post(
 
 chatRoutes.post(
   '/conversations/:conversationId/messages/:messageId/realtime-avatar-speech',
+  requirePilotAvatarFeature,
   validateParams(
     chatSpeechParamsSchema,
   ),
@@ -106,6 +111,7 @@ chatRoutes.post(
 
 chatRoutes.post(
   '/conversations/:conversationId/messages/:messageId/realtime-avatar-speech/chunks/:chunkIndex',
+  requirePilotAvatarFeature,
   validateParams(
     realtimeAvatarSpeechChunkParamsSchema,
   ),
@@ -115,6 +121,7 @@ chatRoutes.post(
 
 chatRoutes.delete(
   '/realtime-audio/:realtimeAudioToken',
+  requirePilotAvatarFeature,
   validateParams(
     realtimeAudioParamsSchema,
   ),
@@ -123,6 +130,7 @@ chatRoutes.delete(
 
 chatRoutes.get(
   '/avatar-jobs/:avatarJobId',
+  requirePilotAvatarFeature,
   validateParams(
     avatarJobParamsSchema,
   ),
@@ -131,6 +139,7 @@ chatRoutes.get(
 
 chatRoutes.get(
   '/avatar-jobs/:avatarJobId/video',
+  requirePilotAvatarFeature,
   validateParams(
     avatarJobParamsSchema,
   ),

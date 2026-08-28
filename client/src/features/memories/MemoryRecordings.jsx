@@ -3,9 +3,11 @@ import { ApiError } from '../../api/authApi.js'
 import {
   approveMemoryRecordingTranscript,
   createMemoryRecording,
+  getMemoryRecordingAudio,
   getMemoryRecordingTranscript,
   listMemoryRecordings,
   requestMemoryRecordingTranscription,
+  reviseApprovedMemoryRecordingTranscript,
   updateMemoryRecordingTranscript,
   uploadMemoryRecordingFile,
 } from '../../api/recordingApi.js'
@@ -43,6 +45,21 @@ const M4A_COMPATIBLE_MIME_TYPES =
     'audio/x-m4a',
   ])
 
+const INTERVIEW_CATEGORY_LABELS =
+  Object.freeze({
+    background: 'רקע ומשפחה',
+    childhood: 'ילדות',
+    education_work:
+      'לימודים ועבודה',
+    relationships:
+      'משפחה וקשרים',
+    personality: 'אופי ואישיות',
+    preferences:
+      'העדפות ותחביבים',
+    values: 'ערכים ואמונה',
+    life_events: 'תחנות בחיים',
+  })
+
 function createInitialForm() {
   return {
     displayName: '',
@@ -50,6 +67,7 @@ function createInitialForm() {
     consentBasis: 'subject_consent',
     storageConsent: false,
     transcriptionConsent: false,
+    playbackConsent: false,
     sourceConsent: false,
     voiceImitationConsent: false,
   }
@@ -71,10 +89,16 @@ function getRecordingErrorMessage(error) {
     RECORDING_FILE_MISMATCH: 'הקובץ שנשלח אינו תואם לפרטי ההקלטה.',
     RECORDING_UPLOAD_UNAVAILABLE: 'לא ניתן להעלות קובץ להקלטה הזאת.',
     RECORDING_FILE_NOT_FOUND: 'קובץ ההקלטה הפרטי לא נמצא.',
+    RECORDING_FILE_UNAVAILABLE: 'קובץ ההקלטה המקורית אינו זמין כרגע.',
+    RECORDING_PLAYBACK_NOT_CONSENTED: 'לא ניתנה הרשאה להשמעת ההקלטה המקורית.',
+    RECORDING_INTEGRITY_FAILED:
+      'בדיקת תקינות ההקלטה נכשלה ולכן היא לא הושמעה.',
     RECORDING_CONSENT_REQUIRED: 'לא קיימת ההסכמה הנדרשת לביצוע הפעולה.',
     RECORDING_TRANSCRIPTION_UNAVAILABLE: 'לא ניתן לתמלל את ההקלטה במצבה הנוכחי.',
     RECORDING_TRANSCRIPTION_IN_PROGRESS: 'תמלול ההקלטה כבר מתבצע.',
     RECORDING_TRANSCRIPT_CONFLICT: 'התמלול השתנה בפעולה אחרת. רעננו אותו ונסו שוב.',
+    RECORDING_TRANSCRIPT_NOT_APPROVED:
+      'התמלול כבר אינו מאושר. רעננו אותו לפני עריכה נוספת.',
     TRANSCRIPTION_AUDIO_FORMAT_INVALID:
       'מבנה קובץ השמע אינו תקין או אינו תואם לסוג שנבחר.',
     TRANSCRIPTION_AUDIO_NORMALIZATION_FAILED:
@@ -189,6 +213,30 @@ function formatDate(value) {
   }).format(date)
 }
 
+function formatDurationMs(durationMs) {
+  if (
+    !Number.isFinite(durationMs) ||
+    durationMs < 1
+  ) {
+    return ''
+  }
+
+  const totalSeconds = Math.max(
+    1,
+    Math.round(durationMs / 1000),
+  )
+
+  const minutes = Math.floor(
+    totalSeconds / 60,
+  )
+
+  const seconds = String(
+    totalSeconds % 60,
+  ).padStart(2, '0')
+
+  return `${minutes}:${seconds}`
+}
+
 function getStorageStatusLabel(status) {
   const labels = {
     pending: 'ממתינה להעלאה',
@@ -232,24 +280,43 @@ function notifyRecordingsUpdated(
 
 function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
   const fileInputRef = useRef(null)
+  const audioUrlRegistryRef = useRef(new Map())
 
   const [recordings, setRecordings] = useState([])
   const [form, setForm] = useState(createInitialForm)
   const [selectedFile, setSelectedFile] = useState(null)
   const [transcriptsByRecordingId, setTranscriptsByRecordingId] = useState({})
   const [transcriptDrafts, setTranscriptDrafts] = useState({})
+  const [editingApprovedTranscripts, setEditingApprovedTranscripts] = useState({})
   const [sourceConfirmations, setSourceConfirmations] = useState({})
+  const [audioUrlsByRecordingId, setAudioUrlsByRecordingId] = useState({})
+  const [audioErrorsByRecordingId, setAudioErrorsByRecordingId] = useState({})
+  const [loadingAudioRecordingId, setLoadingAudioRecordingId] = useState('')
   const [openTranscriptRecordingId, setOpenTranscriptRecordingId] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [retryFilesByRecordingId, setRetryFilesByRecordingId] = useState({})
   const [retryingRecordingId, setRetryingRecordingId] = useState('')
   const [transcribingRecordingId, setTranscribingRecordingId] = useState('')
+  const [awaitingTranscriptRecordingId, setAwaitingTranscriptRecordingId] =
+    useState('')
   const [loadingTranscriptRecordingId, setLoadingTranscriptRecordingId] = useState('')
   const [savingTranscriptRecordingId, setSavingTranscriptRecordingId] = useState('')
   const [approvingTranscriptRecordingId, setApprovingTranscriptRecordingId] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+
+  useEffect(() => {
+    const registry = audioUrlRegistryRef.current
+
+    return () => {
+      for (const url of registry.values()) {
+        URL.revokeObjectURL(url)
+      }
+
+      registry.clear()
+    }
+  }, [])
 
   const fetchRecordings = useCallback(
     () =>
@@ -289,6 +356,192 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
       isActive = false
     }
   }, [fetchRecordings])
+
+  useEffect(() => {
+    let isActive = true
+
+    function handleRecordingsUpdated(
+      event,
+    ) {
+      if (
+        event.detail?.memoryId !==
+        memoryId
+      ) {
+        return
+      }
+
+      void fetchRecordings()
+        .then((nextRecordings) => {
+          if (isActive) {
+            setRecordings(
+              nextRecordings,
+            )
+          }
+        })
+        .catch((error) => {
+          if (isActive) {
+            setErrorMessage(
+              getRecordingErrorMessage(
+                error,
+              ),
+            )
+          }
+        })
+    }
+
+    window.addEventListener(
+      'living-memory:recordings-updated',
+      handleRecordingsUpdated,
+    )
+
+    return () => {
+      isActive = false
+      window.removeEventListener(
+        'living-memory:recordings-updated',
+        handleRecordingsUpdated,
+      )
+    }
+  }, [
+    fetchRecordings,
+    memoryId,
+  ])
+
+  const activeTranscriptionKey =
+    recordings
+      .filter((recording) =>
+        ['queued', 'processing'].includes(
+          recording.transcriptionStatus,
+        ),
+      )
+      .map(
+        (recording) =>
+          `${recording.id}:${recording.transcriptionStatus}`,
+      )
+      .join('|')
+
+  useEffect(() => {
+
+    if (
+      !activeTranscriptionKey &&
+      !awaitingTranscriptRecordingId
+    ) {
+      return undefined
+    }
+
+    let isActive = true
+    let isPolling = false
+
+    async function pollTranscriptions() {
+      if (isPolling) {
+        return
+      }
+
+      isPolling = true
+
+      try {
+        const nextRecordings =
+          await fetchRecordings()
+
+        if (!isActive) {
+          return
+        }
+
+        setRecordings(nextRecordings)
+
+        if (!awaitingTranscriptRecordingId) {
+          return
+        }
+
+        const awaitedRecording =
+          nextRecordings.find(
+            (recording) =>
+              recording.id ===
+              awaitingTranscriptRecordingId,
+          )
+
+        if (
+          awaitedRecording
+            ?.transcriptionStatus ===
+          'completed'
+        ) {
+          const transcript =
+            await runAuthenticatedRequest(
+              (accessToken) =>
+                getMemoryRecordingTranscript(
+                  accessToken,
+                  memoryId,
+                  awaitedRecording.id,
+                ),
+            )
+
+          if (!isActive) {
+            return
+          }
+
+          setTranscriptsByRecordingId(
+            (current) => ({
+              ...current,
+              [awaitedRecording.id]:
+                transcript,
+            }),
+          )
+          setTranscriptDrafts(
+            (current) => ({
+              ...current,
+              [awaitedRecording.id]:
+                transcript.content,
+            }),
+          )
+          setOpenTranscriptRecordingId(
+            awaitedRecording.id,
+          )
+          setAwaitingTranscriptRecordingId(
+            '',
+          )
+          setSuccessMessage(
+            'התמלול הושלם ברקע ונשמר כטיוטה לבדיקה.',
+          )
+        } else if (
+          awaitedRecording
+            ?.transcriptionStatus ===
+          'failed'
+        ) {
+          setAwaitingTranscriptRecordingId(
+            '',
+          )
+          setErrorMessage(
+            'התמלול לא הושלם. אפשר לנסות שוב מכרטיס ההקלטה.',
+          )
+        }
+      } catch (error) {
+        if (isActive) {
+          setErrorMessage(
+            getRecordingErrorMessage(error),
+          )
+        }
+      } finally {
+        isPolling = false
+      }
+    }
+
+    const intervalId = window.setInterval(
+      pollTranscriptions,
+      1_500,
+    )
+
+    void pollTranscriptions()
+
+    return () => {
+      isActive = false
+      window.clearInterval(intervalId)
+    }
+  }, [
+    awaitingTranscriptRecordingId,
+    activeTranscriptionKey,
+    fetchRecordings,
+    memoryId,
+    runAuthenticatedRequest,
+  ])
 
   async function refreshRecordings() {
     const nextRecordings = await fetchRecordings()
@@ -417,6 +670,10 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
       permittedUses.push('memory_grounding')
     }
 
+    if (form.playbackConsent) {
+      permittedUses.push('recording_playback')
+    }
+
     if (form.voiceImitationConsent) {
       permittedUses.push(
         'voice_imitation',
@@ -468,19 +725,25 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
         }),
       )
 
-      const { transcript } = transcriptionResult
+      if (transcriptionResult.transcript) {
+        const { transcript } = transcriptionResult
 
-      setTranscriptsByRecordingId((current) => ({
-        ...current,
-        [storedRecording.id]: transcript,
-      }))
+        setTranscriptsByRecordingId((current) => ({
+          ...current,
+          [storedRecording.id]: transcript,
+        }))
 
-      setTranscriptDrafts((current) => ({
-        ...current,
-        [storedRecording.id]: transcript.content,
-      }))
+        setTranscriptDrafts((current) => ({
+          ...current,
+          [storedRecording.id]: transcript.content,
+        }))
 
-      setOpenTranscriptRecordingId(storedRecording.id)
+        setOpenTranscriptRecordingId(storedRecording.id)
+      } else {
+        setAwaitingTranscriptRecordingId(
+          storedRecording.id,
+        )
+      }
       setForm(createInitialForm())
       setSelectedFile(null)
 
@@ -489,9 +752,11 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
       }
 
       setSuccessMessage(
-        form.sourceConsent
-          ? 'ההקלטה נשמרה ותומללה. בדקו את הטיוטה ואשרו אותה לפני שתשמש כמקור לשיחה.'
-          : 'ההקלטה נשמרה ותומללה כטיוטה. היא לא תשמש כמקור לשיחה ללא הסכמה ואישור מתאימים.',
+        transcriptionResult.queued
+          ? 'ההקלטה נשמרה ונשלחה לתמלול ברקע. אפשר להמשיך לעבוד; הטיוטה תיפתח כשהתמלול יושלם.'
+          : form.sourceConsent
+            ? 'ההקלטה נשמרה ותומללה. בדקו את הטיוטה ואשרו אותה לפני שתשמש כמקור לשיחה.'
+            : 'ההקלטה נשמרה ותומללה כטיוטה. היא לא תשמש כמקור לשיחה ללא הסכמה ואישור מתאימים.',
       )
     } catch (error) {
       setErrorMessage(getRecordingErrorMessage(error))
@@ -525,20 +790,30 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
         }),
       )
 
-      setTranscriptsByRecordingId((current) => ({
-        ...current,
-        [recording.id]: result.transcript,
-      }))
+      if (result.transcript) {
+        setTranscriptsByRecordingId((current) => ({
+          ...current,
+          [recording.id]: result.transcript,
+        }))
 
-      setTranscriptDrafts((current) => ({
-        ...current,
-        [recording.id]: result.transcript.content,
-      }))
+        setTranscriptDrafts((current) => ({
+          ...current,
+          [recording.id]: result.transcript.content,
+        }))
 
-      setOpenTranscriptRecordingId(recording.id)
+        setOpenTranscriptRecordingId(recording.id)
+      } else {
+        setAwaitingTranscriptRecordingId(
+          recording.id,
+        )
+      }
 
       setSuccessMessage(
-        result.created ? 'התמלול הושלם ונשמר כטיוטה.' : 'התמלול הקיים נטען בהצלחה.',
+        result.queued
+          ? 'ההקלטה נשלחה לתמלול ברקע. הטיוטה תיפתח אוטומטית כשהתהליך יושלם.'
+          : result.created
+            ? 'התמלול הושלם ונשמר כטיוטה.'
+            : 'התמלול הקיים נטען בהצלחה.',
       )
     } catch (error) {
       setErrorMessage(getRecordingErrorMessage(error))
@@ -767,11 +1042,103 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
     }
   }
 
+  async function handleLoadOriginalAudio(recording) {
+    resetMessages()
+
+    if (!hasPermittedUse(recording, 'recording_playback')) {
+      setAudioErrorsByRecordingId((current) => ({
+        ...current,
+        [recording.id]: 'לא ניתנה הרשאה להשמעת ההקלטה המקורית.',
+      }))
+      return
+    }
+
+    setLoadingAudioRecordingId(recording.id)
+    setAudioErrorsByRecordingId((current) => ({
+      ...current,
+      [recording.id]: '',
+    }))
+
+    try {
+      const audioBlob = await runAuthenticatedRequest((accessToken) =>
+        getMemoryRecordingAudio(accessToken, memoryId, recording.id),
+      )
+
+      const previousUrl = audioUrlRegistryRef.current.get(recording.id)
+
+      if (previousUrl) {
+        URL.revokeObjectURL(previousUrl)
+      }
+
+      const audioUrl = URL.createObjectURL(audioBlob)
+
+      audioUrlRegistryRef.current.set(recording.id, audioUrl)
+      setAudioUrlsByRecordingId((current) => ({
+        ...current,
+        [recording.id]: audioUrl,
+      }))
+    } catch (error) {
+      setAudioErrorsByRecordingId((current) => ({
+        ...current,
+        [recording.id]: getRecordingErrorMessage(error),
+      }))
+    } finally {
+      setLoadingAudioRecordingId('')
+    }
+  }
+
   function handleTranscriptChange(recordingId, value) {
     setTranscriptDrafts((current) => ({
       ...current,
       [recordingId]: value,
     }))
+  }
+
+  function startEditingApprovedTranscript(
+    recordingId,
+  ) {
+    const transcript =
+      transcriptsByRecordingId[
+        recordingId
+      ]
+
+    if (!transcript) {
+      return
+    }
+
+    resetMessages()
+    setTranscriptDrafts((current) => ({
+      ...current,
+      [recordingId]:
+        transcript.content,
+    }))
+    setEditingApprovedTranscripts(
+      (current) => ({
+        ...current,
+        [recordingId]: true,
+      }),
+    )
+  }
+
+  function cancelEditingApprovedTranscript(
+    recordingId,
+  ) {
+    const transcript =
+      transcriptsByRecordingId[
+        recordingId
+      ]
+
+    setTranscriptDrafts((current) => ({
+      ...current,
+      [recordingId]:
+        transcript?.content ?? '',
+    }))
+    setEditingApprovedTranscripts(
+      (current) => ({
+        ...current,
+        [recordingId]: false,
+      }),
+    )
   }
 
   async function handleSaveTranscript(recording) {
@@ -792,13 +1159,35 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
 
     setSavingTranscriptRecordingId(recording.id)
 
+    const wasApproved =
+      transcript.reviewStatus ===
+      'approved'
+
     try {
-      const updatedTranscript = await runAuthenticatedRequest((accessToken) =>
-        updateMemoryRecordingTranscript(accessToken, memoryId, recording.id, {
-          content,
-          expectedRevision: transcript.revision,
-        }),
-      )
+      const updatedTranscript =
+        await runAuthenticatedRequest(
+          (accessToken) => {
+            const input = {
+              content,
+              expectedRevision:
+                transcript.revision,
+            }
+
+            return wasApproved
+              ? reviseApprovedMemoryRecordingTranscript(
+                  accessToken,
+                  memoryId,
+                  recording.id,
+                  input,
+                )
+              : updateMemoryRecordingTranscript(
+                  accessToken,
+                  memoryId,
+                  recording.id,
+                  input,
+                )
+          },
+        )
 
       setTranscriptsByRecordingId((current) => ({
         ...current,
@@ -810,7 +1199,24 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
         [recording.id]: updatedTranscript.content,
       }))
 
-      setSuccessMessage('טיוטת התמלול נשמרה בהצלחה.')
+      setEditingApprovedTranscripts(
+        (current) => ({
+          ...current,
+          [recording.id]: false,
+        }),
+      )
+
+      setSuccessMessage(
+        wasApproved
+          ? 'התמלול עודכן, הגרסה המאושרת נשמרה בהיסטוריה והוא חזר לטיוטה לאישור מחדש.'
+          : 'טיוטת התמלול נשמרה בהצלחה.',
+      )
+
+      if (wasApproved) {
+        notifyRecordingsUpdated(
+          memoryId,
+        )
+      }
     } catch (error) {
       setErrorMessage(getRecordingErrorMessage(error))
     } finally {
@@ -868,6 +1274,10 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
           ? 'התמלול אושר ונוסף למקורות המידע של השיחה.'
           : 'התמלול כבר היה מאושר כמקור מידע.',
       )
+
+      notifyRecordingsUpdated(
+        memoryId,
+      )
     } catch (error) {
       setErrorMessage(getRecordingErrorMessage(error))
     } finally {
@@ -910,11 +1320,11 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
       </div>
 
       <aside className="recordings-safety-notice">
-        <strong>תמלול בלבד — לא שכפול קול</strong>
+        <strong>שימושים נפרדים — לא שכפול קול</strong>
 
         <p>
-          ההקלטה משמשת בשלב הזה להפקת טקסט בלבד. לא נוצר ממנה קול מלאכותי, והסכמה לתמלול
-          אינה הסכמה לחיקוי קול או להשמעתו לאחרים.
+          שמירת הקלטה אינה מעניקה אוטומטית הרשאה לתמלול, להשמעת המקור או לחיקוי קול.
+          כל שימוש דורש הסכמה נפרדת, ולא נוצר כאן קול מלאכותי.
         </p>
       </aside>
 
@@ -1047,6 +1457,21 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
             <label>
               <input
                 type="checkbox"
+                name="playbackConsent"
+                checked={form.playbackConsent}
+                disabled={hasActiveUpload}
+                onChange={handleFormChange}
+              />
+
+              <span>
+                <strong>השמעת ההקלטה המקורית</strong>
+                אני מאשר/ת לבני משפחה בעלי הרשאת צפייה בזיכרון להשמיע את קובץ המקור.
+              </span>
+            </label>
+
+            <label>
+              <input
+                type="checkbox"
                 name="sourceConsent"
                 checked={form.sourceConsent}
                 disabled={hasActiveUpload || !form.transcriptionConsent}
@@ -1103,7 +1528,9 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
             type="submit"
             disabled={hasActiveUpload}
           >
-            {isSubmitting ? 'מעלים ומתמללים...' : 'שמירה והתחלת תמלול'}
+            {isSubmitting
+              ? 'מעלים ושולחים לתמלול...'
+              : 'שמירה ושליחה לתמלול'}
           </button>
         </form>
 
@@ -1136,6 +1563,13 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                   transcriptDrafts[recording.id] ??
                   transcript?.content ??
                   ''
+
+                const isEditingApprovedTranscript =
+                  Boolean(
+                    editingApprovedTranscripts[
+                      recording.id
+                    ],
+                  )
 
                 const isTranscriptOpen =
                   openTranscriptRecordingId === recording.id
@@ -1175,8 +1609,37 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                 const isRetryingUpload =
                   retryingRecordingId === recording.id
 
+                const canPlayOriginalAudio =
+                  recording.storageStatus === 'stored' &&
+                  hasPermittedUse(recording, 'recording_playback')
+
+                const audioUrl =
+                  audioUrlsByRecordingId[recording.id] ?? ''
+
+                const audioError =
+                  audioErrorsByRecordingId[recording.id] ?? ''
+
+                const isLoadingAudio =
+                  loadingAudioRecordingId === recording.id
+
                 return (
                   <article className="recording-card" key={recording.id}>
+                    {recording.interviewContext && (
+                      <div className="recording-interview-context">
+                        <span>
+                          תשובה מתוך ראיון מודרך
+                          {' · '}
+                          {INTERVIEW_CATEGORY_LABELS[
+                            recording.interviewContext.promptCategory
+                          ] ?? 'פרק חיים'}
+                        </span>
+
+                        <strong>
+                          {recording.interviewContext.promptText}
+                        </strong>
+                      </div>
+                    )}
+
                     <div className="recording-card-header">
                       <div>
                         <h4>{recording.displayName}</h4>
@@ -1205,10 +1668,32 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                         </dd>
                       </div>
 
+                      {['queued', 'processing'].includes(
+                        recording.transcriptionStatus,
+                      ) && (
+                        <div>
+                          <dt>התקדמות</dt>
+                          <dd>
+                            {recording.transcriptionProgress ?? 0}%
+                          </dd>
+                        </div>
+                      )}
+
                       <div>
                         <dt>שפה</dt>
                         <dd>{recording.languageCode}</dd>
                       </div>
+
+                      {recording.durationMs && (
+                        <div>
+                          <dt>משך</dt>
+                          <dd>
+                            {formatDurationMs(
+                              recording.durationMs,
+                            )}
+                          </dd>
+                        </div>
+                      )}
 
                       {recording.createdAt && (
                         <div>
@@ -1234,6 +1719,13 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                       </span>
 
                       <span>
+                        השמעת מקור:{' '}
+                        {hasPermittedUse(recording, 'recording_playback')
+                          ? 'מאושרת לבעלי הרשאת צפייה'
+                          : 'לא אושרה'}
+                      </span>
+
+                      <span>
                         חיקוי קול:{' '}
                         {hasPermittedUse(
                           recording,
@@ -1243,6 +1735,53 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                           : 'לא אושר'}
                       </span>
                     </div>
+
+                    {recording.storageStatus === 'stored' && (
+                      <div className="recording-audio-panel">
+                        <div className="recording-audio-heading">
+                          <strong>ההקלטה המקורית</strong>
+
+                          <span>
+                            נטענת באופן פרטי ורק לאחר בדיקת הרשאה.
+                          </span>
+                        </div>
+
+                        {canPlayOriginalAudio && !audioUrl && (
+                          <button
+                            className="secondary-button"
+                            type="button"
+                            disabled={isLoadingAudio}
+                            onClick={() => handleLoadOriginalAudio(recording)}
+                          >
+                            {isLoadingAudio
+                              ? 'טוענים את ההקלטה...'
+                              : 'השמעת ההקלטה המקורית'}
+                          </button>
+                        )}
+
+                        {audioUrl && (
+                          <audio
+                            controls
+                            preload="metadata"
+                            src={audioUrl}
+                            aria-label={`ההקלטה המקורית: ${recording.displayName}`}
+                          />
+                        )}
+
+                        {!hasPermittedUse(recording, 'recording_playback') && (
+                          <p className="recording-audio-unavailable">
+                            להקלטה הזאת לא ניתנה הרשאת השמעת מקור. הרשאות אינן מתווספות
+                            בדיעבד ללא הסכמה מפורשת.
+                          </p>
+                        )}
+
+                        {audioError && (
+                          <p className="form-error recording-audio-error" role="alert">
+                            {audioError}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {canRetryUpload && (
                       <div className="recording-retry-panel">
@@ -1311,7 +1850,7 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                           }
                         >
                           {isTranscribing
-                            ? 'מתמללים...'
+                            ? 'שולחים לתור...'
                             : recording.transcriptionStatus === 'failed'
                               ? 'ניסיון תמלול נוסף'
                               : 'התחלת תמלול'}
@@ -1353,8 +1892,17 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                           </span>
                         </div>
 
-                        {transcript.reviewStatus === 'draft' ? (
+                        {transcript.reviewStatus === 'draft' ||
+                        isEditingApprovedTranscript ? (
                           <>
+                            {isEditingApprovedTranscript && (
+                              <p className="approved-source-edit-notice">
+                                שמירת השינוי תסיר זמנית את האישור. הגרסה המאושרת
+                                הנוכחית תישמר בהיסטוריה, והתמלול יחזור לטיוטה עד
+                                שתבדקו ותאשרו אותו מחדש.
+                              </p>
+                            )}
+
                             <label className="recording-transcript-field">
                               <span>בדקו ותקנו את התמלול</span>
 
@@ -1393,63 +1941,80 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                                   ? 'שומרים...'
                                   : 'שמירת תיקוני התמלול'}
                               </button>
-                            </div>
 
-                            {canApproveAsSource ? (
-                              <div className="recording-source-approval">
-                                <label>
-                                  <input
-                                    type="checkbox"
-                                    checked={Boolean(
-                                      sourceConfirmations[recording.id],
-                                    )}
-                                    disabled={
-                                      isSavingTranscript ||
-                                      isApprovingTranscript
-                                    }
-                                    onChange={(event) =>
-                                      handleSourceConfirmation(
-                                        recording.id,
-                                        event.target.checked,
-                                      )
-                                    }
-                                  />
-
-                                  <span>
-                                    בדקתי את התמלול ואני מאשר/ת להוסיף אותו למאגר המקורות
-                                    של הזיכרון.
-                                  </span>
-                                </label>
-
+                              {isEditingApprovedTranscript && (
                                 <button
-                                  className="primary-button"
+                                  className="secondary-button"
                                   type="button"
-                                  disabled={
-                                    isSavingTranscript ||
-                                    isApprovingTranscript ||
-                                    !sourceConfirmations[recording.id] ||
-                                    transcriptDraft !== transcript.content
-                                  }
+                                  disabled={isSavingTranscript}
                                   onClick={() =>
-                                    handleApproveTranscript(recording)
+                                    cancelEditingApprovedTranscript(
+                                      recording.id,
+                                    )
                                   }
                                 >
-                                  {isApprovingTranscript
-                                    ? 'מאשרים מקור...'
-                                    : 'אישור כמקור מידע'}
+                                  ביטול העריכה
                                 </button>
+                              )}
+                            </div>
 
-                                {transcriptDraft !== transcript.content && (
-                                  <small>
-                                    יש לשמור את תיקוני התמלול לפני האישור.
-                                  </small>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="recording-source-disabled">
-                                התמלול נשאר טיוטה פרטית ולא ניתן לאשרו כמקור, משום שלא
-                                ניתנה לכך הסכמה בעת העלאת ההקלטה.
-                              </p>
+                            {transcript.reviewStatus === 'draft' && (
+                              canApproveAsSource ? (
+                                <div className="recording-source-approval">
+                                  <label>
+                                    <input
+                                      type="checkbox"
+                                      checked={Boolean(
+                                        sourceConfirmations[recording.id],
+                                      )}
+                                      disabled={
+                                        isSavingTranscript ||
+                                        isApprovingTranscript
+                                      }
+                                      onChange={(event) =>
+                                        handleSourceConfirmation(
+                                          recording.id,
+                                          event.target.checked,
+                                        )
+                                      }
+                                    />
+
+                                    <span>
+                                      בדקתי את התמלול ואני מאשר/ת להוסיף אותו למאגר
+                                      המקורות של הזיכרון.
+                                    </span>
+                                  </label>
+
+                                  <button
+                                    className="primary-button"
+                                    type="button"
+                                    disabled={
+                                      isSavingTranscript ||
+                                      isApprovingTranscript ||
+                                      !sourceConfirmations[recording.id] ||
+                                      transcriptDraft !== transcript.content
+                                    }
+                                    onClick={() =>
+                                      handleApproveTranscript(recording)
+                                    }
+                                  >
+                                    {isApprovingTranscript
+                                      ? 'מאשרים מקור...'
+                                      : 'אישור כמקור מידע'}
+                                  </button>
+
+                                  {transcriptDraft !== transcript.content && (
+                                    <small>
+                                      יש לשמור את תיקוני התמלול לפני האישור.
+                                    </small>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="recording-source-disabled">
+                                  התמלול נשאר טיוטה פרטית ולא ניתן לאשרו כמקור, משום
+                                  שלא ניתנה לכך הסכמה בעת העלאת ההקלטה.
+                                </p>
+                              )
                             )}
                           </>
                         ) : (
@@ -1462,7 +2027,70 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                               התמלול הזה יכול לשמש את הצ׳אט כמקור מאושר. הוא אינו מעניק
                               הרשאה ליצירת קול מלאכותי.
                             </p>
+
+                            <p className="approved-transcript-note">
+                              {transcript.sourceIndexStatus === 'indexed'
+                                ? `מאונדקס במאגר המקורות · גרסה ${transcript.sourceIndexRevision}`
+                                : 'מקור מאושר ותיק: ייכנס לאינדקס בעדכון האישור הבא.'}
+                            </p>
+
+                            <button
+                              className="story-action-button story-action-edit"
+                              type="button"
+                              disabled={isSavingTranscript}
+                              onClick={() =>
+                                startEditingApprovedTranscript(
+                                  recording.id,
+                                )
+                              }
+                            >
+                              עריכת התמלול המאושר
+                            </button>
                           </>
+                        )}
+
+                        {transcript.revisionHistory?.length > 0 && (
+                          <details className="transcript-revision-history">
+                            <summary>
+                              היסטוריית עריכות
+                              {' · '}
+                              {transcript.revisionHistory.length}
+                              {' '}
+                              גרסאות קודמות
+                            </summary>
+
+                            <div className="transcript-revision-list">
+                              {transcript.revisionHistory
+                                .slice()
+                                .reverse()
+                                .map((revision) => (
+                                  <article
+                                    className="transcript-revision-item"
+                                    key={`${recording.id}-${revision.revision}-${revision.changedAt}`}
+                                  >
+                                    <div>
+                                      <strong>
+                                        גרסה {revision.revision}
+                                      </strong>
+
+                                      <span>
+                                        {revision.reviewStatus === 'approved'
+                                          ? 'הייתה מאושרת'
+                                          : 'הייתה טיוטה'}
+                                      </span>
+
+                                      {revision.changedAt && (
+                                        <span>
+                                          עד {formatDate(revision.changedAt)}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <p>{revision.content}</p>
+                                  </article>
+                                ))}
+                            </div>
+                          </details>
                         )}
                       </div>
                     )}

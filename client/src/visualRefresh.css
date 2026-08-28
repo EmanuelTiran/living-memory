@@ -1,0 +1,83 @@
+:root {
+  color: #24332e;
+  background: #f3eee5;
+  font-family: 'Rubik', 'Noto Sans Hebrew', 'Segoe UI', Arial, sans-serif;
+
+  --font-display: 'Frank Ruhl Libre', 'Noto Serif Hebrew', Georgia, serif;
+  --font-body: 'Rubik', 'Noto Sans Hebrew', 'Segoe UI', Arial, sans-serif;
+  --color-canvas: #f3eee5;
+  --color-surface: #fffcf6;
+  --color-surface-muted: #f8f4ec;
+  --color-ink: #24332e;
+  --color-ink-muted: #626b67;
+  --color-olive: #486b5d;
+  --color-olive-strong: #365548;
+  --color-clay: #a4573e;
+  --color-amber: #d7a24c;
+  --color-amber-ink: #583a08;
+  --color-border: #d8d0c2;
+  --color-verified: #376451;
+  --color-verified-bg: #e1eee8;
+  --color-process: #7d5918;
+  --color-process-bg: #f4e8d0;
+  --color-action: #884a3b;
+  --color-action-bg: #f1e6e0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+  --radius-control: 14px;
+  --radius-compact: 12px;
+  --radius-secondary: 18px;
+  --radius-primary: 28px;
+  --radius-hero: 38px;
+  --shadow-primary: 0 14px 40px rgb(36 51 46 / 10%);
+  --shadow-hero: 0 28px 72px rgb(36 51 46 / 14%);
+}
+
+html,
+body {
+  background: var(--color-canvas);
+}
+
+body {
+  color: var(--color-ink);
+  line-height: 1.72;
+}
+
+h1,
+h2,
+h3,
+.editorial-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+time,
+[dir='ltr'],
+.mixed-numerals {
+  font-variant-numeric: tabular-nums;
+  unicode-bidi: plaintext;
+}
+
+::selection {
+  color: #fffdf8;
+  background: var(--color-olive);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

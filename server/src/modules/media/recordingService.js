@@ -3,6 +3,13 @@ import {
   MEMORY_PERMISSIONS,
   requireMemoryPermission,
 } from '../memories/memoryAccessService.js'
+import {
+  getFamilyQuestionAnswerPrompt,
+} from '../memories/familyQuestionService.js'
+import {
+  discardInterviewSession,
+  startInterviewSession,
+} from '../memories/interviewSessionService.js'
 import MemoryRecording, {
   RECORDING_CONSENT_VERSION,
 } from './MemoryRecording.js'
@@ -101,10 +108,70 @@ export async function createMemoryRecordingMetadata(
       recordingData.checksumSha256
   }
 
-  const recording =
-    await MemoryRecording.create(
-      recordingInput,
-    )
+  if (recordingData.durationMs) {
+    recordingInput.durationMs =
+      recordingData.durationMs
+  }
+
+  let interviewSession = null
+
+  if (recordingData.interviewPrompt) {
+    const interview =
+      await startInterviewSession({
+        userId,
+        memoryId: validatedMemoryId,
+        questionKey:
+          recordingData.interviewPrompt
+            .questionKey,
+      })
+
+    interviewSession = interview.session
+    recordingInput.interviewContext = {
+      sessionId: interview.session._id,
+      promptKey:
+        interview.promptSnapshot.key,
+      promptCategory:
+        interview.promptSnapshot.category,
+      promptText:
+        interview.promptSnapshot.question,
+    }
+  } else if (
+    recordingData.familyQuestionId
+  ) {
+    const familyQuestion =
+      await getFamilyQuestionAnswerPrompt(
+        validatedMemoryId,
+        recordingData.familyQuestionId,
+      )
+
+    recordingInput.familyQuestionContext = {
+      questionId:
+        familyQuestion.questionId,
+      questionText:
+        familyQuestion.questionText,
+    }
+  }
+
+  let recording
+
+  try {
+    recording =
+      await MemoryRecording.create(
+        recordingInput,
+      )
+  } catch (error) {
+    if (interviewSession) {
+      try {
+        await discardInterviewSession(
+          interviewSession._id,
+        )
+      } catch {
+        // Preserve the original recording error.
+      }
+    }
+
+    throw error
+  }
 
   return recording.toJSON()
 }

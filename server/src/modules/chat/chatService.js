@@ -360,9 +360,9 @@ export async function sendMemoryChatMessage(
     history,
   }
 
-  if (responseMode === 'creative') {
+  if (responseMode !== 'balanced') {
     providerInput.responseMode =
-      'creative'
+      responseMode
   }
 
   const reply =

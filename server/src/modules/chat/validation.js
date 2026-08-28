@@ -43,7 +43,7 @@ export const sendChatMessageSchema =
     responseMode: z
       .enum(CHAT_RESPONSE_MODES, {
         error:
-          'Chat response mode must be balanced or creative.',
+          'Chat response mode must be balanced, archive, or creative.',
       })
       .optional(),
   })

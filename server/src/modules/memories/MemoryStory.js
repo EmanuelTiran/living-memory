@@ -22,6 +22,67 @@ function isValidDateOnly(value) {
   )
 }
 
+const storyRevisionSchema = new Schema(
+  {
+    revision: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 160,
+    },
+
+    content: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 20000,
+    },
+
+    occurredOn: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+
+    reviewStatus: {
+      type: String,
+      enum: ['draft', 'approved'],
+      required: true,
+    },
+
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
+
+    approvedByUserId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+
+    changedAt: {
+      type: Date,
+      required: true,
+    },
+
+    changedByUserId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+  },
+  {
+    _id: false,
+  },
+)
+
 const memoryStorySchema = new Schema(
   {
     memoryId: {
@@ -76,6 +137,39 @@ const memoryStorySchema = new Schema(
         'archived',
       ],
       default: 'draft',
+    },
+
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
+
+    approvedByUserId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+
+    revision: {
+      type: Number,
+      min: 1,
+      default: 1,
+    },
+
+    revisionHistory: {
+      type: [storyRevisionSchema],
+      default: [],
+    },
+
+    lastEditedAt: {
+      type: Date,
+      default: null,
+    },
+
+    lastEditedByUserId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
   },
   {

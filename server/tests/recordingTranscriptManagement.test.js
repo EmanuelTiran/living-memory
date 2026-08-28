@@ -212,6 +212,10 @@ import {
             $set: {
               content:
                 'Corrected transcript.',
+              sourceIndexStatus:
+                'not_indexed',
+              sourceIndexedAt: null,
+              sourceIndexRevision: null,
             },
             $inc: {
               revision: 1,
@@ -311,6 +315,11 @@ import {
               approvedAt,
               approvedByUserId:
                 userId,
+              sourceIndexStatus:
+                'indexed',
+              sourceIndexedAt:
+                approvedAt,
+              sourceIndexRevision: 1,
             }),
           )
 
@@ -351,6 +360,11 @@ import {
                 expect.any(Date),
               approvedByUserId:
                 userId,
+              sourceIndexStatus:
+                'indexed',
+              sourceIndexedAt:
+                expect.any(Date),
+              sourceIndexRevision: 1,
             },
           },
           {
@@ -367,6 +381,11 @@ import {
               approvedAt,
               approvedByUserId:
                 userId,
+              sourceIndexStatus:
+                'indexed',
+              sourceIndexedAt:
+                approvedAt,
+              sourceIndexRevision: 1,
             }),
           approved: true,
         })
@@ -420,6 +439,13 @@ import {
               ),
             approvedByUserId:
               userId,
+            sourceIndexStatus:
+              'indexed',
+            sourceIndexedAt:
+              new Date(
+                '2026-07-28T21:00:00.000Z',
+              ),
+            sourceIndexRevision: 1,
           })
 
         mocks.findTranscript

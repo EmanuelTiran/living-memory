@@ -7,6 +7,7 @@ export const MEMORY_MEMBER_ROLES =
     'viewer',
     'contributor',
     'editor',
+    'steward',
   ])
 
 export const MEMORY_MEMBERSHIP_STATUSES =

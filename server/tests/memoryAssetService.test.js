@@ -13,6 +13,10 @@ const mocks = vi.hoisted(() => ({
   saveBuffer: vi.fn(),
   readBuffer: vi.fn(),
   deleteFile: vi.fn(),
+  enqueueMemoryAssetProcessing:
+    vi.fn(),
+  cancelMemoryAssetProcessing:
+    vi.fn(),
 }))
 
 vi.mock(
@@ -42,6 +46,16 @@ vi.mock(
   }),
 )
 
+vi.mock(
+  '../src/modules/media/memoryAssetProcessingService.js',
+  () => ({
+    enqueueMemoryAssetProcessing:
+      mocks.enqueueMemoryAssetProcessing,
+    cancelMemoryAssetProcessing:
+      mocks.cancelMemoryAssetProcessing,
+  }),
+)
+
 import MemoryAsset from '../src/modules/media/MemoryAsset.js'
 import {
   archiveMemoryAsset,
@@ -56,6 +70,9 @@ const memoryId =
   '507f1f77bcf86cd799439011'
 const assetId =
   '507f1f77bcf86cd799439012'
+
+const processingJobId =
+  '507f1f77bcf86cd799439013'
 
 function createFile() {
   const buffer = Buffer.from([
@@ -103,6 +120,12 @@ beforeEach(() => {
     })
 
   mocks.deleteFile.mockResolvedValue(true)
+  mocks.enqueueMemoryAssetProcessing
+    .mockResolvedValue({
+      id: processingJobId,
+    })
+  mocks.cancelMemoryAssetProcessing
+    .mockResolvedValue(null)
 })
 
 describe('Memory asset service', () => {
@@ -158,10 +181,22 @@ describe('Memory asset service', () => {
       assetType: 'image',
       mimeType: 'image/png',
       storageProvider: 'local_private',
+      processingStatus: 'queued',
     })
     expect(result).not.toHaveProperty(
       'storageKey',
     )
+    expect(
+      mocks.enqueueMemoryAssetProcessing,
+    ).toHaveBeenCalledWith({
+      memoryId,
+      assetId: expect.any(String),
+      checksumSha256:
+        createHash('sha256')
+          .update(originalBuffer)
+          .digest('hex'),
+      mimeType: 'image/png',
+    })
   })
 
   it('does not store a file when contribution access is denied', async () => {
@@ -234,6 +269,7 @@ describe('Memory asset service', () => {
     const buffer = Buffer.from('private file')
     const publicAsset = createPublicAsset()
     const assetDocument = {
+      storageProvider: 'local_private',
       storageKey: 'private/file.png',
       checksumSha256:
         createHash('sha256')

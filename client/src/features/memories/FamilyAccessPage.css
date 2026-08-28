@@ -1,0 +1,167 @@
+.family-access-page {
+  width: min(1040px, 100%);
+}
+
+.family-access-header {
+  margin-block-start: 28px;
+}
+
+.family-access-header h1,
+.family-access-section h2,
+.family-member-card h3,
+.family-invitation-card h3 {
+  margin: 0;
+  color: #33413d;
+}
+
+.family-access-header > p:last-child {
+  max-width: 700px;
+  margin: 12px 0 0;
+  color: #68706c;
+  line-height: 1.7;
+}
+
+.family-access-loading {
+  display: flex;
+  min-height: 260px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #68706c;
+}
+
+.family-access-section {
+  margin-block-start: 30px;
+  padding-block-start: 26px;
+  border-top: 1px solid rgba(83, 98, 91, 0.14);
+}
+
+.family-invitation-form {
+  display: grid;
+  align-items: end;
+  margin-block-start: 20px;
+  gap: 14px;
+  grid-template-columns:
+    minmax(240px, 1.4fr)
+    minmax(210px, 1fr)
+    auto;
+}
+
+.family-invitation-form select,
+.member-actions select {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  color: #33413d;
+  background: #fffefa;
+  border: 1px solid rgba(83, 98, 91, 0.24);
+  border-radius: 10px;
+}
+
+.invitation-link-box {
+  margin-block-start: 18px;
+  padding: 18px;
+  color: #315f4d;
+  background: #e7f1ec;
+  border: 1px solid rgba(77, 123, 104, 0.2);
+  border-radius: 14px;
+}
+
+.invitation-link-box p {
+  margin: 7px 0 14px;
+  line-height: 1.6;
+}
+
+.invitation-link-box > div {
+  display: flex;
+  gap: 10px;
+}
+
+.invitation-link-box input {
+  min-width: 0;
+  flex: 1;
+}
+
+.family-member-list,
+.family-invitation-list {
+  display: grid;
+  margin-block-start: 18px;
+  gap: 12px;
+}
+
+.family-member-card,
+.family-invitation-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px;
+  background: #f8f5ed;
+  border: 1px solid rgba(83, 98, 91, 0.14);
+  border-radius: 14px;
+}
+
+.family-member-card p,
+.family-invitation-card p,
+.family-invitation-card small {
+  margin: 5px 0 0;
+  color: #68706c;
+}
+
+.family-member-card span {
+  display: inline-block;
+  margin-block-start: 8px;
+  padding: 5px 9px;
+  color: #315f4d;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: #e7f1ec;
+  border-radius: 999px;
+}
+
+.member-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.danger-button {
+  min-height: 42px;
+  padding: 9px 13px;
+  color: #8b4545;
+  font: inherit;
+  font-weight: 700;
+  background: #fff7f5;
+  border: 1px solid rgba(139, 69, 69, 0.28);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.danger-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.family-empty-note {
+  margin: 18px 0 0;
+  color: #7a817d;
+}
+
+@media (max-width: 780px) {
+  .family-invitation-form {
+    grid-template-columns: 1fr;
+  }
+
+  .family-member-card,
+  .family-invitation-card,
+  .invitation-link-box > div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .member-actions,
+  .member-actions > * {
+    width: 100%;
+  }
+}

@@ -15,7 +15,10 @@ function resolveCandidateLimit(limit) {
   )
 }
 
-function createStorySource(story) {
+function createStorySource(
+  story,
+  memoryId,
+) {
   const sourceVersion =
     story.updatedAt instanceof Date
       ? story.updatedAt.toISOString()
@@ -28,6 +31,8 @@ function createStorySource(story) {
     content: story.content,
     approvedAt: null,
     sourceVersion,
+    sourceRoute:
+      `/app/memories/${memoryId}#stories-title`,
   })
 }
 
@@ -57,7 +62,12 @@ export async function listApprovedStorySources(
     })
     .lean()
 
-  return stories.map(createStorySource)
+  return stories.map((story) =>
+    createStorySource(
+      story,
+      memoryId,
+    ),
+  )
 }
 
 export const approvedStorySourceProvider =

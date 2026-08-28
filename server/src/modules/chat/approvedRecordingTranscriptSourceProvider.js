@@ -88,6 +88,7 @@ function createSourceTitle(
 function createTranscriptSources(
   transcript,
   recording,
+  memoryId,
 ) {
   const chunks =
     splitTranscriptContent(
@@ -112,6 +113,18 @@ function createTranscriptSources(
           transcript.approvedAt,
         sourceVersion:
           `revision:${transcript.revision}:chunk:${chunkIndex + 1}`,
+        sourceRoute:
+          `/app/memories/${memoryId}#recordings-title`,
+        recordingId:
+          recording._id.toString(),
+        recordedAt:
+          recording.createdAt ?? null,
+        canPlayOriginalAudio:
+          recording.consent
+            ?.permittedUses
+            ?.includes(
+              'recording_playback',
+            ) ?? false,
       }),
   )
 }
@@ -147,6 +160,17 @@ export async function listApprovedRecordingTranscriptSources(
         memoryId,
         reviewStatus: 'approved',
         lifecycleStatus: 'active',
+        $or: [
+          {
+            sourceIndexStatus:
+              'indexed',
+          },
+          {
+            sourceIndexStatus: {
+              $exists: false,
+            },
+          },
+        ],
       })
       .sort({
         updatedAt: -1,
@@ -192,6 +216,8 @@ export async function listApprovedRecordingTranscriptSources(
       .select({
         _id: 1,
         displayName: 1,
+        createdAt: 1,
+        'consent.permittedUses': 1,
       })
       .lean()
 
@@ -222,6 +248,7 @@ export async function listApprovedRecordingTranscriptSources(
       createTranscriptSources(
         transcript,
         recording,
+        memoryId,
       )
 
     for (

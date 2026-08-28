@@ -1,6 +1,7 @@
 .biography-questionnaire {
+  scroll-margin-block-start: 24px;
   margin-block-start: 28px;
-  background: #fffefa;
+  background: #fbf7f1;
   border: 1px solid rgba(83, 98, 91, 0.14);
   border-radius: 20px;
   overflow: hidden;
@@ -14,8 +15,8 @@
   gap: 28px;
   background:
     linear-gradient(135deg,
-      rgba(245, 239, 228, 0.86),
-      rgba(237, 246, 241, 0.7));
+      rgba(127, 146, 125, 0.18),
+      rgba(251, 247, 241, 0.92));
 }
 
 .biography-introduction h2 {
@@ -38,6 +39,156 @@
 .biography-questionnaire-content {
   padding: clamp(22px, 4vw, 32px);
   border-top: 1px solid rgba(83, 98, 91, 0.12);
+}
+
+.guided-interview-context {
+  margin-block-end: 22px;
+  padding: 18px 20px;
+  background: rgba(127, 146, 125, 0.11);
+  border-inline-start: 4px solid #7f927d;
+  border-radius: 14px;
+}
+
+.guided-interview-context strong {
+  color: #31413d;
+}
+
+.guided-interview-context p {
+  margin: 7px 0 0;
+  color: #64706b;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.guided-repeat-search {
+  display: grid;
+  margin-block-end: 22px;
+  padding: 18px 20px;
+  gap: 14px;
+  background: #fffefa;
+  border: 1px solid rgba(83, 98, 91, 0.14);
+  border-radius: 14px;
+}
+
+.guided-repeat-search-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.guided-repeat-search-heading h3 {
+  margin: 0;
+  color: #33413d;
+  font-size: 0.98rem;
+}
+
+.guided-repeat-search-heading p {
+  margin: 6px 0 0;
+  color: #69716d;
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.guided-repeat-search-heading > span {
+  display: grid;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: #7f927d;
+  border-radius: 11px;
+}
+
+.guided-repeat-search-field {
+  display: grid;
+  gap: 7px;
+}
+
+.guided-repeat-search-field > span {
+  color: #46534f;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.guided-repeat-search-field input {
+  width: 100%;
+  padding: 11px 13px;
+  color: #26302d;
+  font: inherit;
+  background: #fff;
+  border: 1px solid rgba(83, 98, 91, 0.22);
+  border-radius: 11px;
+  outline: none;
+}
+
+.guided-repeat-search-field input:focus {
+  border-color: #7f927d;
+  box-shadow: 0 0 0 4px rgba(127, 146, 125, 0.12);
+}
+
+.guided-repeat-results {
+  display: grid;
+  gap: 8px;
+}
+
+.guided-repeat-results button {
+  display: grid;
+  width: 100%;
+  align-items: center;
+  padding: 12px 14px;
+  gap: 4px 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  color: inherit;
+  text-align: start;
+  background: #f7f4ec;
+  border: 1px solid rgba(83, 98, 91, 0.13);
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+.guided-repeat-results button:hover {
+  border-color: rgba(127, 146, 125, 0.5);
+  background: #f1f5ef;
+}
+
+.guided-repeat-results button:focus-visible {
+  outline: 3px solid rgba(77, 123, 104, 0.28);
+  outline-offset: 2px;
+}
+
+.guided-repeat-results button > span {
+  color: #33413d;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.guided-repeat-results button small {
+  color: #7b817d;
+  font-size: 0.7rem;
+}
+
+.guided-repeat-results button strong {
+  align-self: center;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: #4d7b68;
+  font-size: 0.76rem;
+}
+
+.guided-repeat-search-hint,
+.guided-repeat-no-results {
+  margin: 0;
+  color: #737a76;
+  font-size: 0.78rem;
+}
+
+.guided-repeat-navigation {
+  justify-content: flex-start;
 }
 
 .biography-loading {
@@ -109,12 +260,25 @@
 .biography-question-card {
   position: relative;
   padding: clamp(20px, 4vw, 28px);
-  background: #f9f7f1;
+  background: #fffefa;
   border: 1px solid rgba(83, 98, 91, 0.14);
   border-radius: 18px;
   transition:
     border-color 180ms ease,
     background-color 180ms ease;
+}
+
+.guided-question-navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-block-start: 24px;
+  padding-block-start: 18px;
+  gap: 12px;
+  border-top: 1px solid rgba(83, 98, 91, 0.13);
+}
+
+.guided-question-navigation .secondary-button {
+  min-width: 128px;
 }
 
 .biography-question-saved {
@@ -160,6 +324,34 @@
   color: #80633d;
   font-size: 0.76rem;
   font-weight: 800;
+}
+
+.biography-written-answer {
+  margin-block-start: 18px;
+  padding: 13px 15px;
+  background: #f8f5ed;
+  border: 1px solid rgba(83, 98, 91, 0.14);
+  border-radius: 12px;
+}
+
+.biography-written-answer summary {
+  color: #66706c;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.biography-written-answer[open] summary {
+  margin-block-end: 16px;
+}
+
+.biography-written-answer summary:focus-visible {
+  outline: 3px solid rgba(77, 123, 104, 0.28);
+  outline-offset: 4px;
+}
+
+.biography-written-answer .biography-save-button {
+  margin-block-start: 16px;
 }
 
 .biography-options {
@@ -373,6 +565,25 @@
   font-size: 0.88rem;
 }
 
+@media (max-width: 620px) {
+  .guided-repeat-search-heading {
+    display: grid;
+  }
+
+  .guided-repeat-search-heading > span {
+    justify-self: start;
+  }
+
+  .guided-repeat-results button {
+    grid-template-columns: 1fr;
+  }
+
+  .guided-repeat-results button strong {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
 @media (max-width: 760px) {
   .biography-introduction {
     align-items: stretch;
@@ -389,6 +600,16 @@
 
   .biography-custom-option {
     grid-column: auto;
+  }
+
+  .guided-question-navigation {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .guided-question-navigation .secondary-button {
+    width: 100%;
+    min-width: 0;
   }
 }
 

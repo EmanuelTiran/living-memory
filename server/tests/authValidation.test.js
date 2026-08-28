@@ -29,6 +29,38 @@ describe('Authentication validation', () => {
     expect(result.success).toBe(true)
   })
 
+  it('accepts a valid invitation token', () => {
+    const invitationToken = 'a'.repeat(43)
+    const result = registerSchema.parse({
+      displayName: 'Emmanuel',
+      email: 'user@example.com',
+      password: 'a secure passphrase',
+      invitationToken,
+    })
+
+    expect(result.invitationToken).toBe(
+      invitationToken,
+    )
+  })
+
+  it('rejects a malformed invitation token', () => {
+    const result = registerSchema.safeParse({
+      displayName: 'Emmanuel',
+      email: 'user@example.com',
+      password: 'a secure passphrase',
+      invitationToken: 'not-a-token',
+    })
+
+    expect(result.success).toBe(false)
+    expect(
+      result.error.issues.some(
+        (issue) =>
+          issue.path[0] ===
+          'invitationToken',
+      ),
+    ).toBe(true)
+  })
+
   it('rejects weak registration input', () => {
     const result = registerSchema.safeParse({
       displayName: 'E',

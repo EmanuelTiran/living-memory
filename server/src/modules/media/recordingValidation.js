@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import {
+  MAX_RECORDING_DURATION_MS,
   MAX_RECORDING_SIZE_BYTES,
   RECORDING_ALLOWED_USES,
   RECORDING_CONSENT_BASES,
@@ -147,6 +148,28 @@ export const createMemoryRecordingSchema =
         },
       ),
 
+    durationMs: z
+      .number({
+        error:
+          'Recording duration must be a number.',
+      })
+      .int({
+        error:
+          'Recording duration must be an integer.',
+      })
+      .min(1, {
+        error:
+          'Recording duration must be positive.',
+      })
+      .max(
+        MAX_RECORDING_DURATION_MS,
+        {
+          error:
+            'Recording duration is too long.',
+        },
+      )
+      .optional(),
+
     languageCode: z
       .string({
         error:
@@ -183,6 +206,29 @@ export const createMemoryRecordingSchema =
       })
       .optional(),
 
+    interviewPrompt: z
+      .strictObject({
+        questionKey: z
+          .string({
+            error:
+              'Interview question key must be a string.',
+          })
+          .trim()
+          .regex(
+            /^[a-z][a-z0-9_]{2,79}$/,
+            {
+              error:
+                'Interview question key must be valid.',
+            },
+          ),
+      })
+      .optional(),
+
+    familyQuestionId:
+      objectIdSchema(
+        'Family question ID',
+      ).optional(),
+
     consent: z.strictObject({
       confirmed: z.literal(true, {
         error:
@@ -215,6 +261,18 @@ export const createMemoryRecordingSchema =
         ],
         message:
           'Voice imitation is currently limited to the recorded person’s own voice.',
+      })
+    }
+
+    if (
+      value.interviewPrompt &&
+      value.familyQuestionId
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['familyQuestionId'],
+        message:
+          'A recording can answer only one prompt source.',
       })
     }
   })

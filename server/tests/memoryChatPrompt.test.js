@@ -27,9 +27,10 @@ import {
   }
 
   describe('Memory chat prompt', () => {
-    it('declares balanced and explicit creative request modes', () => {
+    it('declares balanced, archive, and explicit creative request modes', () => {
       expect(CHAT_RESPONSE_MODES).toEqual([
         'balanced',
+        'archive',
         'creative',
       ])
     })
@@ -144,6 +145,31 @@ import {
 
       expect(payload.task).toContain(
         'Do not use citations',
+      )
+    })
+
+    it('creates an archive-only request without unsupported answer modes', () => {
+      const input = buildMemoryChatInput({
+        message:
+          'Where did the family meet?',
+        sources: [source],
+        responseMode: 'archive',
+      })
+
+      const payload = JSON.parse(
+        input[0].content,
+      )
+
+      expect(payload.requestMode).toBe(
+        'archive',
+      )
+
+      expect(payload.task).toContain(
+        'Answer only from approved sources',
+      )
+
+      expect(payload.task).toContain(
+        'Never use general_knowledge or creative',
       )
     })
 

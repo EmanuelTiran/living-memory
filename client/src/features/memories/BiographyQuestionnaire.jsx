@@ -1,5 +1,6 @@
-import {
+  import {
     useCallback,
+    useEffect,
     useMemo,
     useState,
   } from 'react'
@@ -8,6 +9,7 @@ import {
     getBiographyQuestionnaire,
     saveBiographyQuestionnaireAnswer,
   } from '../../api/biographyApi.js'
+  import GuidedInterviewRecorder from './GuidedInterviewRecorder.jsx'
   import './BiographyQuestionnaire.css'
 
   const CATEGORY_LABELS = {
@@ -77,11 +79,23 @@ import {
     }
   }
 
+  function normalizePromptSearch(value) {
+    return value
+      .trim()
+      .toLocaleLowerCase('he-IL')
+  }
+
   function QuestionResponseForm({
     question,
     draft,
     isSaving,
     hasSavedAnswer,
+    memoryId,
+    subjectName,
+    runAuthenticatedRequest,
+    onVoiceRecorderBusyChange,
+    onVoiceAnswerStored,
+    showVoiceRecorder = false,
     onDraftChange,
     onSubmit,
   }) {
@@ -108,7 +122,34 @@ import {
             ] ?? 'שאלת חיים'}
           </p>
 
-          <div className="biography-options">
+          {showVoiceRecorder && (
+            <GuidedInterviewRecorder
+              memoryId={memoryId}
+              question={question}
+              subjectName={subjectName}
+              runAuthenticatedRequest={
+                runAuthenticatedRequest
+              }
+              onBusyChange={
+                onVoiceRecorderBusyChange
+              }
+              onAnswerStored={
+                onVoiceAnswerStored
+              }
+            />
+          )}
+
+          <details
+            className="biography-written-answer"
+            open={!showVoiceRecorder}
+          >
+            <summary>
+              {showVoiceRecorder
+                ? 'מעדיפים לענות בקצרה בכתב?'
+                : 'עריכת התשובה הכתובה'}
+            </summary>
+
+            <div className="biography-options">
             {question.options.map(
               (option) => (
                 <label
@@ -178,60 +219,61 @@ import {
                 תשובה אחרת בניסוח שלי
               </span>
             </label>
-          </div>
+            </div>
 
-          {draft.mode === 'custom' && (
-            <label className="biography-custom-field">
-              <span>
-                כתבו את התשובה המדויקת
-              </span>
+            {draft.mode === 'custom' && (
+              <label className="biography-custom-field">
+                <span>
+                  כתבו את התשובה המדויקת
+                </span>
 
-              <textarea
-                value={draft.customAnswer}
-                onChange={(event) =>
-                  onDraftChange(
-                    question.key,
-                    {
-                      mode: 'custom',
-                      optionKey: '',
-                      customAnswer:
-                        event.target.value,
-                    },
-                  )
-                }
-                maxLength={
-                  CUSTOM_ANSWER_MAX_LENGTH
-                }
-                rows={4}
-                required
-              />
+                <textarea
+                  value={draft.customAnswer}
+                  onChange={(event) =>
+                    onDraftChange(
+                      question.key,
+                      {
+                        mode: 'custom',
+                        optionKey: '',
+                        customAnswer:
+                          event.target.value,
+                      },
+                    )
+                  }
+                  maxLength={
+                    CUSTOM_ANSWER_MAX_LENGTH
+                  }
+                  rows={4}
+                  required
+                />
 
-              <small>
-                {customAnswerLength}/
-                {CUSTOM_ANSWER_MAX_LENGTH}
-              </small>
-            </label>
-          )}
+                <small>
+                  {customAnswerLength}/
+                  {CUSTOM_ANSWER_MAX_LENGTH}
+                </small>
+              </label>
+            )}
+
+            <button
+              className="primary-button biography-save-button"
+              type="submit"
+              disabled={
+                isSaving ||
+                draft.mode === '' ||
+                (draft.mode === 'option' &&
+                  !draft.optionKey) ||
+                (draft.mode === 'custom' &&
+                  !draft.customAnswer.trim())
+              }
+            >
+              {isSaving
+                ? 'שומרים את התשובה...'
+                : hasSavedAnswer
+                  ? 'עדכון התשובה'
+                  : 'שמירת התשובה'}
+            </button>
+          </details>
         </fieldset>
-
-        <button
-          className="primary-button biography-save-button"
-          type="submit"
-          disabled={
-            isSaving ||
-            draft.mode === '' ||
-            (draft.mode === 'option' &&
-              !draft.optionKey) ||
-            (draft.mode === 'custom' &&
-              !draft.customAnswer.trim())
-          }
-        >
-          {isSaving
-            ? 'שומרים את התשובה...'
-            : hasSavedAnswer
-              ? 'עדכון התשובה'
-              : 'שמירת התשובה'}
-        </button>
       </form>
     )
   }
@@ -240,11 +282,12 @@ import {
     memoryId,
     subjectName,
     runAuthenticatedRequest,
+    initiallyExpanded = false,
   }) {
     const [
       isExpanded,
       setIsExpanded,
-    ] = useState(false)
+    ] = useState(initiallyExpanded)
 
     const [
       questionnaire,
@@ -253,6 +296,11 @@ import {
 
     const [drafts, setDrafts] =
       useState({})
+
+    const [
+      activeQuestionIndex,
+      setActiveQuestionIndex,
+    ] = useState(0)
 
     const [
       savedQuestionKeys,
@@ -269,8 +317,23 @@ import {
       setShowSavedAnswers,
     ] = useState(false)
 
+    const [
+      repeatPromptSearch,
+      setRepeatPromptSearch,
+    ] = useState('')
+
+    const [
+      repeatQuestionKey,
+      setRepeatQuestionKey,
+    ] = useState('')
+
     const [isLoading, setIsLoading] =
-      useState(false)
+      useState(initiallyExpanded)
+
+    const [
+      isVoiceRecorderBusy,
+      setIsVoiceRecorderBusy,
+    ] = useState(false)
 
     const [
       savingQuestionKey,
@@ -313,14 +376,21 @@ import {
 
           setQuestionnaire(result)
           setDrafts(nextDrafts)
+          setActiveQuestionIndex(0)
           setSavedQuestionKeys(
             new Set(),
           )
           setEditingQuestionKey('')
+          setRepeatPromptSearch('')
+          setRepeatQuestionKey('')
+
+          return true
         } catch (error) {
           setErrorMessage(
             getErrorMessage(error),
           )
+
+          return false
         } finally {
           setIsLoading(false)
         }
@@ -328,6 +398,67 @@ import {
         memoryId,
         runAuthenticatedRequest,
       ])
+
+    useEffect(() => {
+      if (!initiallyExpanded) {
+        return undefined
+      }
+
+      let isActive = true
+
+      void runAuthenticatedRequest(
+        (accessToken) =>
+          getBiographyQuestionnaire(
+            accessToken,
+            memoryId,
+          ),
+      )
+        .then((result) => {
+          if (!isActive) {
+            return
+          }
+
+          const nextDrafts = {}
+
+          for (
+            const question
+            of result.questions
+          ) {
+            nextDrafts[question.key] =
+              createEmptyDraft()
+          }
+
+          setQuestionnaire(result)
+          setDrafts(nextDrafts)
+          setActiveQuestionIndex(0)
+          setSavedQuestionKeys(
+            new Set(),
+          )
+          setEditingQuestionKey('')
+          setRepeatPromptSearch('')
+          setRepeatQuestionKey('')
+        })
+        .catch((error) => {
+          if (isActive) {
+            setErrorMessage(
+              getErrorMessage(error),
+            )
+          }
+        })
+        .finally(() => {
+          if (isActive) {
+            setIsLoading(false)
+          }
+        })
+
+      return () => {
+        isActive = false
+      }
+    }, [
+      initiallyExpanded,
+      memoryId,
+      runAuthenticatedRequest,
+    ])
 
     const currentQuestionKeys =
       useMemo(
@@ -353,6 +484,53 @@ import {
         [
           currentQuestionKeys,
           questionnaire,
+        ],
+      )
+
+    const repeatSearchResults =
+      useMemo(() => {
+        const normalizedSearch =
+          normalizePromptSearch(
+            repeatPromptSearch,
+          )
+
+        if (normalizedSearch.length < 2) {
+          return []
+        }
+
+        return (
+          questionnaire
+            ?.answeredQuestions
+            ?.filter((question) => {
+              const searchableText =
+                normalizePromptSearch(
+                  `${question.question} ${CATEGORY_LABELS[question.category] ?? ''}`,
+                )
+
+              return searchableText.includes(
+                normalizedSearch,
+              )
+            })
+            .slice(0, 6) ?? []
+        )
+      }, [
+        questionnaire,
+        repeatPromptSearch,
+      ])
+
+    const repeatQuestion =
+      useMemo(
+        () =>
+          questionnaire
+            ?.answeredQuestions
+            ?.find(
+              (question) =>
+                question.key ===
+                repeatQuestionKey,
+            ) ?? null,
+        [
+          questionnaire,
+          repeatQuestionKey,
         ],
       )
 
@@ -477,14 +655,34 @@ import {
           const isNewAnswer =
             existingAnswerIndex === -1
 
+          const wasAlreadyAnswered =
+            current.answeredQuestions
+              ?.some(
+                (answeredQuestion) =>
+                  answeredQuestion.key ===
+                  question.key,
+              ) ?? false
+
+          const answeredQuestions =
+            wasAlreadyAnswered
+              ? current.answeredQuestions
+              : [
+                  ...(current.answeredQuestions ?? []),
+                  question,
+                ]
+
           const completedCount =
             current.progress
               .completedCount +
-            (isNewAnswer ? 1 : 0)
+            (isNewAnswer &&
+            !wasAlreadyAnswered
+              ? 1
+              : 0)
 
           return {
             ...current,
             answers,
+            answeredQuestions,
             progress: {
               ...current.progress,
               completedCount,
@@ -521,9 +719,34 @@ import {
 
         setEditingQuestionKey('')
 
+        if (
+          repeatQuestionKey ===
+          question.key
+        ) {
+          setRepeatPromptSearch('')
+          setRepeatQuestionKey('')
+        }
+
         setSuccessMessage(
           'התשובה נשמרה ואושרה כמקור ביוגרפי.',
         )
+
+        const currentQuestionIndex =
+          questionnaire?.questions.findIndex(
+            (currentQuestion) =>
+              currentQuestion.key ===
+              question.key,
+          ) ?? -1
+
+        if (
+          currentQuestionIndex >= 0 &&
+          currentQuestionIndex <
+            questionnaire.questions.length - 1
+        ) {
+          setActiveQuestionIndex(
+            currentQuestionIndex + 1,
+          )
+        }
       } catch (error) {
         setErrorMessage(
           getErrorMessage(error),
@@ -559,40 +782,78 @@ import {
       setErrorMessage('')
     }
 
-    const progress =
-      questionnaire?.progress
+    function selectQuestionToRepeat(
+      question,
+    ) {
+      setDrafts((current) => ({
+        ...current,
+        [question.key]:
+          createEmptyDraft(),
+      }))
+      setRepeatQuestionKey(
+        question.key,
+      )
+      setRepeatPromptSearch('')
+      setErrorMessage('')
+      setSuccessMessage('')
+    }
 
-    const progressPercentage =
-      progress?.totalCount
-        ? Math.round(
-            (
-              progress.completedCount /
-              progress.totalCount
-            ) * 100,
-          )
-        : 0
+    function cancelQuestionRepeat() {
+      setRepeatQuestionKey('')
+      setErrorMessage('')
+      setSuccessMessage('')
+    }
+
+    function handleVoiceAnswerStored() {
+      setRepeatPromptSearch('')
+      setRepeatQuestionKey('')
+
+      void loadQuestionnaire().then(
+        (wasLoaded) => {
+          if (wasLoaded) {
+            setSuccessMessage(
+              'התשובה הקולית נשמרה. בפעם הבאה תוצע שאלה שעדיין לא נענתה.',
+            )
+          }
+        },
+      )
+    }
+
+    const progress = questionnaire?.progress
+
+    const suggestedQuestion =
+      questionnaire?.questions[
+        activeQuestionIndex
+      ] ?? null
+
+    const currentQuestion =
+      repeatQuestion ??
+      suggestedQuestion
+
+    const isRepeatingQuestion =
+      Boolean(repeatQuestion)
 
     return (
       <section
+        id="guided-interview"
         className="biography-questionnaire"
         aria-labelledby="biography-questionnaire-title"
       >
         <div className="biography-introduction">
           <div>
             <p className="panel-kicker">
-              מקור ביוגרפי מודרך
+              ראיון חיים מודרך
             </p>
 
             <h2 id="biography-questionnaire-title">
-              שאלות על החיים של{' '}
+              שיחה קצרה עם{' '}
               {subjectName}
             </h2>
 
             <p>
-              ענו בכל פעם על עד חמש שאלות
-              קצרות. כל תשובה שתשמרו
-              תאושר כמקור ותוכל לסייע
-              לשיחה עם הזיכרון.
+              בכל פעם מופיעה שאלה אנושית אחת.
+              אין צורך להשלים שאלון או לענות
+              על הכול ברצף.
             </p>
           </div>
 
@@ -600,13 +861,14 @@ import {
             className="primary-button biography-toggle-button"
             type="button"
             onClick={handleToggle}
+            disabled={isVoiceRecorderBusy}
             aria-expanded={isExpanded}
           >
             {isExpanded
-              ? 'סגירת השאלון'
+              ? 'סיום לעכשיו'
               : questionnaire
-                ? 'המשך השאלון'
-                : 'התחלת שאלון ביוגרפי'}
+                ? 'המשך הראיון'
+                : 'התחלת ראיון קצר'}
           </button>
         </div>
 
@@ -661,42 +923,119 @@ import {
             {!isLoading &&
               questionnaire && (
                 <>
-                  <div className="biography-progress">
-                    <div className="biography-progress-heading">
-                      <strong>
-                        {progress.completedCount}{' '}
-                        מתוך{' '}
-                        {progress.totalCount}{' '}
-                        שאלות הושלמו
-                      </strong>
+                  <div className="guided-interview-context">
+                    <strong>
+                      שאלה אחת, בקצב שלכם
+                    </strong>
 
-                      <span>
-                        {progressPercentage}%
-                      </span>
-                    </div>
-
-                    <div
-                      className="biography-progress-track"
-                      role="progressbar"
-                      aria-valuemin="0"
-                      aria-valuemax={
-                        progress.totalCount
-                      }
-                      aria-valuenow={
-                        progress.completedCount
-                      }
-                      aria-label="התקדמות בשאלון הביוגרפי"
-                    >
-                      <span
-                        style={{
-                          width:
-                            `${progressPercentage}%`,
-                        }}
-                      />
-                    </div>
+                    <p>
+                      התשובות שכבר נשמרו נשארות
+                      זמינות לעריכה. מאגר השאלות
+                      עובד מאחורי הקלעים ואינו
+                      דורש מכם “לסיים” אותו.
+                    </p>
                   </div>
 
-                  {progress.isComplete ? (
+                  {questionnaire
+                    .answeredQuestions
+                    ?.length > 0 && (
+                    <section
+                      className="guided-repeat-search"
+                      aria-labelledby="guided-repeat-search-title"
+                    >
+                      <div className="guided-repeat-search-heading">
+                        <div>
+                          <h3 id="guided-repeat-search-title">
+                            רוצים לחזור לשאלה שכבר נענתה?
+                          </h3>
+
+                          <p>
+                            שאלות שנענו לא יוצעו שוב אוטומטית. אפשר לחפש ולבחור אחת
+                            מהן במפורש.
+                          </p>
+                        </div>
+
+                        <span>
+                          {
+                            questionnaire
+                              .answeredQuestions
+                              .length
+                          }
+                        </span>
+                      </div>
+
+                      <label className="guided-repeat-search-field">
+                        <span>חיפוש בשאלות שכבר נענו</span>
+
+                        <input
+                          type="search"
+                          value={repeatPromptSearch}
+                          disabled={isVoiceRecorderBusy}
+                          onChange={(event) => {
+                            setRepeatPromptSearch(
+                              event.target.value,
+                            )
+                            setRepeatQuestionKey('')
+                          }}
+                          placeholder="לדוגמה: ילדות, משפחה או עבודה"
+                        />
+                      </label>
+
+                      {normalizePromptSearch(
+                        repeatPromptSearch,
+                      ).length === 1 && (
+                        <p className="guided-repeat-search-hint">
+                          כתבו לפחות שני תווים לחיפוש.
+                        </p>
+                      )}
+
+                      {normalizePromptSearch(
+                        repeatPromptSearch,
+                      ).length >= 2 && (
+                        repeatSearchResults.length > 0 ? (
+                          <div className="guided-repeat-results">
+                            {repeatSearchResults.map(
+                              (question) => (
+                                <button
+                                  type="button"
+                                  key={question.key}
+                                  disabled={isVoiceRecorderBusy}
+                                  onClick={() =>
+                                    selectQuestionToRepeat(
+                                      question,
+                                    )
+                                  }
+                                >
+                                  <span>
+                                    {question.question}
+                                  </span>
+
+                                  <small>
+                                    {CATEGORY_LABELS[
+                                      question.category
+                                    ] ?? 'שאלת חיים'}
+                                    {' · '}
+                                    כבר נענתה
+                                  </small>
+
+                                  <strong>
+                                    לענות שוב
+                                  </strong>
+                                </button>
+                              ),
+                            )}
+                          </div>
+                        ) : (
+                          <p className="guided-repeat-no-results">
+                            לא נמצאה שאלה שנענתה ומתאימה לחיפוש.
+                          </p>
+                        )
+                      )}
+                    </section>
+                  )}
+
+                  {progress.isComplete &&
+                  !isRepeatingQuestion ? (
                     <div className="biography-complete">
                       <span aria-hidden="true">
                         ✓
@@ -704,76 +1043,157 @@ import {
 
                       <div>
                         <h3>
-                          השאלון הושלם
+                          יש לנו בסיס מצוין לסיפור
                         </h3>
 
                         <p>
-                          כל השאלות נשמרו
-                          כמקורות ביוגרפיים
-                          מאושרים. אפשר לערוך
+                          השאלות שנענו נשמרו
+                          כמקורות ביוגרפיים מאושרים.
+                          אפשר לחזור אליהן ולערוך
                           אותן בכל עת.
                         </p>
                       </div>
                     </div>
                   ) : (
                     <div className="biography-question-list">
-                      {questionnaire.questions
-                        .map(
-                          (question) => (
-                            <article
-                              className={`biography-question-card ${
-                                savedQuestionKeys.has(
-                                  question.key,
-                                )
-                                  ? 'biography-question-saved'
-                                  : ''
-                              }`}
-                              key={
-                                question.key
-                              }
-                            >
-                              {savedQuestionKeys.has(
-                                question.key,
-                              ) && (
-                                <p className="biography-saved-mark">
-                                  התשובה נשמרה
-                                </p>
-                              )}
+                      {currentQuestion &&
+                        (isRepeatingQuestion ||
+                          !currentBatchIsComplete) && (
+                          <article
+                            className={`biography-question-card ${
+                              isRepeatingQuestion ||
+                              savedQuestionKeys.has(
+                                currentQuestion.key,
+                              )
+                                ? 'biography-question-saved'
+                                : ''
+                            }`}
+                          >
+                            {(isRepeatingQuestion ||
+                              savedQuestionKeys.has(
+                                currentQuestion.key,
+                              )) && (
+                              <p className="biography-saved-mark">
+                                {isRepeatingQuestion
+                                  ? 'השאלה כבר נענתה — בחרתם לענות שוב'
+                                  : 'התשובה נשמרה'}
+                              </p>
+                            )}
 
-                              <QuestionResponseForm
-                                question={
-                                  question
-                                }
-                                draft={
-                                  drafts[
-                                    question.key
-                                  ] ??
-                                  createEmptyDraft()
-                                }
-                                isSaving={
-                                  savingQuestionKey ===
-                                  question.key
-                                }
-                                hasSavedAnswer={savedQuestionKeys.has(
-                                  question.key,
-                                )}
-                                onDraftChange={
-                                  handleDraftChange
-                                }
-                                onSubmit={
-                                  handleSave
-                                }
-                              />
-                            </article>
-                          ),
+                            <QuestionResponseForm
+                              key={`${currentQuestion.key}-${
+                                isRepeatingQuestion
+                                  ? 'repeat'
+                                  : 'suggested'
+                              }`}
+                              question={currentQuestion}
+                              draft={
+                                drafts[
+                                  currentQuestion.key
+                                ] ??
+                                createEmptyDraft()
+                              }
+                              isSaving={
+                                savingQuestionKey ===
+                                currentQuestion.key
+                              }
+                              hasSavedAnswer={
+                                isRepeatingQuestion ||
+                                savedQuestionKeys.has(
+                                  currentQuestion.key,
+                                )
+                              }
+                              memoryId={memoryId}
+                              subjectName={subjectName}
+                              runAuthenticatedRequest={
+                                runAuthenticatedRequest
+                              }
+                              onVoiceRecorderBusyChange={
+                                setIsVoiceRecorderBusy
+                              }
+                              onVoiceAnswerStored={
+                                handleVoiceAnswerStored
+                              }
+                              showVoiceRecorder
+                              onDraftChange={
+                                handleDraftChange
+                              }
+                              onSubmit={handleSave}
+                            />
+
+                            {isRepeatingQuestion ? (
+                              <nav
+                                className="guided-question-navigation guided-repeat-navigation"
+                                aria-label="חזרה לשאלה המוצעת"
+                              >
+                                <button
+                                  className="secondary-button"
+                                  type="button"
+                                  disabled={
+                                    Boolean(savingQuestionKey) ||
+                                    isVoiceRecorderBusy
+                                  }
+                                  onClick={cancelQuestionRepeat}
+                                >
+                                  חזרה לשאלה המוצעת
+                                </button>
+                              </nav>
+                            ) : (
+                              <nav
+                                className="guided-question-navigation"
+                                aria-label="מעבר בין שאלות מוצעות"
+                              >
+                                <button
+                                  className="secondary-button"
+                                  type="button"
+                                  disabled={
+                                    activeQuestionIndex === 0 ||
+                                    Boolean(savingQuestionKey) ||
+                                    isVoiceRecorderBusy
+                                  }
+                                  onClick={() =>
+                                    setActiveQuestionIndex(
+                                      (current) =>
+                                        Math.max(0, current - 1),
+                                    )
+                                  }
+                                >
+                                  שאלה קודמת
+                                </button>
+
+                                <button
+                                  className="secondary-button"
+                                  type="button"
+                                  disabled={
+                                    activeQuestionIndex >=
+                                      questionnaire.questions.length - 1 ||
+                                    Boolean(savingQuestionKey) ||
+                                    isVoiceRecorderBusy
+                                  }
+                                  onClick={() =>
+                                    setActiveQuestionIndex(
+                                      (current) =>
+                                        Math.min(
+                                          questionnaire.questions.length - 1,
+                                          current + 1,
+                                        ),
+                                    )
+                                  }
+                                >
+                                  שאלה אחרת
+                                </button>
+                              </nav>
+                            )}
+                          </article>
                         )}
 
-                      {currentBatchIsComplete && (
+                      {currentBatchIsComplete &&
+                        !isRepeatingQuestion && (
                         <div className="biography-next-batch">
                           <p>
-                            מצוין. חמש התשובות
-                            נשמרו ואפשר לעצור
-                            כאן או להמשיך.
+                            מצוין. התשובות מהשיחה
+                            הזאת נשמרו, ואפשר לעצור
+                            כאן או לקבל שאלה נוספת.
                           </p>
 
                           <button
@@ -786,8 +1206,7 @@ import {
                               isLoading
                             }
                           >
-                            שאלו אותי עוד 5
-                            שאלות
+                            קבלת שאלה נוספת
                           </button>
                         </div>
                       )}

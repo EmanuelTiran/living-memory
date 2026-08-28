@@ -195,7 +195,7 @@ import {
         lifecycleStatus: 'active',
       })
       .select(
-        '+storageKey +checksumSha256 +transcriptionFailureCode',
+        '+storageKey +checksumSha256 +transcriptionFailureCode +transcriptionJobId +transcriptionRequestSequence',
       )
   }
 
@@ -235,6 +235,7 @@ import {
             $set: {
               transcriptionStatus:
                 'completed',
+              transcriptionProgress: 100,
               transcriptionProvider:
                 transcript
                   .transcriptionProvider,
@@ -262,23 +263,35 @@ import {
 
   async function startTranscription(
     recording,
+    {
+      expectedStatus =
+        recording.transcriptionStatus,
+      jobId = null,
+    } = {},
   ) {
+    const query = {
+      _id: recording._id,
+      memoryId:
+        recording.memoryId,
+      lifecycleStatus: 'active',
+      storageStatus: 'stored',
+      transcriptionStatus:
+        expectedStatus,
+    }
+
+    if (jobId) {
+      query.transcriptionJobId = jobId
+    }
+
     const startedRecording =
       await MemoryRecording
         .findOneAndUpdate(
-          {
-            _id: recording._id,
-            memoryId:
-              recording.memoryId,
-            lifecycleStatus: 'active',
-            storageStatus: 'stored',
-            transcriptionStatus:
-              recording.transcriptionStatus,
-          },
+          query,
           {
             $set: {
               transcriptionStatus:
                 'processing',
+              transcriptionProgress: 5,
               transcriptionProvider:
                 'openai',
               transcriptionModel:
@@ -320,6 +333,7 @@ import {
             $set: {
               transcriptionStatus:
                 'completed',
+              transcriptionProgress: 100,
               transcriptionProvider:
                 transcription.provider,
               transcriptionModel:
@@ -361,6 +375,7 @@ import {
             $set: {
               transcriptionStatus:
                 'failed',
+              transcriptionProgress: 0,
               transcriptionFailureCode:
                 resolveFailureCode(error),
             },
@@ -414,6 +429,12 @@ import {
     memoryId,
     recordingId,
     input = {},
+    {
+      fromQueue = false,
+      jobId = null,
+      updateProgress = null,
+      deferFailureState = false,
+    } = {},
   ) {
     validateUserId(userId)
 
@@ -480,11 +501,15 @@ import {
       throw createTranscriptUnavailableError()
     }
 
+    const allowedStatuses =
+      fromQueue
+        ? ['queued']
+        : processableTranscriptionStatuses
+
     if (
-      !processableTranscriptionStatuses
-        .includes(
-          recording.transcriptionStatus,
-        )
+      !allowedStatuses.includes(
+        recording.transcriptionStatus,
+      )
     ) {
       throw createTranscriptionInProgressError()
     }
@@ -495,9 +520,17 @@ import {
     try {
       await startTranscription(
         recording,
+        {
+          expectedStatus:
+            recording.transcriptionStatus,
+          jobId:
+            fromQueue ? jobId : null,
+        },
       )
 
       processingStarted = true
+
+      await updateProgress?.(10)
 
       audioBuffer =
         await privateRecordingStorage
@@ -509,6 +542,8 @@ import {
         recording,
         audioBuffer,
       )
+
+      await updateProgress?.(35)
 
       const transcription =
         await transcribeRecordingWithOpenAI({
@@ -523,6 +558,8 @@ import {
             recording.languageCode,
         })
 
+      await updateProgress?.(75)
+
       const generatedAt = new Date()
 
       const transcript =
@@ -532,6 +569,8 @@ import {
           transcription,
           generatedAt,
         })
+
+      await updateProgress?.(90)
 
       await completeTranscription(
         recording,
@@ -545,7 +584,10 @@ import {
         created: true,
       }
     } catch (error) {
-      if (processingStarted) {
+      if (
+        processingStarted &&
+        !deferFailureState
+      ) {
         await markTranscriptionFailed(
           recording,
           error,

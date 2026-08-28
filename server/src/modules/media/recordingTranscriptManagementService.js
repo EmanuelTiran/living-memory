@@ -3,6 +3,10 @@ import {
   MEMORY_PERMISSIONS,
   requireMemoryPermission,
 } from '../memories/memoryAccessService.js'
+import {
+  createTranscriptRevisionSnapshot,
+  MAX_SOURCE_REVISION_HISTORY,
+} from '../memories/sourceRevisionHistory.js'
 import MemoryRecording from './MemoryRecording.js'
 import MemoryRecordingTranscript from './MemoryRecordingTranscript.js'
 import {
@@ -50,6 +54,17 @@ function createTranscriptApprovedError() {
       statusCode: 409,
       code:
         'RECORDING_TRANSCRIPT_ALREADY_APPROVED',
+    },
+  )
+}
+
+function createTranscriptNotApprovedError() {
+  return new AppError(
+    'Only an approved transcript can start a new revision.',
+    {
+      statusCode: 409,
+      code:
+        'RECORDING_TRANSCRIPT_NOT_APPROVED',
     },
   )
 }
@@ -235,6 +250,10 @@ export async function updateMemoryRecordingTranscript(
           $set: {
             content:
               validatedInput.content,
+            sourceIndexStatus:
+              'not_indexed',
+            sourceIndexedAt: null,
+            sourceIndexRevision: null,
           },
           $inc: {
             revision: 1,
@@ -252,6 +271,119 @@ export async function updateMemoryRecordingTranscript(
 
   return serializeTranscript(
     updatedTranscript,
+  )
+}
+
+export async function reviseApprovedMemoryRecordingTranscript(
+  userId,
+  memoryId,
+  recordingId,
+  input,
+) {
+  validateUserId(userId)
+
+  const validatedParams =
+    memoryRecordingTranscriptionParamsSchema
+      .parse({
+        memoryId,
+        recordingId,
+      })
+
+  const validatedInput =
+    updateMemoryRecordingTranscriptSchema
+      .parse(input)
+
+  await requireMemoryPermission(
+    userId,
+    validatedParams.memoryId,
+    MEMORY_PERMISSIONS.EDIT,
+  )
+
+  const transcript =
+    await findActiveTranscript(
+      validatedParams.memoryId,
+      validatedParams.recordingId,
+    )
+
+  if (!transcript) {
+    throw createTranscriptNotFoundError()
+  }
+
+  if (
+    transcript.reviewStatus !==
+    'approved'
+  ) {
+    throw createTranscriptNotApprovedError()
+  }
+
+  validateRevision(
+    transcript,
+    validatedInput.expectedRevision,
+  )
+
+  const changedAt = new Date()
+  const revisionSnapshot =
+    createTranscriptRevisionSnapshot(
+      transcript,
+      userId,
+      changedAt,
+    )
+
+  const revisedTranscript =
+    await MemoryRecordingTranscript
+      .findOneAndUpdate(
+        {
+          _id: transcript._id,
+          memoryId:
+            validatedParams.memoryId,
+          recordingId:
+            validatedParams.recordingId,
+          lifecycleStatus: 'active',
+          reviewStatus: 'approved',
+          revision:
+            validatedInput
+              .expectedRevision,
+        },
+        {
+          $set: {
+            content:
+              validatedInput.content,
+            reviewStatus: 'draft',
+            approvedAt: null,
+            approvedByUserId: null,
+            sourceIndexStatus:
+              'not_indexed',
+            sourceIndexedAt: null,
+            sourceIndexRevision: null,
+            lastEditedAt: changedAt,
+            lastEditedByUserId:
+              userId,
+          },
+          $inc: {
+            revision: 1,
+          },
+          $push: {
+            revisionHistory: {
+              $each: [
+                revisionSnapshot,
+              ],
+              $slice:
+                -MAX_SOURCE_REVISION_HISTORY,
+            },
+          },
+        },
+        {
+          returnDocument: 'after',
+          runValidators: true,
+        },
+      )
+
+  if (!revisedTranscript) {
+    throw createTranscriptConflictError()
+  }
+
+  return serializeTranscript(
+    revisedTranscript,
   )
 }
 
@@ -312,6 +444,56 @@ export async function approveMemoryRecordingTranscript(
     transcript.reviewStatus ===
     'approved'
   ) {
+    if (
+      transcript.sourceIndexStatus !==
+        'indexed' ||
+      transcript.sourceIndexRevision !==
+        transcript.revision
+    ) {
+      const indexedAt = new Date()
+      const indexedTranscript =
+        await MemoryRecordingTranscript
+          .findOneAndUpdate(
+            {
+              _id: transcript._id,
+              memoryId:
+                validatedParams.memoryId,
+              recordingId:
+                validatedParams.recordingId,
+              lifecycleStatus: 'active',
+              reviewStatus: 'approved',
+              revision:
+                transcript.revision,
+            },
+            {
+              $set: {
+                sourceIndexStatus:
+                  'indexed',
+                sourceIndexedAt:
+                  indexedAt,
+                sourceIndexRevision:
+                  transcript.revision,
+              },
+            },
+            {
+              returnDocument: 'after',
+              runValidators: true,
+            },
+          )
+
+      if (!indexedTranscript) {
+        throw createTranscriptConflictError()
+      }
+
+      return {
+        transcript:
+          serializeTranscript(
+            indexedTranscript,
+          ),
+        approved: false,
+      }
+    }
+
     return {
       transcript:
         serializeTranscript(
@@ -350,6 +532,12 @@ export async function approveMemoryRecordingTranscript(
             approvedAt,
             approvedByUserId:
               userId,
+            sourceIndexStatus:
+              'indexed',
+            sourceIndexedAt:
+              approvedAt,
+            sourceIndexRevision:
+              transcript.revision,
           },
         },
         {

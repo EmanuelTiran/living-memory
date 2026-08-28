@@ -8,6 +8,7 @@ import {
 
   const mocks = vi.hoisted(() => ({
     find: vi.fn(),
+    distinct: vi.fn(),
     findOne: vi.fn(),
     create: vi.fn(),
     exists: vi.fn(),
@@ -30,6 +31,15 @@ import {
         },
       }
     },
+  )
+
+  vi.mock(
+    '../src/modules/media/MemoryRecording.js',
+    () => ({
+      default: {
+        distinct: mocks.distinct,
+      },
+    }),
   )
 
   vi.mock(
@@ -121,13 +131,20 @@ import {
     return document
   }
 
-  function mockAnswersQuery(answers) {
+  function mockAnswersQuery(
+    answers,
+    storedPromptKeys = [],
+  ) {
     const sort = vi.fn()
       .mockResolvedValue(answers)
 
     mocks.find.mockReturnValue({
       sort,
     })
+
+    mocks.distinct.mockResolvedValue(
+      storedPromptKeys,
+    )
 
     return sort
   }
@@ -193,6 +210,20 @@ import {
         memoryId,
         'manage',
       )
+
+      expect(mocks.distinct)
+        .toHaveBeenCalledWith(
+          'interviewContext.promptKey',
+          {
+            memoryId,
+            lifecycleStatus: 'active',
+            storageStatus: 'stored',
+            'interviewContext.promptKey': {
+              $exists: true,
+              $ne: '',
+            },
+          },
+        )
 
       expect(result.questions)
         .toHaveLength(5)
@@ -437,6 +468,9 @@ import {
       )
 
       expect(mocks.find)
+        .not.toHaveBeenCalled()
+
+      expect(mocks.distinct)
         .not.toHaveBeenCalled()
     })
 

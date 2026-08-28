@@ -2,6 +2,9 @@ import { Router } from 'express'
 import { validateBody } from '../../middleware/validateBody.js'
 import { validateParams } from '../../middleware/validateParams.js'
 import {
+  requirePilotAvatarFeature,
+} from '../../middleware/requirePilotAvatarFeature.js'
+import {
   activateApprovedDIDAvatar,
   activateApprovedChatVoiceInput,
   activateApprovedVoiceClone,
@@ -64,6 +67,7 @@ digitalPersonaRoutes.put(
 
 digitalPersonaRoutes.put(
   '/avatar',
+  requirePilotAvatarFeature,
   validateBody(
     activateDIDAvatarSchema,
   ),

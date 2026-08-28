@@ -7,15 +7,22 @@ function MemoryChatLauncher({
 }) {
   return (
     <article className="memory-chat-launcher">
-      <span aria-hidden="true">03</span>
+      <span>Ask their story · with proof</span>
 
-      <h2>שיחה אינטראקטיבית</h2>
+      <h2>שאלו את הסיפור — וקבלו את המקור</h2>
 
       <p>
-        שוחחו בטקסט עם הדמיית הזיכרון.
-        התשובות יתבססו רק על סיפורים
-        שנבדקו ואושרו.
+        שאלו שאלה על {subjectName}. כל תשובה
+        תסומן כמאומתת, כהסקה זהירה או כמידע
+        שעדיין אינו קיים, ותאפשר לפתוח את הסיפור
+        או ההקלטה שעליהם היא מבוססת.
       </p>
+
+      <ul className="memory-chat-trust-list" aria-label="כללי אמון בתשובות">
+        <li>תשובה מסומנת</li>
+        <li>מקור מאושר</li>
+        <li>הקלטה מקורית כשזמינה</li>
+      </ul>
 
       <Link
         className="memory-chat-start-button"
@@ -24,7 +31,7 @@ function MemoryChatLauncher({
           subjectName,
         }}
       >
-        התחלת שיחה
+        שאלת שאלה ראשונה
       </Link>
     </article>
   )

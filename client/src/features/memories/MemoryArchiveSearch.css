@@ -1,0 +1,233 @@
+.memory-archive-search {
+  display: grid;
+  gap: 1.3rem;
+  padding: clamp(1.2rem, 4vw, 2rem);
+  border: 1px solid rgba(77, 123, 104, 0.24);
+  border-radius: 24px;
+  background: linear-gradient(145deg, #f3f8f4, #fffefa);
+}
+
+.memory-archive-search-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.memory-archive-search-heading h2 {
+  margin: 0.25rem 0 0;
+  color: #1d2a36;
+  font-size: clamp(1.35rem, 4vw, 1.9rem);
+}
+
+.memory-archive-search-heading > div > p:last-child {
+  max-width: 650px;
+  margin: 0.6rem 0 0;
+  color: #5f6967;
+  line-height: 1.65;
+}
+
+.memory-archive-search-count {
+  padding: 0.6rem 0.85rem;
+  color: #315f4d;
+  font-size: 0.84rem;
+  font-weight: 850;
+  background: rgba(77, 123, 104, 0.12);
+  border-radius: 999px;
+}
+
+.memory-archive-search-form {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(29, 42, 54, 0.1);
+  border-radius: 18px;
+  background: #fffefa;
+}
+
+.memory-archive-search-query,
+.memory-archive-search-filters label {
+  display: grid;
+  gap: 0.4rem;
+  color: #3e4c48;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.memory-archive-search-query input,
+.memory-archive-search-filters select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0.7rem 0.8rem;
+  color: #263632;
+  font: inherit;
+  background: #fff;
+  border: 1px solid rgba(29, 42, 54, 0.17);
+  border-radius: 11px;
+}
+
+.memory-archive-search-query input:focus,
+.memory-archive-search-filters select:focus {
+  outline: 3px solid rgba(77, 123, 104, 0.22);
+  border-color: #4d7b68;
+}
+
+.memory-archive-search-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.memory-archive-search-buttons {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.memory-archive-search-buttons button {
+  min-height: 44px;
+}
+
+.memory-archive-search-message {
+  margin: 0;
+}
+
+.memory-archive-search-empty {
+  display: grid;
+  min-height: 130px;
+  padding: 1.5rem;
+  place-items: center;
+  align-content: center;
+  gap: 0.5rem;
+  border: 1px dashed rgba(77, 123, 104, 0.4);
+  border-radius: 17px;
+  text-align: center;
+}
+
+.memory-archive-search-empty p {
+  margin: 0;
+  color: #65706c;
+}
+
+.memory-archive-search-results {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.memory-archive-search-limit-note {
+  margin: 0;
+  color: #65706c;
+  font-size: 0.8rem;
+}
+
+.memory-archive-search-result {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(29, 42, 54, 0.11);
+  border-radius: 17px;
+  background: #fffefa;
+  box-shadow: 0 10px 28px rgba(29, 42, 54, 0.05);
+}
+
+.memory-archive-search-result header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.memory-archive-search-result header span {
+  color: #315f4d;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.memory-archive-search-result time {
+  color: #707875;
+  font-size: 0.7rem;
+}
+
+.memory-archive-search-result h3 {
+  margin: 0;
+  color: #1d2a36;
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.memory-archive-search-result > p {
+  margin: 0;
+  color: #4b5753;
+  line-height: 1.7;
+}
+
+.memory-archive-search-actions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-block-start: auto;
+}
+
+.memory-archive-search-actions a,
+.memory-archive-search-actions button {
+  display: inline-flex;
+  min-height: 38px;
+  padding: 0.5rem 0.8rem;
+  align-items: center;
+  justify-content: center;
+  color: #315f4d;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-decoration: none;
+  background: #f2f7f3;
+  border: 1px solid rgba(77, 123, 104, 0.25);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.memory-archive-search-actions a:hover,
+.memory-archive-search-actions button:hover:not(:disabled) {
+  background: #e4f0e8;
+}
+
+.memory-archive-search-actions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.memory-archive-search-result audio {
+  width: 100%;
+}
+
+.memory-archive-search-result .memory-archive-search-audio-error {
+  padding: 0.65rem 0.75rem;
+  color: #8b4545;
+  font-size: 0.8rem;
+  background: #fbefef;
+  border-radius: 9px;
+}
+
+@media (max-width: 760px) {
+  .memory-archive-search-filters,
+  .memory-archive-search-results {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .memory-archive-search-buttons,
+  .memory-archive-search-actions {
+    display: grid;
+  }
+
+  .memory-archive-search-buttons button,
+  .memory-archive-search-actions a,
+  .memory-archive-search-actions button {
+    width: 100%;
+  }
+}

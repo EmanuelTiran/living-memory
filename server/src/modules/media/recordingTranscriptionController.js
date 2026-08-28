@@ -1,13 +1,13 @@
 import {
-    transcribeMemoryRecording,
-  } from './recordingTranscriptionService.js'
+    enqueueMemoryRecordingTranscription,
+  } from './recordingTranscriptionQueueService.js'
 
   export async function requestRecordingTranscription(
     req,
     res,
   ) {
     const result =
-      await transcribeMemoryRecording(
+      await enqueueMemoryRecordingTranscription(
         req.auth.userId,
         req.validatedParams.memoryId,
         req.validatedParams.recordingId,
@@ -16,7 +16,7 @@ import {
 
     res
       .status(
-        result.created ? 201 : 200,
+        result.queued ? 202 : 200,
       )
       .json({
         success: true,
@@ -25,6 +25,8 @@ import {
             result.transcript,
           created:
             result.created,
+          queued:
+            result.queued,
         },
       })
   }

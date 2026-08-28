@@ -163,6 +163,8 @@ describe('Approved story source provider', () => {
         approvedAt: null,
         sourceVersion:
           updatedAt.toISOString(),
+        sourceRoute:
+          `/app/memories/${memoryId}#stories-title`,
       },
     ])
   })

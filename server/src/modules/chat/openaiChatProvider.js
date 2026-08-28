@@ -31,6 +31,13 @@ const SOURCE_FREE_STATUSES =
     'creative',
   ])
 
+const ARCHIVE_REPLY_STATUSES =
+  new Set([
+    'grounded',
+    'inferred',
+    'insufficient_context',
+  ])
+
 const chatResponseModeSchema =
   z.enum(CHAT_RESPONSE_MODES)
 
@@ -112,7 +119,7 @@ function createInvalidResponseError() {
 }
 
 function createCitation(source) {
-  return {
+  const citation = {
     sourceType: source.sourceType,
     sourceId: source.sourceId,
     title: source.title,
@@ -125,6 +132,31 @@ function createCitation(source) {
     sourceVersion:
       source.sourceVersion,
   }
+
+  if (source.sourceRoute) {
+    citation.sourceRoute =
+      source.sourceRoute
+  }
+
+  if (source.recordingId) {
+    citation.recordingId =
+      source.recordingId
+  }
+
+  if (source.recordedAt) {
+    citation.recordedAt =
+      source.recordedAt
+  }
+
+  if (
+    typeof source.canPlayOriginalAudio ===
+    'boolean'
+  ) {
+    citation.canPlayOriginalAudio =
+      source.canPlayOriginalAudio
+  }
+
+  return citation
 }
 
 function createInsufficientContextReply({
@@ -192,6 +224,15 @@ function validateReplyMode(
   }
 
   if (
+    responseMode === 'archive' &&
+    !ARCHIVE_REPLY_STATUSES.has(
+      groundingStatus,
+    )
+  ) {
+    throw createInvalidResponseError()
+  }
+
+  if (
     responseMode === 'creative' &&
     groundingStatus !== 'creative' &&
     groundingStatus !==
@@ -204,6 +245,7 @@ function validateReplyMode(
 function createSourceBackedReply({
   parsedReply,
   approvedSources,
+  responseMode,
   model,
   providerResponseId,
 }) {
@@ -227,9 +269,16 @@ function createSourceBackedReply({
         !sourceById.has(sourceId),
     )
 
+  const hasUnsupportedArchiveInference =
+    responseMode === 'archive' &&
+    parsedReply.groundingStatus ===
+      'inferred' &&
+    uniqueUsedSourceIds.length < 2
+
   if (
     hasUnknownSource ||
-    uniqueUsedSourceIds.length === 0
+    uniqueUsedSourceIds.length === 0 ||
+    hasUnsupportedArchiveInference
   ) {
     return createInsufficientContextReply({
       model,
@@ -343,13 +392,27 @@ export async function generateMemoryChatReply(
   const parsedReply =
     validateProviderResponse(response)
 
+  const providerResponseId =
+    response.id ?? null
+
+  if (
+    validatedResponseMode ===
+      'archive' &&
+    !ARCHIVE_REPLY_STATUSES.has(
+      parsedReply.groundingStatus,
+    )
+  ) {
+    return createInsufficientContextReply({
+      model,
+      provider: 'openai',
+      providerResponseId,
+    })
+  }
+
   validateReplyMode(
     parsedReply.groundingStatus,
     validatedResponseMode,
   )
-
-  const providerResponseId =
-    response.id ?? null
 
   if (
     parsedReply.groundingStatus ===
@@ -370,6 +433,8 @@ export async function generateMemoryChatReply(
     return createSourceBackedReply({
       parsedReply,
       approvedSources,
+      responseMode:
+        validatedResponseMode,
       model,
       providerResponseId,
     })

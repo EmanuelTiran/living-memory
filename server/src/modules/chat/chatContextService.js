@@ -5,6 +5,9 @@ import {
     approvedRecordingTranscriptSourceProvider,
   } from './approvedRecordingTranscriptSourceProvider.js'
   import {
+    approvedProfileSourceProvider,
+  } from './approvedProfileSourceProvider.js'
+  import {
     approvedStorySourceProvider,
   } from './approvedStorySourceProvider.js'
   import {
@@ -31,6 +34,13 @@ import {
       approvedStorySourceProvider,
       approvedBiographySourceProvider,
       approvedRecordingTranscriptSourceProvider,
+      approvedProfileSourceProvider,
+    ])
+
+  const queryTokenAliases =
+    new Map([
+      ['קוראים', ['שם']],
+      ['שמך', ['שם']],
     ])
 
   const stopWords = new Set([
@@ -117,9 +127,21 @@ import {
     sources,
     message,
   ) {
+    const baseQueryTokens =
+      tokenize(message)
+
     const queryTokens = Array.from(
       new Set(
-        tokenize(message),
+        baseQueryTokens.flatMap(
+          (token) => [
+            token,
+            ...(
+              queryTokenAliases.get(
+                token,
+              ) ?? []
+            ),
+          ],
+        ),
       ),
     )
 

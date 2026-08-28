@@ -114,6 +114,16 @@ function createDIDProviderNotConfiguredError() {
   )
 }
 
+function createAvatarFeatureDisabledError() {
+  return new AppError(
+    'The avatar feature is not available in this pilot.',
+    {
+      statusCode: 404,
+      code: 'PILOT_AVATAR_DISABLED',
+    },
+  )
+}
+
 function createChatVoiceInputNotConfiguredError() {
   return new AppError(
     'OpenAI chat transcription is not configured.',
@@ -193,7 +203,9 @@ function createPublicSetup({
     toPublicObject(voiceProfile)
 
   const publicAvatarProfile =
-    toPublicObject(avatarProfile)
+    env.pilotAvatarEnabled
+      ? toPublicObject(avatarProfile)
+      : null
 
   const voiceCloneIsActive =
     publicVoiceProfile?.provider ===
@@ -270,7 +282,10 @@ function createPublicSetup({
     avatar: {
       provider: 'd-id',
       providerConfigured:
+        env.pilotAvatarEnabled &&
         isDIDAvatarProviderConfigured(),
+      enabled:
+        env.pilotAvatarEnabled,
       active: didAvatarIsActive,
       localFallbackAvailable:
         localAvatarIsAvailable,
@@ -639,18 +654,25 @@ export async function initializeMockProfiles(
     throw createConsentRequiredError()
   }
 
-  await Promise.all([
+  const profileTasks = [
     createMockVoiceProfile({
       userId,
       memoryId: validatedMemoryId,
       consent,
     }),
-    createMockAvatarProfile({
-      userId,
-      memoryId: validatedMemoryId,
-      consent,
-    }),
-  ])
+  ]
+
+  if (env.pilotAvatarEnabled) {
+    profileTasks.push(
+      createMockAvatarProfile({
+        userId,
+        memoryId: validatedMemoryId,
+        consent,
+      }),
+    )
+  }
+
+  await Promise.all(profileTasks)
 
   return loadPublicSetup(
     memoryProfile,
@@ -858,6 +880,10 @@ export async function activateDIDAvatar(
   memoryId,
   input,
 ) {
+  if (!env.pilotAvatarEnabled) {
+    throw createAvatarFeatureDisabledError()
+  }
+
   validateUserId(userId)
 
   const validatedMemoryId =
