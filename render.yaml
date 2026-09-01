@@ -9,7 +9,6 @@ services:
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /api/ready
-    maxShutdownDelaySeconds: 180
     disk:
       name: living-memory-data
       mountPath: /var/lib/living-memory
