@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: living-memory
+    runtime: node
+    branch: release/production-launch
+    region: frankfurt
+    plan: 1c-2g
+    numInstances: 1
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/ready
+    maxShutdownDelaySeconds: 180
+    disk:
+      name: living-memory-data
+      mountPath: /var/lib/living-memory
+      sizeGB: 10
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: ACCESS_TOKEN_SECRET
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: PILOT_INVITE_ONLY
+        value: true
+      - key: PILOT_AVATAR_ENABLED
+        value: false
+      - key: VITE_PILOT_INVITE_ONLY
+        value: true
+      - key: VITE_PILOT_AVATAR_ENABLED
+        value: false
+      - key: SERVE_CLIENT_BUILD
+        value: true
+      - key: PERSISTENT_STORAGE_REQUIRED
+        value: true
+      - key: TRUST_PROXY_HOPS
+        value: 1
+      - key: RECORDING_STORAGE_ROOT
+        value: /var/lib/living-memory/recordings
+      - key: MEMORY_ASSET_STORAGE_ROOT
+        value: /var/lib/living-memory/memory-assets
