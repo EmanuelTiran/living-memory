@@ -359,6 +359,7 @@ function MemoryArchiveSearch({
           <button
             className="primary-button"
             type="submit"
+            data-aura-tooltip="לחפש בתוך המקורות המאושרים"
             disabled={isLoading}
           >
             {isLoading
@@ -370,6 +371,7 @@ function MemoryArchiveSearch({
             <button
               className="secondary-button"
               type="button"
+              data-aura-tooltip="לנקות את החיפוש והסינונים"
               disabled={isLoading}
               onClick={handleClear}
             >
@@ -464,6 +466,7 @@ function MemoryArchiveSearch({
                       {result.sourceRoute && (
                         <Link
                           to={result.sourceRoute}
+                          data-aura-tooltip="לפתוח את המקור בתוך הארכיון"
                           state={{ subjectName }}
                         >
                           פתיחת המקור בארכיון
@@ -475,6 +478,7 @@ function MemoryArchiveSearch({
                         !audioUrl && (
                           <button
                             type="button"
+                            data-aura-tooltip="לשמוע את הקלטת המקור"
                             disabled={
                               loadingRecordingId ===
                               result.recordingId

@@ -39,6 +39,12 @@ export default defineConfig({
     cwd: projectRoot,
     command:
       'npm run dev --workspace client -- --host 127.0.0.1 --port 4173',
+    env: {
+      ...process.env,
+      API_PROXY_TARGET:
+        process.env.API_PROXY_TARGET ??
+        'http://127.0.0.1:5000',
+    },
     url: baseURL,
     reuseExistingServer:
       process.env.CI !== 'true',

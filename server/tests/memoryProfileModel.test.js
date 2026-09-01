@@ -22,9 +22,38 @@ describe('MemoryProfile model', () => {
 
     expect(profile.visibility).toBe('private')
     expect(profile.status).toBe('active')
+    expect(profile.subjectGender).toBe(
+      'unspecified',
+    )
     expect(profile.relationship).toBe(
       'Grandmother',
     )
+  })
+
+  it('stores gender and designated portrait and voice references', async () => {
+    const portraitAssetId =
+      new mongoose.Types.ObjectId()
+    const voiceSampleRecordingId =
+      new mongoose.Types.ObjectId()
+
+    const profile = new MemoryProfile({
+      ...validProfileData,
+      subjectGender: 'female',
+      portraitAssetId,
+      voiceSampleRecordingId,
+    })
+
+    await expect(
+      profile.validate(),
+    ).resolves.toBeUndefined()
+
+    expect(profile.toJSON()).toMatchObject({
+      subjectGender: 'female',
+      portraitAssetId:
+        portraitAssetId.toString(),
+      voiceSampleRecordingId:
+        voiceSampleRecordingId.toString(),
+    })
   })
 
   it('rejects invalid profile fields', async () => {

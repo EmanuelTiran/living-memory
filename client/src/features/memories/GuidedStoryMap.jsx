@@ -372,6 +372,7 @@ function GuidedStoryMap({
       >
         <button
           type="button"
+          data-aura-tooltip="להציג סיפורים מכל פרקי החיים"
           className={
             selectedChapter === 'all'
               ? 'guided-story-chapter-active'
@@ -389,6 +390,7 @@ function GuidedStoryMap({
           ([chapterKey, label]) => (
             <button
               type="button"
+              data-aura-tooltip={`לסנן סיפורים לפי ${label}`}
               className={
                 selectedChapter ===
                 chapterKey
@@ -537,6 +539,7 @@ function GuidedStoryMap({
                       <button
                         className="primary-button"
                         type="button"
+                        data-aura-tooltip="לשמוע את ההקלטה המקורית"
                         disabled={
                           loadingAudioId ===
                           story.recordingId
@@ -557,6 +560,11 @@ function GuidedStoryMap({
                   <button
                     className="secondary-button"
                     type="button"
+                    data-aura-tooltip={
+                      isTranscriptOpen
+                        ? 'לסגור את תמלול הסיפור'
+                        : 'לפתוח את התמלול המלא'
+                    }
                     disabled={
                       loadingTranscriptId ===
                       story.recordingId

@@ -34,6 +34,14 @@ describe(
         ).toBe(false)
 
         expect(
+          result.unansweredQuestions.some(
+            (question) =>
+              question.key ===
+              answeredQuestion.key,
+          ),
+        ).toBe(false)
+
+        expect(
           result.answeredQuestions,
         ).toEqual(
           expect.arrayContaining([
@@ -48,6 +56,12 @@ describe(
         expect(
           result.progress.completedCount,
         ).toBe(1)
+
+        expect(
+          result.unansweredQuestions,
+        ).toHaveLength(
+          BIOGRAPHY_QUESTIONS.length - 1,
+        )
       },
     )
 

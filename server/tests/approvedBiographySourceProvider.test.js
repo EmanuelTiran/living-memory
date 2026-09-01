@@ -126,7 +126,7 @@ import {
             sourceVersion:
               'revision:2',
             sourceRoute:
-              `/app/memories/${memoryId}#guided-interview`,
+              `/app/memories/${memoryId}?tab=documentation#guided-interview`,
           },
         ])
       })

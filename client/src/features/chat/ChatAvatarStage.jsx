@@ -71,13 +71,15 @@ function ChatAvatarStage({
   const [openedVideoUrl, setOpenedVideoUrl] =
     useState('')
 
-  if (!avatar?.localFallbackAvailable) {
+  if (
+    !avatar?.localFallbackAvailable ||
+    !avatar.localAssetUrl
+  ) {
     return null
   }
 
   const localAssetUrl =
-    avatar.localAssetUrl ??
-    '/assets/emanuel-living-memory-avatar.png'
+    avatar.localAssetUrl
   const isSpeaking =
     speechState.status === 'playing'
   const hasVideo =
@@ -206,6 +208,11 @@ function ChatAvatarStage({
                   .filter(Boolean)
                   .join(' ')}
                 type="button"
+                data-aura-tooltip={
+                  liveConversationEnabled
+                    ? 'לכבות קול ופנים בזמן אמת'
+                    : 'להפעיל קול ופנים בזמן אמת'
+                }
                 aria-pressed={
                   liveConversationEnabled
                 }
@@ -238,6 +245,7 @@ function ChatAvatarStage({
           <button
             className="chat-avatar-open-video"
             type="button"
+            data-aura-tooltip="לפתוח את סרטון האווטאר המוכן"
             disabled={isSpeaking}
             onClick={() =>
               setOpenedVideoUrl(
@@ -256,6 +264,7 @@ function ChatAvatarStage({
           <button
             className="chat-avatar-close-video"
             type="button"
+            data-aura-tooltip="לחזור לתצוגת האווטאר החי"
             onClick={() =>
               setOpenedVideoUrl('')
             }

@@ -4,7 +4,11 @@ import {
   useMemo,
   useState,
 } from 'react'
+import { Link } from 'react-router'
 import { ApiError } from '../../api/authApi.js'
+import {
+  revealAuraTarget,
+} from '../../auraMotion.js'
 import {
   createFamilyQuestion,
   listFamilyQuestions,
@@ -60,8 +64,11 @@ function getFamilyQuestionId(recording) {
 }
 
 function FamilyQuestions({
+  canContribute = true,
+  focusQuestionId = '',
   memoryId,
   subjectName,
+  subjectGender = 'unspecified',
   runAuthenticatedRequest,
 }) {
   const [questions, setQuestions] =
@@ -177,6 +184,46 @@ function FamilyQuestions({
     }
   }, [loadQuestions, memoryId])
 
+  useEffect(() => {
+    if (
+      isLoading ||
+      !focusQuestionId
+    ) {
+      return undefined
+    }
+
+    const frameId =
+      window.requestAnimationFrame(() => {
+        const target =
+          document.getElementById(
+            `family-question-${focusQuestionId}`,
+          )
+
+        target
+          ?.closest(
+            'details.family-question-list-more',
+          )
+          ?.setAttribute('open', '')
+
+        revealAuraTarget(target, {
+          block: 'center',
+        })
+        target?.focus({
+          preventScroll: true,
+        })
+      })
+
+    return () => {
+      window.cancelAnimationFrame(
+        frameId,
+      )
+    }
+  }, [
+    focusQuestionId,
+    isLoading,
+    questions,
+  ])
+
   const answeredQuestionIds = useMemo(
     () =>
       new Set(
@@ -259,6 +306,103 @@ function FamilyQuestions({
     )
   }
 
+  function renderQuestionCard(question) {
+    const isAnswered =
+      answeredQuestionIds.has(question.id)
+    const isAnswering =
+      answeringQuestionId === question.id
+
+    return (
+      <article
+        id={`family-question-${question.id}`}
+        className={`family-question-card ${
+          isAnswered
+            ? 'family-question-card-answered'
+            : ''
+        }`}
+        key={question.id}
+        tabIndex={-1}
+      >
+        <div className="family-question-card-heading">
+          <div>
+            <span>
+              {question.askedByCurrentUser
+                ? 'השאלה שלך'
+                : 'שאלה מהמשפחה'}
+            </span>
+
+            <time dateTime={question.createdAt}>
+              {formatDate(question.createdAt)}
+            </time>
+          </div>
+
+          <span className="family-question-status">
+            {isAnswered
+              ? 'נענתה בקול'
+              : 'ממתינה לתשובה'}
+          </span>
+        </div>
+
+        <p className="family-question-text">
+          {question.question}
+        </p>
+
+        {isAnswered ? (
+          <Link
+            className="secondary-button"
+            data-aura-tooltip="לפתוח את ההקלטה והתמלול בארכיון"
+            to={`/app/memories/${encodeURIComponent(memoryId)}?tab=archive#recordings-title`}
+          >
+            מעבר להקלטה ולתמלול
+          </Link>
+        ) : !canContribute ? (
+          <p className="family-question-viewer-note">
+            מענה קולי זמין לבני משפחה בעלי הרשאת תיעוד.
+          </p>
+        ) : (
+          <button
+            className="primary-button"
+            type="button"
+            data-aura-tooltip={
+              isAnswering
+                ? 'לסגור את אזור ההקלטה'
+                : 'להקליט תשובה לשאלה המשפחתית'
+            }
+            disabled={
+              recorderBusy && !isAnswering
+            }
+            onClick={() =>
+              startAnswering(question.id)
+            }
+          >
+            {isAnswering
+              ? 'סגירת ההקלטה'
+              : 'לענות בקול'}
+          </button>
+        )}
+
+        {canContribute && isAnswering && (
+          <GuidedInterviewRecorder
+            key={question.id}
+            memoryId={memoryId}
+            familyQuestionId={question.id}
+            question={{
+              key: `family_${question.id}`,
+              question: question.question,
+              category: 'family_questions',
+            }}
+            subjectName={subjectName}
+            runAuthenticatedRequest={
+              runAuthenticatedRequest
+            }
+            onBusyChange={setRecorderBusy}
+            onAnswerStored={handleAnswerStored}
+          />
+        )}
+      </article>
+    )
+  }
+
   return (
     <section
       id="family-questions"
@@ -289,8 +433,21 @@ function FamilyQuestions({
         </span>
       </header>
 
-      <details className="family-question-composer">
-        <summary>
+      <details
+        className="family-question-composer"
+        onToggle={(event) => {
+          if (event.currentTarget.open) {
+            window.requestAnimationFrame(() => {
+              document
+                .getElementById(
+                  'family-question-input',
+                )
+                ?.focus()
+            })
+          }
+        }}
+      >
+        <summary data-aura-tooltip="לפתוח טופס לשאלה משפחתית חדשה">
           <span>הוספת שאלה משפחתית</span>
           <span aria-hidden="true">+</span>
         </summary>
@@ -314,13 +471,20 @@ function FamilyQuestions({
               minLength={5}
               maxLength={500}
               rows={3}
-              placeholder={`לדוגמה: ${subjectName}, מה הרגע הראשון שאת/ה זוכר/ת מבית הילדות?`}
+              placeholder={
+                subjectGender === 'female'
+                  ? `לדוגמה: ${subjectName}, מה הרגע הראשון שאת זוכרת מבית הילדות?`
+                  : subjectGender === 'male'
+                    ? `לדוגמה: ${subjectName}, מה הרגע הראשון שאתה זוכר מבית הילדות?`
+                    : `לדוגמה: ${subjectName}, מהו הזיכרון הראשון מבית הילדות?`
+              }
               required
             />
 
             <button
               className="primary-button"
               type="submit"
+              data-aura-tooltip="לשמור את השאלה בזיכרון המשפחתי"
               disabled={isSubmitting}
             >
               {isSubmitting
@@ -376,109 +540,25 @@ function FamilyQuestions({
         </div>
       ) : (
         <div className="family-question-list">
-          {questions.map((question) => {
-            const isAnswered =
-              answeredQuestionIds.has(
-                question.id,
-              )
-            const isAnswering =
-              answeringQuestionId ===
-              question.id
+          {questions
+            .slice(0, 3)
+            .map(renderQuestionCard)}
 
-            return (
-              <article
-                className={`family-question-card ${
-                  isAnswered
-                    ? 'family-question-card-answered'
-                    : ''
-                }`}
-                key={question.id}
-              >
-                <div className="family-question-card-heading">
-                  <div>
-                    <span>
-                      {question.askedByCurrentUser
-                        ? 'השאלה שלך'
-                        : 'שאלה מהמשפחה'}
-                    </span>
+          {questions.length > 3 && (
+            <details className="family-question-list-more">
+              <summary data-aura-tooltip="לפתוח את כל שאלות המשפחה">
+                הצגת כל השאלות
+                {' · '}
+                {questions.length - 3} נוספות
+              </summary>
 
-                    <time
-                      dateTime={question.createdAt}
-                    >
-                      {formatDate(
-                        question.createdAt,
-                      )}
-                    </time>
-                  </div>
-
-                  <span className="family-question-status">
-                    {isAnswered
-                      ? 'נענתה בקול'
-                      : 'ממתינה לתשובה'}
-                  </span>
-                </div>
-
-                <p className="family-question-text">
-                  {question.question}
-                </p>
-
-                {isAnswered ? (
-                  <a
-                    className="secondary-button"
-                    href="#recordings-title"
-                  >
-                    מעבר להקלטה ולתמלול
-                  </a>
-                ) : (
-                  <button
-                    className="primary-button"
-                    type="button"
-                    disabled={
-                      recorderBusy &&
-                      !isAnswering
-                    }
-                    onClick={() =>
-                      startAnswering(
-                        question.id,
-                      )
-                    }
-                  >
-                    {isAnswering
-                      ? 'סגירת ההקלטה'
-                      : 'לענות בקול'}
-                  </button>
-                )}
-
-                {isAnswering && (
-                  <GuidedInterviewRecorder
-                    key={question.id}
-                    memoryId={memoryId}
-                    familyQuestionId={
-                      question.id
-                    }
-                    question={{
-                      key:
-                        `family_${question.id}`,
-                      question:
-                        question.question,
-                      category:
-                        'family_questions',
-                    }}
-                    subjectName={subjectName}
-                    runAuthenticatedRequest={
-                      runAuthenticatedRequest
-                    }
-                    onBusyChange={
-                      setRecorderBusy
-                    }
-                    onAnswerStored={
-                      handleAnswerStored
-                    }
-                  />
-                )}
-              </article>
-            )
-          })}
+              <div>
+                {questions
+                  .slice(3)
+                  .map(renderQuestionCard)}
+              </div>
+            </details>
+          )}
         </div>
       )}
     </section>

@@ -1,0 +1,1198 @@
+/* Visual system only: it intentionally layers over existing component CSS. */
+:root {
+  --color-canvas: var(--aura-canvas);
+  --color-surface: #fffdf8;
+  --color-surface-muted: #faf6ee;
+  --color-ink: var(--aura-ink);
+  --color-ink-muted: #64706b;
+  --color-olive: var(--aura-olive);
+  --color-olive-strong: #38584c;
+  --color-clay: var(--aura-clay);
+  --color-amber: var(--aura-amber);
+  --color-amber-ink: #5c4315;
+  --color-border: #ded5c6;
+  --aura-surface-main: #fffdf9;
+  --aura-surface-card: #fffaf2;
+  --aura-surface-raised: #fffefa;
+  --aura-border-default: #d8ccba;
+  --aura-border-strong: #c8b79d;
+  --aura-shadow-subtle: 0 2px 8px rgb(36 51 46 / 5%);
+  --aura-shadow-featured: 0 12px 30px rgb(36 51 46 / 9%);
+  --radius-control: 12px;
+  --radius-compact: 14px;
+  --radius-secondary: 18px;
+  --radius-primary: 26px;
+  --radius-hero: 32px;
+  --motion-fast: 120ms;
+  --motion-normal: 180ms;
+  --motion-slow: 260ms;
+  --motion-arrival: 760ms;
+  --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-in: cubic-bezier(0.4, 0, 1, 1);
+}
+
+@keyframes aura-tooltip-enter {
+  from {
+    opacity: 0;
+    transform: translateY(
+      var(--aura-tooltip-entry-shift, 4px)
+    );
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.aura-tooltip {
+  --aura-tooltip-background: var(--color-olive-strong);
+  --aura-tooltip-entry-shift: 4px;
+
+  position: fixed;
+  z-index: 1200;
+  width: max-content;
+  max-width: min(270px, calc(100vw - 24px));
+  padding: 8px 11px;
+  color: var(--aura-surface-main);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.48;
+  text-align: right;
+  background: var(--aura-tooltip-background);
+  border: 1px solid rgb(255 253 249 / 18%);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgb(36 51 46 / 16%);
+  direction: rtl;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.aura-tooltip[data-positioned='true'] {
+  visibility: visible;
+  animation: aura-tooltip-enter var(--motion-fast)
+    var(--motion-ease-out) both;
+}
+
+.aura-tooltip[data-placement='bottom'] {
+  --aura-tooltip-entry-shift: -4px;
+}
+
+.aura-tooltip-arrow {
+  position: absolute;
+  left: var(--aura-tooltip-arrow-left);
+  width: 8px;
+  height: 8px;
+  background: var(--aura-tooltip-background);
+  border: solid rgb(255 253 249 / 18%);
+  pointer-events: none;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.aura-tooltip[data-placement='top']
+  .aura-tooltip-arrow {
+  bottom: -5px;
+  border-width: 0 1px 1px 0;
+}
+
+.aura-tooltip[data-placement='bottom']
+  .aura-tooltip-arrow {
+  top: -5px;
+  border-width: 1px 0 0 1px;
+}
+
+html,
+body {
+  background: var(--aura-canvas);
+}
+
+body,
+button,
+input,
+textarea,
+select,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--aura-ink);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+}
+
+input,
+textarea,
+select {
+  color: var(--aura-ink);
+  background: #fffdf8;
+  border-color: var(--aura-border-soft);
+  border-radius: var(--radius-control);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--aura-olive) !important;
+  box-shadow: var(--aura-focus-ring);
+  outline: 0;
+}
+
+.page-shell {
+  align-items: start;
+  overflow: visible;
+  padding: clamp(20px, 4vw, 64px);
+  background: var(--aura-canvas);
+}
+
+.page-shell::before,
+.page-shell::after {
+  display: none;
+}
+
+.surface-card {
+  background: var(--aura-surface-main);
+  border-color: var(--aura-border-default);
+  border-radius: var(--radius-hero);
+  box-shadow: var(--shadow-primary);
+  backdrop-filter: none;
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 52px;
+  padding-inline: 22px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.primary-button {
+  background: var(--aura-olive);
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--color-olive-strong);
+  box-shadow: 0 7px 16px rgb(72 107 93 / 16%);
+}
+
+.secondary-button {
+  color: var(--aura-olive);
+  background: var(--aura-surface-raised);
+  border-color: rgb(72 107 93 / 68%);
+}
+
+.secondary-button:hover:not(:disabled) {
+  color: var(--color-olive-strong);
+  background: #eaf2ec;
+}
+
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 3px solid rgb(72 107 93 / 45%);
+  outline-offset: 3px;
+}
+
+.eyebrow,
+.panel-kicker,
+.memory-profile-hero-kicker,
+.chat-eyebrow {
+  color: var(--aura-clay);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.hero-title,
+.memory-profile-title,
+.memory-pilot-header h1,
+.pricing-pilot-header h1,
+.chat-page-header h1 {
+  font-family: var(--font-body);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.memory-profile-page {
+  max-width: 1220px;
+}
+
+.memory-profile-hero {
+  --memory-profile-avatar-size: clamp(220px, 25vw, 310px);
+  --memory-profile-avatar-offset: clamp(34px, 7vw, 92px);
+  --memory-profile-avatar-gap: clamp(38px, 4vw, 58px);
+
+  position: relative;
+  display: grid;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--aura-surface-main);
+  border: 1px solid var(--aura-border-default);
+  border-radius: var(--radius-hero);
+  box-shadow: var(--aura-shadow-featured);
+  grid-template-columns: 1fr;
+}
+
+.memory-profile-identity-header {
+  position: relative;
+  display: flex;
+  min-height: 280px;
+  align-items: center;
+  padding: clamp(40px, 5vw, 66px) clamp(34px, 6vw, 78px);
+  background: var(--aura-clay);
+}
+
+.memory-profile-hero-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0;
+  padding-left: calc(
+    var(--memory-profile-avatar-size) +
+    var(--memory-profile-avatar-offset) +
+    var(--memory-profile-avatar-gap)
+  );
+  color: #fffdf8;
+  background: transparent;
+}
+
+.memory-profile-identity-header::before {
+  position: absolute;
+  inset: 0;
+  opacity: 0.25;
+  background:
+    radial-gradient(circle at 10% 22%, #f3d3a7 0 2px, transparent 3px),
+    radial-gradient(circle at 13% 27%, #f3d3a7 0 3px, transparent 4px),
+    radial-gradient(circle at 17% 18%, #f3d3a7 0 1px, transparent 2px),
+    radial-gradient(circle at 21% 24%, #f3d3a7 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 76% 12%, #f3d3a7 0 2px, transparent 3px),
+    radial-gradient(circle at 81% 16%, #f3d3a7 0 1px, transparent 2px),
+    radial-gradient(circle at 87% 11%, #f3d3a7 0 3px, transparent 4px),
+    linear-gradient(145deg, transparent 0 66%, rgb(36 51 46 / 32%) 100%);
+  content: '';
+  pointer-events: none;
+}
+
+.memory-profile-identity-header::after {
+  position: absolute;
+  inset-block-start: -105px;
+  inset-inline-end: -80px;
+  width: 340px;
+  height: 340px;
+  border: 1px solid rgb(255 253 248 / 19%);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 42px rgb(255 253 248 / 4%),
+    0 0 0 92px rgb(255 253 248 / 3%);
+  content: '';
+  pointer-events: none;
+}
+
+.memory-profile-title {
+  color: #fffdf8;
+  font-size: clamp(3rem, 6vw, 5rem);
+  line-height: 1.04;
+}
+
+.memory-profile-hero-visual {
+  position: absolute;
+  z-index: 3;
+  inset-block-end: clamp(-118px, -10vw, -92px);
+  inset-inline-end: var(--memory-profile-avatar-offset);
+  width: var(--memory-profile-avatar-size);
+  aspect-ratio: 1;
+  margin: 0;
+  min-height: 0;
+  background: #e9dfcc;
+  border: 8px solid #fff9ef;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px rgb(215 162 76 / 55%),
+    0 20px 42px rgb(36 51 46 / 18%);
+  transform: none;
+}
+
+.memory-profile-hero-visual::before {
+  background: rgb(72 107 93 / 11%);
+}
+
+.memory-privacy,
+.memory-profile-hero-kicker,
+.profile-relationship,
+.memory-profile-hero-metadata dt,
+.memory-profile-hero-metadata dd {
+  color: #fffdf8;
+}
+
+.memory-privacy {
+  padding: 7px 10px;
+  background: rgb(255 253 248 / 13%);
+  border: 1px solid rgb(255 253 248 / 28%);
+  border-radius: 999px;
+}
+
+.memory-profile-hero-kicker {
+  color: #ffe1a2;
+}
+
+.profile-relationship {
+  color: #f8e9da;
+}
+
+.memory-profile-hero-actions .secondary-button {
+  color: var(--aura-olive);
+  background: var(--aura-surface-raised);
+  border-color: rgb(72 107 93 / 68%);
+}
+
+.memory-profile-hero-actions .secondary-button:hover:not(:disabled) {
+  background: #eaf2ec;
+}
+
+.memory-profile-hero-actions .primary-button {
+  color: #fffdf8;
+  background: var(--aura-olive);
+  box-shadow: 0 8px 18px rgb(36 51 46 / 14%);
+}
+
+.memory-profile-hero-actions .primary-button:hover:not(:disabled) {
+  color: #fffdf8;
+  background: var(--color-olive-strong);
+  box-shadow: 0 11px 22px rgb(36 51 46 / 18%);
+}
+
+.memory-profile-hero-content {
+  display: grid;
+  min-height: 176px;
+  align-content: center;
+  padding: 42px clamp(34px, 6vw, 78px) 18px;
+  padding-left: calc(
+    var(--memory-profile-avatar-size) +
+    var(--memory-profile-avatar-offset) +
+    var(--memory-profile-avatar-gap)
+  );
+  background: var(--aura-surface-main);
+}
+
+.memory-profile-hero-description {
+  max-width: 650px;
+  margin: 0;
+  padding: 0;
+  color: var(--aura-ink);
+  font-size: clamp(1.02rem, 1.8vw, 1.2rem);
+  line-height: 1.8;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.memory-profile-hero-description::before {
+  width: 64px;
+  background: var(--aura-amber);
+}
+
+.memory-profile-hero-actions {
+  display: grid;
+  align-items: stretch;
+  padding: 0 clamp(34px, 6vw, 78px) 38px;
+  gap: clamp(12px, 2vw, 24px);
+  direction: ltr;
+  background: var(--aura-surface-main);
+  grid-template-areas: 'photo story primary';
+  grid-template-columns:
+    minmax(180px, 1fr)
+    minmax(180px, 1fr)
+    minmax(230px, 1.15fr);
+}
+
+.memory-profile-hero-actions > * {
+  display: inline-flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  direction: rtl;
+}
+
+.memory-profile-photo-action {
+  min-width: 0;
+  grid-area: photo;
+}
+
+.memory-profile-primary-action {
+  min-width: 0;
+  grid-area: primary;
+}
+
+.memory-profile-story-action {
+  min-width: 0;
+  grid-area: story;
+}
+
+
+.memory-profile-photo-action::before {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  margin-inline-end: 8px;
+  background: currentColor;
+  content: '';
+  opacity: 0.82;
+  -webkit-mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M9.4 5 10.6 3h2.8l1.2 2H18a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h3.4ZM12 8.25A4.75 4.75 0 1 0 12 17.75 4.75 4.75 0 0 0 12 8.25Zm0 2A2.75 2.75 0 1 1 12 15.75 2.75 2.75 0 0 1 12 10.25ZM17.5 7.25a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M9.4 5 10.6 3h2.8l1.2 2H18a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h3.4ZM12 8.25A4.75 4.75 0 1 0 12 17.75 4.75 4.75 0 0 0 12 8.25Zm0 2A2.75 2.75 0 1 1 12 15.75 2.75 2.75 0 0 1 12 10.25ZM17.5 7.25a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.memory-profile-hero-metadata {
+  display: grid;
+  margin: 0;
+  padding: 24px clamp(34px, 6vw, 78px);
+  gap: 18px 42px;
+  background: #fbf7ef;
+  border-top: 1px solid var(--aura-border-default);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.memory-profile-hero-metadata div {
+  gap: 5px;
+}
+
+.memory-profile-hero-metadata dt {
+  color: var(--color-ink-muted);
+}
+
+.memory-profile-hero-metadata dd {
+  color: var(--aura-ink);
+}
+
+.memory-profile-tab-navigation {
+  padding: 6px;
+  background: #e9dfcf;
+  border: 1px solid var(--aura-border-default);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+.memory-profile-tab {
+  min-height: 48px;
+  color: var(--color-ink-muted);
+  font-weight: 600;
+  border-radius: 12px;
+}
+
+.memory-profile-tab[aria-selected='true'] {
+  color: var(--aura-ink);
+  background: var(--aura-surface-raised);
+  border-color: transparent;
+  box-shadow: inset 0 -3px 0 var(--aura-olive);
+}
+
+.memory-today,
+.memory-documentation,
+.family-questions,
+.recordings-workspace,
+.memory-assets-workspace,
+.biography-questionnaire,
+.guided-story-map,
+.memory-timeline {
+  padding: clamp(24px, 4vw, 44px);
+  background: var(--aura-surface-main);
+  border: 1px solid var(--aura-border-default);
+  border-radius: var(--radius-primary);
+  box-shadow: none;
+}
+
+.memory-today-heading h2,
+.memory-documentation-heading h2,
+.family-questions-heading h2,
+.recordings-heading h2,
+.memory-assets-heading h2,
+.biography-introduction h2,
+.guided-story-map-heading h2,
+.memory-timeline-heading h2,
+.memory-archive-search-heading h2 {
+  font-size: clamp(1.55rem, 3vw, 2.35rem);
+  line-height: 1.2;
+}
+
+.memory-today-primary-action {
+  padding: clamp(26px, 4vw, 42px);
+  background: var(--aura-olive);
+  border: 0;
+  border-radius: var(--radius-primary);
+  box-shadow: none;
+}
+
+.memory-today-primary-action h3 {
+  font-family: var(--font-body);
+  font-size: clamp(1.6rem, 3vw, 2.35rem);
+  font-weight: 600;
+}
+
+.memory-today-primary-action .primary-button {
+  color: var(--aura-ink);
+  background: #f6d89c;
+}
+
+.memory-today-primary-action .primary-button:hover:not(:disabled) {
+  background: #f9e4b7;
+}
+
+.memory-today-counts > div,
+.memory-today-recent,
+.memory-documentation-choice-prompt,
+.memory-documentation-permission-note,
+.guided-interview-context,
+.recordings-safety-notice,
+.memory-assets-privacy-note {
+  background: var(--color-surface-muted);
+  border-color: var(--aura-border-soft);
+  box-shadow: none;
+}
+
+.memory-documentation-tools {
+  gap: 14px;
+}
+
+.memory-documentation-tool {
+  min-height: 170px;
+  padding: 24px;
+  color: var(--aura-ink);
+  text-align: right;
+  background: #fffdf8;
+  border: 1px solid var(--aura-border-soft);
+  border-radius: var(--radius-secondary);
+  box-shadow: none;
+}
+
+.memory-documentation-tool:hover,
+.memory-documentation-tool[aria-pressed='true'] {
+  background: #f6f1e7;
+  border-color: rgb(72 107 93 / 42%);
+  box-shadow: inset 4px 0 0 var(--aura-olive);
+}
+
+.memory-documentation-tool > span,
+.memory-documentation-tool > small {
+  color: var(--color-ink-muted);
+}
+
+.memory-documentation-tool > strong {
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+}
+
+.memory-archive-search {
+  padding: clamp(24px, 4vw, 40px);
+  background: #fffdf8;
+  border-color: var(--aura-border-soft);
+  border-radius: var(--radius-primary);
+}
+
+.memory-archive-search-form,
+.recording-upload-form,
+.memory-asset-upload-form,
+.story-form-panel,
+.story-list-panel,
+.biography-question-card,
+.family-question-composer,
+.family-question-card,
+.recording-list-panel,
+.memory-assets-list-panel {
+  background: var(--aura-surface-card);
+  border-color: var(--aura-border-default);
+  box-shadow: var(--aura-shadow-subtle);
+}
+
+.memory-archive-view-list,
+.guided-story-chapters {
+  background: #f3ede2;
+  border-color: var(--aura-border-soft);
+}
+
+.memory-archive-view-button[aria-selected='true'],
+.guided-story-chapters .guided-story-chapter-active {
+  color: var(--aura-ink);
+  background: #fffdf8;
+  border-color: var(--aura-border-soft);
+  box-shadow: none;
+}
+
+.memory-story-card,
+.recording-card,
+.memory-asset-card,
+.guided-story-card,
+.memory-timeline-card {
+  background: var(--aura-surface-raised);
+  border-color: var(--aura-border-default);
+  box-shadow: var(--aura-shadow-subtle);
+}
+
+.memory-story-card {
+  border-inline-start: 3px solid var(--aura-amber);
+}
+
+.story-card-header h3,
+.recording-card-header h4,
+.memory-asset-card-body h4,
+.guided-story-card header h3,
+.memory-timeline-card h4 {
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+.dashboard-card {
+  max-width: 1180px;
+}
+
+.dashboard-header,
+.memory-toolbar {
+  padding-block-end: 22px;
+  border-bottom: 1px solid var(--aura-border-soft);
+}
+
+.dashboard-title {
+  font-size: clamp(2.05rem, 4vw, 3.35rem);
+  line-height: 1.12;
+}
+
+.account-status,
+.memory-optional-context,
+.memory-card-more-actions {
+  background: #f7f1e6;
+  border-color: var(--aura-border-soft);
+  box-shadow: none;
+}
+
+.guided-living-dashboard-intro {
+  background: #fffaf1;
+  border-color: var(--aura-border-soft);
+  border-radius: var(--radius-primary);
+  box-shadow: none;
+}
+
+.guided-living-dashboard-intro li {
+  color: var(--aura-ink);
+  background: #fffdf8;
+  border-color: var(--aura-border-soft);
+}
+
+.guided-living-dashboard-intro li span,
+.memory-initial,
+.memory-empty-icon {
+  background: var(--aura-olive);
+}
+
+.memory-form,
+.memory-media-field,
+.memory-card {
+  background: #fffdf8;
+  border-color: var(--aura-border-soft);
+  border-radius: var(--radius-secondary);
+  box-shadow: none;
+}
+
+.memory-form {
+  padding: clamp(24px, 4vw, 40px);
+}
+
+.memory-gender-field,
+.memory-media-field input[type='file'] {
+  border-color: var(--aura-border-soft);
+}
+
+.memory-gender-field label {
+  color: var(--aura-ink);
+  background: #fffdf8;
+  border-color: var(--aura-border-soft);
+}
+
+.memory-card {
+  border-inline-start: 3px solid var(--aura-amber);
+}
+
+.memory-card-primary-action {
+  color: #fffdf8;
+  background: var(--aura-olive);
+  border-color: var(--aura-olive);
+  box-shadow: none;
+}
+
+.memory-card-primary-action:hover {
+  background: var(--color-olive-strong);
+}
+
+.memory-relationship {
+  color: var(--aura-clay);
+  background: #f5e8df;
+}
+
+.story-disclosure-label,
+.story-summary-excerpt,
+.story-dates span,
+.recording-card-header p,
+.memory-asset-card-body > p {
+  color: var(--color-ink-muted);
+}
+
+.story-status-approved,
+.recording-storage-stored,
+.transcript-review-approved {
+  background: #dcebe3;
+  color: #2e6651;
+}
+
+.memory-chat-trust-list li::before {
+  background: var(--aura-amber);
+}
+
+.story-status-draft,
+.recording-storage-pending,
+.transcript-review-draft {
+  color: #73571c;
+  background: #f5e8c9;
+}
+
+.story-action-button,
+.memory-archive-search-actions a,
+.memory-archive-search-actions button,
+.memory-timeline-actions a,
+.memory-timeline-actions button {
+  color: var(--aura-olive);
+  background: #fffdf8;
+  border-color: rgb(72 107 93 / 38%);
+  border-radius: 10px;
+}
+
+.story-action-archive,
+.memory-asset-archive-button,
+.pilot-withdraw-button {
+  color: var(--aura-clay) !important;
+  border-color: rgb(164 87 62 / 38%) !important;
+  background: #fffaf7 !important;
+}
+
+.family-questions-heading,
+.recordings-heading,
+.memory-assets-heading,
+.guided-story-map-heading,
+.memory-timeline-heading,
+.memory-archive-search-heading {
+  padding-block-end: 20px;
+  border-bottom: 1px solid var(--aura-border-soft);
+}
+
+.family-question-composer > summary,
+.family-question-list-more > summary,
+.memory-today-journey > summary,
+.optional-ai-layer > summary {
+  color: var(--aura-ink);
+  background: #f7f1e6;
+  border-color: var(--aura-border-soft);
+  border-radius: var(--radius-control);
+}
+
+.family-question-card {
+  border-inline-start-color: var(--aura-clay);
+}
+
+.family-question-card,
+.recording-card,
+.memory-asset-card {
+  border-width: 1px;
+  border-inline-start-width: 3px;
+}
+
+.family-question-card-answered {
+  border-inline-start-color: var(--aura-olive);
+}
+
+.family-question-text {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.memory-chat-launcher {
+  background: var(--aura-ink);
+  border-radius: var(--radius-primary);
+  box-shadow: none;
+}
+
+.profile-features .memory-chat-launcher-empty,
+.profile-features .memory-chat-launcher-error,
+.profile-features .memory-chat-launcher-waiting {
+  background: #f8f3e9;
+  border-color: var(--aura-border-soft);
+}
+
+.chat-page-shell,
+.memory-chat-page {
+  background: var(--aura-canvas);
+}
+
+.chat-window,
+.chat-composer,
+.chat-empty-state,
+.chat-message,
+.chat-citations,
+.chat-avatar-stage {
+  border-color: var(--aura-border-soft);
+  box-shadow: none;
+}
+
+.chat-message-user {
+  background: #e3eee8;
+}
+
+.chat-message-assistant,
+.chat-composer,
+.chat-empty-state {
+  background: #fffdf8;
+}
+
+.digital-persona-setup,
+.persona-consent-form,
+.persona-approved-panel,
+.persona-profile-card,
+.persona-voice-clone-panel,
+.persona-avatar-panel,
+.persona-transcription-panel,
+.pilot-header,
+.pilot-section,
+.pilot-actions-panel,
+.pricing-offer-card,
+.pricing-safety-note,
+.pricing-gate-card,
+.pricing-decision-card {
+  background: var(--aura-surface-main);
+  border-color: var(--aura-border-default);
+  box-shadow: var(--aura-shadow-subtle);
+}
+
+.pilot-status-strip,
+.pricing-status-line,
+.participant-code {
+  background: #f6f0e5;
+  border-color: var(--aura-border-soft);
+}
+
+.pilot-gate,
+.pilot-week {
+  background: #fffdf8;
+  border-color: var(--aura-border-soft);
+  box-shadow: none;
+}
+
+.pilot-week-current,
+.pricing-offer-card {
+  border-color: rgb(215 162 76 / 58%);
+  box-shadow: inset 0 3px 0 var(--aura-amber);
+}
+
+.guided-living-dashboard-intro,
+.memory-empty-state,
+.family-questions-empty,
+.recordings-empty,
+.memory-assets-empty,
+.memory-archive-empty,
+.memory-timeline-empty,
+.guided-story-map-empty {
+  background: var(--aura-surface-card);
+  border-color: var(--aura-border-default);
+  box-shadow: var(--aura-shadow-subtle);
+}
+
+@media (max-width: 760px) {
+  :root {
+    --motion-normal: 160ms;
+    --motion-slow: 220ms;
+    --motion-arrival: 680ms;
+  }
+
+  .page-shell {
+    padding: 12px;
+  }
+
+  .surface-card {
+    padding: 24px 18px;
+    border-radius: 24px;
+  }
+
+  .memory-today,
+  .memory-documentation,
+  .family-questions,
+  .recordings-workspace,
+  .memory-assets-workspace,
+  .biography-questionnaire,
+  .guided-story-map,
+  .memory-timeline,
+  .memory-archive-search {
+    padding: 24px 18px;
+  }
+
+  .memory-profile-identity-header {
+    min-height: 220px;
+    padding: 30px 24px;
+  }
+
+  .memory-profile-hero-copy {
+    padding: 0;
+    padding-inline-end: min(40%, 150px);
+  }
+
+  .memory-profile-hero-content {
+    min-height: 0;
+    padding: 92px 24px 28px;
+  }
+
+  .memory-profile-hero-description {
+    display: none;
+    margin-inline-start: 0;
+  }
+
+  .memory-profile-hero-visual {
+    inset-block-end: -62px;
+    inset-inline-end: 20px;
+    width: clamp(126px, 34vw, 162px);
+    margin: 0;
+    min-height: 0;
+    border-width: 5px;
+    transform: none;
+  }
+
+  .memory-profile-hero-actions {
+    padding: 0 24px 28px;
+    gap: 10px;
+    direction: rtl;
+    grid-template-areas:
+      'primary'
+      'story'
+      'photo';
+    grid-template-columns: 1fr;
+  }
+
+  .memory-profile-hero-actions .primary-button,
+  .memory-profile-hero-actions .secondary-button {
+    width: 100%;
+    min-width: 0;
+    justify-self: stretch;
+  }
+
+  .memory-profile-hero-metadata {
+    display: none;
+    padding: 20px 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .memory-profile-mobile-details {
+    display: block;
+  }
+
+  .memory-profile-title {
+    font-size: clamp(2.1rem, 12vw, 3.2rem);
+  }
+
+  .memory-documentation-tool {
+    min-height: 0;
+    padding: 20px;
+  }
+
+  .memory-today-primary-action {
+    padding: 28px 22px;
+  }
+}
+
+/* AURA motion system: restrained feedback without delaying navigation. */
+@keyframes aura-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aura-content-enter {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aura-details-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aura-target-arrive {
+  0%,
+  100% {
+    outline: 3px solid rgb(215 162 76 / 0%);
+    outline-offset: 8px;
+  }
+
+  30% {
+    outline-color: rgb(215 162 76 / 42%);
+    outline-offset: 4px;
+  }
+}
+
+.page-shell > .surface-card {
+  animation: aura-page-enter var(--motion-slow)
+    var(--motion-ease-out) both;
+}
+
+.memory-profile-tab-panel:not([hidden]),
+.memory-archive-view-panel,
+.story-workspace:not([hidden]),
+.memory-documentation
+  > div:not([hidden])
+  > .biography-questionnaire {
+  animation: aura-content-enter var(--motion-normal)
+    var(--motion-ease-out) both;
+}
+
+details[open] > :not(summary) {
+  animation: aura-details-enter var(--motion-normal)
+    var(--motion-ease-out) both;
+}
+
+.profile-edit-panel,
+.form-error,
+.form-notice,
+.story-success,
+.memory-profile-tab-notice {
+  animation: aura-content-enter var(--motion-normal)
+    var(--motion-ease-out) both;
+}
+
+.aura-target-arrival {
+  animation: aura-target-arrive var(--motion-arrival)
+    var(--motion-ease-out);
+}
+
+.primary-button,
+.secondary-button,
+.memory-profile-tab,
+.memory-archive-view-button,
+.memory-documentation-tool,
+.memory-card-primary-action,
+.story-action-button,
+.profile-management-button,
+.memory-chat-start-button,
+.chat-speech-button,
+.memory-today-recent a,
+.memory-story-disclosure > summary {
+  transition-duration: var(--motion-normal);
+  transition-timing-function: var(--motion-ease-standard);
+}
+
+.memory-profile-tab,
+.memory-archive-view-button {
+  transition-property:
+    color,
+    background-color,
+    border-color,
+    box-shadow,
+    transform;
+}
+
+:is(
+  .primary-button,
+  .secondary-button,
+  .memory-profile-tab,
+  .memory-archive-view-button,
+  .memory-documentation-tool,
+  .memory-card-primary-action,
+  .story-action-button,
+  .profile-management-button,
+  .memory-chat-start-button,
+  .chat-speech-button
+):active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+  transition-duration: var(--motion-fast);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0.01ms;
+    --motion-normal: 0.01ms;
+    --motion-slow: 0.01ms;
+    --motion-arrival: 0.01ms;
+  }
+
+  .page-shell > .surface-card,
+  .memory-profile-tab-panel:not([hidden]),
+  .memory-archive-view-panel,
+  .story-workspace:not([hidden]),
+  .memory-documentation
+    > div:not([hidden])
+    > .biography-questionnaire,
+  details[open] > :not(summary),
+  .profile-edit-panel,
+  .form-error,
+  .form-notice,
+  .story-success,
+  .memory-profile-tab-notice,
+  .aura-target-arrival,
+  .aura-tooltip[data-positioned='true'] {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  :is(
+    .primary-button,
+    .secondary-button,
+    .memory-profile-tab,
+    .memory-archive-view-button,
+    .memory-documentation-tool,
+    .memory-card-primary-action,
+    .story-action-button,
+    .profile-management-button,
+    .memory-chat-start-button,
+    .chat-speech-button
+  ):active:not(:disabled) {
+    transform: none;
+  }
+}

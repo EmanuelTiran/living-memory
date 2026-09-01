@@ -205,7 +205,11 @@ function InvitationAcceptPage({
         className="surface-card invitation-page"
         aria-labelledby="invitation-title"
       >
-        <Link className="back-link" to="/">
+        <Link
+          className="back-link"
+          to="/"
+          data-aura-tooltip="לחזור לעמוד הפתיחה של זיכרון חי"
+        >
           חזרה לעמוד הראשי
         </Link>
 
@@ -273,6 +277,7 @@ function InvitationAcceptPage({
                 <div>
                   <Link
                     className="primary-button"
+                    data-aura-tooltip="להתחבר ולחזור להזמנה המשפחתית"
                     to="/login"
                     state={{ returnTo }}
                   >
@@ -280,6 +285,7 @@ function InvitationAcceptPage({
                   </Link>
                   <Link
                     className="secondary-button"
+                    data-aura-tooltip="ליצור חשבון עבור ההזמנה"
                     to="/register"
                     state={{
                       returnTo,
@@ -373,6 +379,7 @@ function InvitationAcceptPage({
                 <button
                   className="primary-button"
                   type="submit"
+                  data-aura-tooltip="לאשר ולהצטרף לארכיון המשפחתי"
                   disabled={isSubmitting}
                 >
                   {isSubmitting

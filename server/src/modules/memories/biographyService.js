@@ -18,6 +18,9 @@ import {
   MEMORY_PERMISSIONS,
   requireMemoryPermission,
 } from './memoryAccessService.js'
+import {
+  personalizeBiographyQuestion,
+} from './subjectLanguage.js'
 
 function validateUserId(userId) {
   if (
@@ -89,12 +92,24 @@ function isDuplicateKeyError(error) {
   return error?.code === 11000
 }
 
-function serializeQuestion(question) {
+function serializeQuestion(
+  question,
+  subject,
+) {
+  const personalizedQuestion =
+    personalizeBiographyQuestion(
+      question,
+      subject,
+    )
+
   return {
-    key: question.key,
-    category: question.category,
-    question: question.question,
-    options: question.options.map(
+    key: personalizedQuestion.key,
+    category:
+      personalizedQuestion.category,
+    question:
+      personalizedQuestion.question,
+    options:
+      personalizedQuestion.options.map(
       (option) => ({
         key: option.key,
         label: option.label,
@@ -105,6 +120,7 @@ function serializeQuestion(question) {
 
 function serializeBiographyAnswer(
   biographyAnswer,
+  subject,
 ) {
   const serialized =
     typeof biographyAnswer.toJSON ===
@@ -119,11 +135,26 @@ function serializeBiographyAnswer(
       serialized.questionKey,
     )
 
+  const personalizedQuestion =
+    questionDefinition
+      ? personalizeBiographyQuestion(
+          questionDefinition,
+          subject,
+        )
+      : null
+
   const selectedOption =
     questionDefinition?.options.find(
       (option) =>
         option.label ===
-        serialized.answer,
+          serialized.answer ||
+        personalizedQuestion?.options
+          .find(
+            (personalizedOption) =>
+              personalizedOption.key ===
+                option.key,
+          )
+          ?.label === serialized.answer,
     ) ?? null
 
   return {
@@ -134,6 +165,7 @@ function serializeBiographyAnswer(
       questionDefinition
         ? serializeQuestion(
             questionDefinition,
+            subject,
           )
         : null,
   }
@@ -142,13 +174,17 @@ function serializeBiographyAnswer(
 function resolveQuestionnaireAnswer(
   question,
   response,
+  subject,
 ) {
   if ('customAnswer' in response) {
     return response.customAnswer
   }
 
   const selectedOption =
-    question.options.find(
+    personalizeBiographyQuestion(
+      question,
+      subject,
+    ).options.find(
       (option) =>
         option.key ===
         response.optionKey,
@@ -198,6 +234,7 @@ async function loadStoredInterviewPromptKeys(
 export function createQuestionnaireResult(
   biographyAnswers,
   storedInterviewPromptKeys = [],
+  subject = {},
 ) {
   const knownQuestionKeys = new Set(
     [
@@ -231,16 +268,34 @@ export function createQuestionnaireResult(
     BIOGRAPHY_QUESTIONS.length
 
   return {
+    unansweredQuestions:
+      unansweredQuestions.map(
+        (question) =>
+          serializeQuestion(
+            question,
+            subject,
+          ),
+      ),
+
     questions: unansweredQuestions
       .slice(
         0,
         BIOGRAPHY_QUESTION_BATCH_SIZE,
       )
-      .map(serializeQuestion),
+      .map((question) =>
+        serializeQuestion(
+          question,
+          subject,
+        ),
+      ),
 
     answers:
       biographyAnswers.map(
-        serializeBiographyAnswer,
+        (answer) =>
+          serializeBiographyAnswer(
+            answer,
+            subject,
+          ),
       ),
 
     answeredQuestions:
@@ -250,7 +305,12 @@ export function createQuestionnaireResult(
             question.key,
           ),
         )
-        .map(serializeQuestion),
+        .map((question) =>
+          serializeQuestion(
+            question,
+            subject,
+          ),
+        ),
 
     progress: {
       totalCount,
@@ -277,11 +337,15 @@ export async function getBiographyQuestionnaire(
         memoryId,
       })
 
-  await requireMemoryPermission(
-    userId,
-    validatedParams.memoryId,
-    MEMORY_PERMISSIONS.MANAGE,
-  )
+  const access =
+    await requireMemoryPermission(
+      userId,
+      validatedParams.memoryId,
+      MEMORY_PERMISSIONS.MANAGE,
+    )
+
+  const memoryProfile =
+    access?.memoryProfile ?? {}
 
   const [
     biographyAnswers,
@@ -298,6 +362,12 @@ export async function getBiographyQuestionnaire(
   return createQuestionnaireResult(
     biographyAnswers,
     storedInterviewPromptKeys,
+    {
+      subjectName:
+        memoryProfile.subjectName,
+      subjectGender:
+        memoryProfile.subjectGender,
+    },
   )
 }
 
@@ -329,17 +399,41 @@ export async function saveBiographyQuestionnaireAnswer(
     throw createBiographyQuestionNotFoundError()
   }
 
+  resolveQuestionnaireAnswer(
+    question,
+    validatedInput,
+    {},
+  )
+
+  const access =
+    await requireMemoryPermission(
+      userId,
+      validatedParams.memoryId,
+      MEMORY_PERMISSIONS.MANAGE,
+    )
+
+  const memoryProfile =
+    access?.memoryProfile ?? {}
+
+  const subject = {
+    subjectName:
+      memoryProfile.subjectName,
+    subjectGender:
+      memoryProfile.subjectGender,
+  }
+
+  const personalizedQuestion =
+    personalizeBiographyQuestion(
+      question,
+      subject,
+    )
+
   const answer =
     resolveQuestionnaireAnswer(
       question,
       validatedInput,
+      subject,
     )
-
-  await requireMemoryPermission(
-    userId,
-    validatedParams.memoryId,
-    MEMORY_PERMISSIONS.MANAGE,
-  )
 
   const existingAnswer =
     await MemoryBiographyAnswer.findOne({
@@ -354,7 +448,7 @@ export async function saveBiographyQuestionnaireAnswer(
 
   if (existingAnswer) {
     existingAnswer.question =
-      question.question
+      personalizedQuestion.question
     existingAnswer.answer = answer
     existingAnswer.status =
       'approved'
@@ -369,6 +463,7 @@ export async function saveBiographyQuestionnaireAnswer(
 
     return serializeBiographyAnswer(
       existingAnswer,
+      subject,
     )
   }
 
@@ -383,7 +478,7 @@ export async function saveBiographyQuestionnaireAnswer(
         questionKey:
           validatedParams.questionKey,
         question:
-          question.question,
+          personalizedQuestion.question,
         answer,
         origin: 'questionnaire',
         status: 'approved',
@@ -401,6 +496,7 @@ export async function saveBiographyQuestionnaireAnswer(
 
   return serializeBiographyAnswer(
     biographyAnswer,
+    subject,
   )
 }
 

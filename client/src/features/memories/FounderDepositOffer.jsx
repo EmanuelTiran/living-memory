@@ -55,6 +55,7 @@ function DepositStatus({
           <button
             className="primary-button"
             type="button"
+            data-aura-tooltip="לסמן עניין בהצעת קבוצת המייסדים"
             onClick={() => {
               onDecision('interested')
             }}
@@ -68,6 +69,7 @@ function DepositStatus({
           <button
             className="secondary-button"
             type="button"
+            data-aura-tooltip="לדחות את ההצעה לעת עתה"
             onClick={() => {
               onDecision('declined')
             }}
@@ -165,6 +167,7 @@ function FounderDepositOffer({
           </p>
           <Link
             className="primary-button"
+            data-aura-tooltip="לעבור למסלול הפיילוט המשפחתי"
             to={`/app/memories/${memoryId}/pilot`}
           >
             מעבר לפיילוט המשפחתי
@@ -181,6 +184,7 @@ function FounderDepositOffer({
           <button
             className="primary-button"
             type="button"
+            data-aura-tooltip="לפתוח הצעה בלי לבצע חיוב"
             onClick={onOffer}
             disabled={isSubmitting}
           >

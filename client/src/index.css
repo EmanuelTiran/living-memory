@@ -1,7 +1,7 @@
 :root {
   color: #26302d;
   background: #f4f0e8;
-  font-family: 'Segoe UI', Arial, sans-serif;
+  font-family: 'Rubik', 'Noto Sans Hebrew', 'Segoe UI', Arial, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   color-scheme: light;
@@ -24,6 +24,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  font-family: 'Rubik', 'Noto Sans Hebrew', 'Segoe UI', Arial, sans-serif;
 }
 
 body,
@@ -32,6 +33,7 @@ input,
 textarea,
 select {
   font: inherit;
+  font-family: 'Rubik', 'Noto Sans Hebrew', 'Segoe UI', Arial, sans-serif;
 }
 
 button,

@@ -138,6 +138,7 @@ function TimelineEntry({
         <div className="memory-timeline-actions">
           <Link
             to={entry.sourceRoute}
+            data-aura-tooltip="לפתוח את המקור בתוך הארכיון"
             state={{ subjectName }}
           >
             פתיחת המקור
@@ -148,6 +149,7 @@ function TimelineEntry({
             !audioUrl && (
               <button
                 type="button"
+                data-aura-tooltip="לשמוע את הקלטת המקור"
                 disabled={isLoadingAudio}
                 onClick={() =>
                   onLoadAudio(entry)

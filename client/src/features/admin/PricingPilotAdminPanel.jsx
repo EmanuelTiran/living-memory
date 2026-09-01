@@ -238,6 +238,7 @@ function PricingPilotAdminPanel({
           <button
             className="primary-button"
             type="submit"
+            data-aura-tooltip="לאמת תשלום לפי קוד המשתתף"
             disabled={isSubmitting}
           >
             אימות תשלום
@@ -245,6 +246,7 @@ function PricingPilotAdminPanel({
           <button
             className="secondary-button"
             type="button"
+            data-aura-tooltip="לתעד החזר מאומת לפי הקוד"
             onClick={() => {
               void handleAction('record_refund')
             }}

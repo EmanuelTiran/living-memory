@@ -213,6 +213,13 @@
 }
 
 @media (max-width: 760px) {
+  .memory-archive-search-form {
+    position: sticky;
+    inset-block-start: 126px;
+    z-index: 12;
+    box-shadow: 0 10px 24px rgba(29, 42, 54, 0.1);
+  }
+
   .memory-archive-search-filters,
   .memory-archive-search-results {
     grid-template-columns: 1fr;

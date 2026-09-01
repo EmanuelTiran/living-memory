@@ -7,6 +7,9 @@ import {
   generateMemoryChatMessageSpeech,
   generateMemoryChatMessageSpeechChunk,
 } from '../voice/speechService.js'
+import {
+  getMemoryAssetFile,
+} from '../media/memoryAssetService.js'
 import AvatarProfile from './AvatarProfile.js'
 import ConsentRecord from './ConsentRecord.js'
 import {
@@ -27,9 +30,6 @@ import {
   isDIDAvatarProviderConfigured,
   isDIDRealtimeAvatarConfigured,
 } from './providers/didAvatarProvider.js'
-import {
-  DID_AVATAR_ASSET_ID,
-} from './providers/didAvatarProfileProvider.js'
 
 function createAvatarUnavailableError() {
   return new AppError(
@@ -81,11 +81,7 @@ async function requireActiveDIDAvatar(
 
   const profile = await profileQuery
 
-  if (
-    !profile ||
-    profile.providerProfileId !==
-      DID_AVATAR_ASSET_ID
-  ) {
+  if (!profile) {
     throw createAvatarUnavailableError()
   }
 
@@ -119,18 +115,24 @@ async function requireActiveDIDAvatar(
   if (!consent) {
     throw createAvatarUnavailableError()
   }
+
+  return profile.providerProfileId
 }
 
 async function runDIDJob(
   jobId,
   audioBuffer,
   audioContentType,
+  imageBuffer,
+  imageContentType,
 ) {
   try {
     const video =
       await generateDIDAvatarVideo({
         audioBuffer,
         audioContentType,
+        imageBuffer,
+        imageContentType,
       })
 
     completeDIDAvatarJob(
@@ -141,6 +143,7 @@ async function runDIDJob(
     failDIDAvatarJob(jobId, error)
   } finally {
     audioBuffer.fill(0)
+    imageBuffer.fill(0)
   }
 }
 
@@ -159,7 +162,10 @@ export async function generateMemoryChatAvatarSpeech(
     throw createAvatarNotConfiguredError()
   }
 
-  await requireActiveDIDAvatar(memoryId)
+  const portraitAssetId =
+    await requireActiveDIDAvatar(
+      memoryId,
+    )
 
   const speech =
     await generateMemoryChatMessageSpeech(
@@ -171,6 +177,20 @@ export async function generateMemoryChatAvatarSpeech(
         preferClonedVoice: true,
       },
     )
+
+  const {
+    asset: portraitAsset,
+    buffer: portraitBuffer,
+  } = await getMemoryAssetFile(
+    userId,
+    memoryId,
+    portraitAssetId,
+  )
+
+  if (portraitAsset.assetType !== 'image') {
+    portraitBuffer.fill(0)
+    throw createAvatarUnavailableError()
+  }
 
   const avatarAudioBuffer = Buffer.from(
     speech.audioBuffer,
@@ -187,6 +207,8 @@ export async function generateMemoryChatAvatarSpeech(
     jobId,
     avatarAudioBuffer,
     speech.contentType,
+    portraitBuffer,
+    portraitAsset.mimeType,
   )
 
   return {

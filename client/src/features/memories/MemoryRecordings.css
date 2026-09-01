@@ -64,6 +64,10 @@
     minmax(0, 1.22fr);
 }
 
+.recordings-layout-view-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .recording-upload-form,
 .recording-list-panel {
   padding: 22px;
@@ -252,6 +256,13 @@
   background: #fffefa;
   border: 1px solid rgba(83, 98, 91, 0.14);
   border-radius: 15px;
+}
+
+.recording-card:target,
+.recording-card:focus {
+  border-color: rgba(77, 123, 104, 0.48);
+  box-shadow: 0 0 0 4px rgba(77, 123, 104, 0.1);
+  outline: none;
 }
 
 .recording-interview-context {

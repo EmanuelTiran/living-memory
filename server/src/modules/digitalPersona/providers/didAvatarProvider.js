@@ -85,7 +85,7 @@ function createTimeoutError() {
   )
 }
 
-function isPng(buffer) {
+function detectImageContentType(buffer) {
   const signature = [
     0x89,
     0x50,
@@ -97,14 +97,41 @@ function isPng(buffer) {
     0x0a,
   ]
 
-  return (
+  if (
     Buffer.isBuffer(buffer) &&
     buffer.length >= signature.length &&
     signature.every(
       (value, index) =>
         buffer[index] === value,
     )
-  )
+  ) {
+    return 'image/png'
+  }
+
+  if (
+    Buffer.isBuffer(buffer) &&
+    buffer.length >= 3 &&
+    buffer[0] === 0xff &&
+    buffer[1] === 0xd8 &&
+    buffer[2] === 0xff
+  ) {
+    return 'image/jpeg'
+  }
+
+  if (
+    Buffer.isBuffer(buffer) &&
+    buffer.length >= 12 &&
+    buffer
+      .subarray(0, 4)
+      .toString('ascii') === 'RIFF' &&
+    buffer
+      .subarray(8, 12)
+      .toString('ascii') === 'WEBP'
+  ) {
+    return 'image/webp'
+  }
+
+  return ''
 }
 
 function isMp4(buffer) {
@@ -286,16 +313,23 @@ function getUploadedResource(data) {
 
 async function uploadImage(
   imageBuffer,
+  imageContentType,
   context,
 ) {
   const form = new FormData()
 
+  const extension = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+  }[imageContentType]
+
   form.append(
     'image',
     new Blob([imageBuffer], {
-      type: 'image/png',
+      type: imageContentType,
     }),
-    'living-memory-avatar.png',
+    `living-memory-avatar.${extension}`,
   )
 
   const data = await requestJson({
@@ -658,6 +692,8 @@ export async function generateDIDAvatarVideo(
   {
     audioBuffer,
     audioContentType,
+    imageBuffer,
+    imageContentType,
   },
   {
     fetchImplementation = globalThis.fetch,
@@ -665,7 +701,10 @@ export async function generateDIDAvatarVideo(
     apiKeyMode = env.didApiKeyMode,
     imagePath =
       env.didAvatarImagePath,
-    imageBuffer,
+    imageBuffer:
+      configuredImageBuffer,
+    imageContentType:
+      configuredImageContentType,
     timeoutMs = env.didTimeoutMs,
     pollIntervalMs =
       env.didPollIntervalMs,
@@ -686,10 +725,25 @@ export async function generateDIDAvatarVideo(
 
   const resolvedImageBuffer =
     imageBuffer ??
+    configuredImageBuffer ??
     await readAvatarImage(imagePath)
 
+  const resolvedImageContentType =
+    imageContentType ??
+    configuredImageContentType
+
+  const detectedImageContentType =
+    detectImageContentType(
+      resolvedImageBuffer,
+    )
+
   if (
-    !isPng(resolvedImageBuffer) ||
+    !detectedImageContentType ||
+    (
+      resolvedImageContentType &&
+      resolvedImageContentType !==
+        detectedImageContentType
+    ) ||
     resolvedImageBuffer.length >
       DID_IMAGE_MAX_SIZE_BYTES
   ) {
@@ -713,6 +767,7 @@ export async function generateDIDAvatarVideo(
   try {
     imageResource = await uploadImage(
       resolvedImageBuffer,
+      detectedImageContentType,
       context,
     )
 

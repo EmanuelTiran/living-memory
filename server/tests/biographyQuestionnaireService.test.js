@@ -229,6 +229,10 @@ import {
         .toHaveLength(5)
 
       expect(
+        result.unansweredQuestions,
+      ).toHaveLength(79)
+
+      expect(
         result.questions[0].key,
       ).toBe(
         'childhood_environment',

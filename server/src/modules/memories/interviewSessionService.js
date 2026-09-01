@@ -1,6 +1,9 @@
 import { AppError } from '../../errors/AppError.js'
 import { getBiographyQuestion } from './biographyQuestionCatalog.js'
 import InterviewSession from './InterviewSession.js'
+import {
+  personalizeBiographyQuestion,
+} from './subjectLanguage.js'
 
 function createPromptNotFoundError() {
   return new AppError(
@@ -13,11 +16,22 @@ function createPromptNotFoundError() {
   )
 }
 
-function createPromptSnapshot(question) {
+function createPromptSnapshot(
+  question,
+  subject,
+) {
+  const personalizedQuestion =
+    personalizeBiographyQuestion(
+      question,
+      subject,
+    )
+
   return {
-    key: question.key,
-    category: question.category,
-    question: question.question,
+    key: personalizedQuestion.key,
+    category:
+      personalizedQuestion.category,
+    question:
+      personalizedQuestion.question,
   }
 }
 
@@ -25,6 +39,7 @@ export async function startInterviewSession({
   userId,
   memoryId,
   questionKey,
+  subject,
 }) {
   const question =
     getBiographyQuestion(questionKey)
@@ -34,7 +49,10 @@ export async function startInterviewSession({
   }
 
   const promptSnapshot =
-    createPromptSnapshot(question)
+    createPromptSnapshot(
+      question,
+      subject,
+    )
 
   const session =
     await InterviewSession.create({

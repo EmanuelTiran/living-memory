@@ -15,13 +15,119 @@ import {
   import {
     createMemoryProfile,
     listMemoryProfiles,
+    updateMemoryProfile,
   } from '../../api/memoryApi.js'
+  import {
+    uploadMemoryAsset,
+  } from '../../api/assetApi.js'
+  import {
+    createMemoryRecording,
+    uploadMemoryRecordingFile,
+  } from '../../api/recordingApi.js'
   import './MemoryDashboard.css'
 
   const emptyForm = {
     subjectName: '',
+    subjectGender: '',
     relationship: '',
     description: '',
+  }
+
+  const MAX_PORTRAIT_SIZE_BYTES =
+    10 * 1024 * 1024
+
+  const MAX_VOICE_SAMPLE_SIZE_BYTES =
+    25 * 1024 * 1024
+
+  const VOICE_MIME_TYPES = new Set([
+    'audio/mpeg',
+    'audio/mp4',
+    'audio/x-m4a',
+    'audio/wav',
+    'audio/x-wav',
+    'audio/webm',
+  ])
+
+  const DASHBOARD_ICON_PATHS = {
+    calendar: (
+      <>
+        <path d="M8 2v4M16 2v4M3 9h18" />
+        <rect x="3" y="4" width="18" height="17" rx="2" />
+      </>
+    ),
+    chevronDown: <path d="m6 9 6 6 6-6" />,
+    logout: (
+      <>
+        <path d="M10 17l5-5-5-5M15 12H3" />
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+      </>
+    ),
+    management: (
+      <>
+        <rect x="3" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" />
+        <rect x="14" y="14" width="7" height="7" rx="1" />
+      </>
+    ),
+    message: (
+      <path d="M21 15a4 4 0 0 1-4 4H8l-5 3 1.6-4.8A8 8 0 1 1 21 15Z" />
+    ),
+    plus: (
+      <>
+        <path d="M12 5v14" />
+        <path d="M5 12h14" />
+      </>
+    ),
+    shieldCheck: (
+      <>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+        <path d="m9 12 2 2 4-4" />
+      </>
+    ),
+    users: (
+      <>
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+      </>
+    ),
+  }
+
+  function DashboardIcon({ name }) {
+    return (
+      <svg
+        className="dashboard-icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        {DASHBOARD_ICON_PATHS[name]}
+      </svg>
+    )
+  }
+
+  function resolveVoiceMimeType(file) {
+    if (VOICE_MIME_TYPES.has(file.type)) {
+      return file.type
+    }
+
+    const extension = file.name
+      .split('.')
+      .pop()
+      ?.toLocaleLowerCase('en-US')
+
+    return {
+      mp3: 'audio/mpeg',
+      m4a: 'audio/mp4',
+      mp4: 'audio/mp4',
+      wav: 'audio/wav',
+      webm: 'audio/webm',
+    }[extension] ?? ''
   }
 
   function getMemoryErrorMessage(error) {
@@ -103,11 +209,13 @@ import {
           </span>
         </div>
 
-        {memoryProfile.relationship && (
-          <p className="memory-relationship">
-            {memoryProfile.relationship}
-          </p>
-        )}
+        <div className="memory-relationship-slot">
+          {memoryProfile.relationship && (
+            <p className="memory-relationship">
+              {memoryProfile.relationship}
+            </p>
+          )}
+        </div>
 
         {memoryProfile.description ? (
           <p className="memory-description">
@@ -121,10 +229,13 @@ import {
 
         {memoryProfile.createdAt && (
           <p className="memory-created-at">
-            נוצר בתאריך{' '}
-            {formatDate(
-              memoryProfile.createdAt,
-            )}
+            <DashboardIcon name="calendar" />
+            <span>
+              נוצר בתאריך{' '}
+              {formatDate(
+                memoryProfile.createdAt,
+              )}
+            </span>
           </p>
         )}
 
@@ -132,17 +243,22 @@ import {
           <Link
             className="memory-card-primary-action"
             to={`/app/memories/${memoryProfile.id}`}
+            data-aura-tooltip={`להיכנס לזיכרון של ${memoryProfile.subjectName} ולהמשיך בתיעוד`}
           >
             פתיחת המסלול של {memoryProfile.subjectName}
           </Link>
 
           <details className="memory-card-more-actions">
-            <summary>פעולות נוספות</summary>
+            <summary data-aura-tooltip="לפתוח את כל אפשרויות הזיכרון">
+              <span>פעולות נוספות</span>
+              <DashboardIcon name="chevronDown" />
+            </summary>
 
             <div>
               <Link
                 className="dashboard-home-link"
                 to={`/app/memories/${memoryProfile.id}/pilot`}
+                data-aura-tooltip="לפתוח את מסלול הפיילוט המשפחתי"
               >
                 פיילוט משפחתי בן 4 שבועות
               </Link>
@@ -151,6 +267,7 @@ import {
                 <Link
                   className="dashboard-home-link"
                   to={`/app/memories/${memoryProfile.id}/pricing-pilot`}
+                  data-aura-tooltip="לפתוח את הצעת קבוצת המייסדים"
                 >
                   הצעת קבוצת המייסדים
                 </Link>
@@ -163,6 +280,7 @@ import {
                 <Link
                   className="dashboard-home-link"
                   to={`/app/memories/${memoryProfile.id}/family`}
+                  data-aura-tooltip="לעבור לניהול בני המשפחה וההרשאות"
                 >
                   הזמנת המשפחה וניהול גישה
                 </Link>
@@ -185,6 +303,15 @@ import {
 
     const [formData, setFormData] =
       useState(emptyForm)
+
+    const [portraitFile, setPortraitFile] =
+      useState(null)
+
+    const [voiceSampleFile, setVoiceSampleFile] =
+      useState(null)
+
+    const [voiceRightsConfirmed, setVoiceRightsConfirmed] =
+      useState(false)
 
     const [showCreateForm, setShowCreateForm] =
       useState(false)
@@ -296,10 +423,64 @@ import {
       event.preventDefault()
       setErrorMessage('')
       setSuccessMessage('')
+
+      if (
+        portraitFile &&
+        (
+          ![
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+          ].includes(portraitFile.type) ||
+          portraitFile.size < 1 ||
+          portraitFile.size >
+            MAX_PORTRAIT_SIZE_BYTES
+        )
+      ) {
+        setErrorMessage(
+          'תמונת האדם חייבת להיות JPG, PNG או WebP ובגודל של עד 10 MB.',
+        )
+        return
+      }
+
+      const voiceMimeType =
+        voiceSampleFile
+          ? resolveVoiceMimeType(
+              voiceSampleFile,
+            )
+          : ''
+
+      if (
+        voiceSampleFile &&
+        (
+          !voiceMimeType ||
+          voiceSampleFile.size < 1 ||
+          voiceSampleFile.size >
+            MAX_VOICE_SAMPLE_SIZE_BYTES
+        )
+      ) {
+        setErrorMessage(
+          'דגימת הקול חייבת להיות MP3, M4A, MP4, WAV או WebM ובגודל של עד 25 MB.',
+        )
+        return
+      }
+
+      if (
+        voiceSampleFile &&
+        !voiceRightsConfirmed
+      ) {
+        setErrorMessage(
+          'כדי לשמור את דגימת הקול יש לאשר שיש לכם רשות לשמור ולהשמיע אותה בארכיון.',
+        )
+        return
+      }
+
       setIsSubmitting(true)
 
+      let createdProfile = null
+
       try {
-        const memoryProfile =
+        createdProfile =
           await runAuthenticatedRequest(
             (accessToken) =>
               createMemoryProfile(
@@ -308,20 +489,104 @@ import {
               ),
           )
 
+        const profileMedia = {}
+
+        if (portraitFile) {
+          const portraitAsset =
+            await runAuthenticatedRequest(
+              (accessToken) =>
+                uploadMemoryAsset(
+                  accessToken,
+                  createdProfile.id,
+                  {
+                    file: portraitFile,
+                    displayName:
+                      `תמונת הפרופיל של ${createdProfile.subjectName}`,
+                    description:
+                      'התמונה הראשית שנבחרה עבור האדם בארכיון.',
+                  },
+                ),
+            )
+
+          profileMedia.portraitAssetId =
+            portraitAsset.id
+        }
+
+        if (voiceSampleFile) {
+          const voiceRecording =
+            await runAuthenticatedRequest(
+              (accessToken) =>
+                createMemoryRecording(
+                  accessToken,
+                  createdProfile.id,
+                  {
+                    displayName:
+                      `דגימת הקול של ${createdProfile.subjectName}`,
+                    originalFileName:
+                      voiceSampleFile.name,
+                    mimeType:
+                      voiceMimeType,
+                    sizeBytes:
+                      voiceSampleFile.size,
+                    languageCode: 'he',
+                    consent: {
+                      confirmed: true,
+                      basis:
+                        'rights_holder',
+                      permittedUses: [
+                        'recording_playback',
+                      ],
+                    },
+                  },
+                ),
+            )
+
+          const storedRecording =
+            await runAuthenticatedRequest(
+              (accessToken) =>
+                uploadMemoryRecordingFile(
+                  accessToken,
+                  createdProfile.id,
+                  voiceRecording.id,
+                  voiceSampleFile,
+                ),
+            )
+
+          profileMedia.voiceSampleRecordingId =
+            storedRecording.id
+        }
+
+        if (
+          Object.keys(profileMedia).length > 0
+        ) {
+          createdProfile =
+            await runAuthenticatedRequest(
+              (accessToken) =>
+                updateMemoryProfile(
+                  accessToken,
+                  createdProfile.id,
+                  profileMedia,
+                ),
+            )
+        }
+
         setMemoryProfiles((current) => [
-          memoryProfile,
+          createdProfile,
           ...current,
         ])
 
         setFormData(emptyForm)
+        setPortraitFile(null)
+        setVoiceSampleFile(null)
+        setVoiceRightsConfirmed(false)
         setShowCreateForm(false)
 
         setSuccessMessage(
-          `הזיכרון של ${memoryProfile.subjectName} נוצר בהצלחה.`,
+          `הזיכרון של ${createdProfile.subjectName} נוצר בהצלחה.`,
         )
 
         navigate(
-          `/app/memories/${memoryProfile.id}`,
+          `/app/memories/${createdProfile.id}?tab=documentation#guided-interview`,
           {
             state: {
               startGuidedInterview: true,
@@ -329,6 +594,28 @@ import {
           },
         )
       } catch (error) {
+        if (createdProfile) {
+          setMemoryProfiles((current) => [
+            createdProfile,
+            ...current.filter(
+              (profile) =>
+                profile.id !==
+                createdProfile.id,
+            ),
+          ])
+
+          navigate(
+            `/app/memories/${createdProfile.id}`,
+            {
+              state: {
+                profileSetupWarning:
+                  'הארכיון נוצר, אך אחד מקובצי ההקמה לא נשמר. פתחו את עריכת פרטי הזיכרון ונסו להעלות אותו שוב.',
+              },
+            },
+          )
+          return
+        }
+
         setErrorMessage(
           getMemoryErrorMessage(error),
         )
@@ -381,20 +668,37 @@ import {
               <p>{user.email}</p>
             </div>
 
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-            >
-              {isLoggingOut
-                ? 'מתנתקים...'
-                : 'התנתקות'}
-            </button>
+            <div className="dashboard-header-actions">
+              {user.systemRole === 'admin' && (
+                <Link
+                  className="secondary-button admin-dashboard-link"
+                  to="/app/admin"
+                  data-aura-tooltip="מעבר לכלי הניהול של המערכת"
+                >
+                  <DashboardIcon name="management" />
+                  פתיחת לוח הניהול
+                </Link>
+              )}
+
+              <button
+                className="secondary-button"
+                type="button"
+                data-aura-tooltip="יציאה בטוחה מהחשבון"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+              >
+                <DashboardIcon name="logout" />
+                {isLoggingOut
+                  ? 'מתנתקים...'
+                  : 'התנתקות'}
+              </button>
+            </div>
           </header>
 
           <div className="account-status">
-            <span aria-hidden="true" />
+            <span aria-hidden="true">
+              <DashboardIcon name="shieldCheck" />
+            </span>
 
             <div>
               <strong>
@@ -409,44 +713,49 @@ import {
             </div>
           </div>
 
-          {user.systemRole === 'admin' && (
-            <Link
-              className="secondary-button admin-dashboard-link"
-              to="/app/admin"
-            >
-              פתיחת לוח הניהול
-            </Link>
-          )}
-
           <section
             className="guided-living-dashboard-intro"
             aria-labelledby="guided-living-dashboard-title"
           >
-            <p className="panel-kicker">זיכרון חי למשפחה</p>
+            <div className="guided-living-dashboard-copy">
+              <p className="panel-kicker">זיכרון חי למשפחה</p>
 
-            <h2 id="guided-living-dashboard-title">
-              הסיפורים של המשפחה שלכם. בקולם. מוכנים לשאלה הבאה.
-            </h2>
+              <h2 id="guided-living-dashboard-title">
+                הסיפורים של המשפחה שלכם. מוכנים לשאלה הבאה.
+              </h2>
 
-            <p>
-              מתעדים בשיחות קצרות וטבעיות, שומרים את הסיפור ואת הקול
-              המקורי, ומקבלים תשובות שמראות על מה הן מבוססות.
-            </p>
+              <p>
+                מתעדים בשיחות קצרות וטבעיות, שומרים את הסיפור ואת הקול
+                המקורי, ומקבלים תשובות שמראות על מה הן מבוססות.
+              </p>
 
-            <ol aria-label="איך המסלול עובד">
-              <li><span>1</span> מדברים</li>
-              <li><span>2</span> שומרים מקור</li>
-              <li><span>3</span> המשפחה שואלת</li>
-            </ol>
+              <ol aria-label="איך המסלול עובד">
+                <li>
+                  <DashboardIcon name="users" />
+                  <span>1</span>
+                  <strong>מדברים</strong>
+                </li>
+                <li>
+                  <DashboardIcon name="shieldCheck" />
+                  <span>2</span>
+                  <strong>שומרים מקור</strong>
+                </li>
+                <li>
+                  <DashboardIcon name="message" />
+                  <span>3</span>
+                  <strong>המשפחה שואלת</strong>
+                </li>
+              </ol>
+            </div>
           </section>
 
-          <div className="memory-toolbar">
+          <div className="memory-toolbar dashboard-memory-section">
             <div>
               <p className="panel-kicker">
                 הארכיונים המשפחתיים
               </p>
 
-              <h2>
+              <h2 id="dashboard-memories-title">
                 של מי הסיפורים שנרצה לשמור?
               </h2>
             </div>
@@ -454,6 +763,11 @@ import {
             <button
               className="primary-button"
               type="button"
+              data-aura-tooltip={
+                showCreateForm
+                  ? 'לסגור את טופס הארכיון החדש'
+                  : 'ליצור זיכרון משפחתי חדש'
+              }
               onClick={() => {
                 setShowCreateForm(
                   (current) => !current,
@@ -463,6 +777,9 @@ import {
                 setSuccessMessage('')
               }}
             >
+              {!showCreateForm && (
+                <DashboardIcon name="plus" />
+              )}
               {showCreateForm
                 ? 'סגירת הטופס'
                 : memoryProfiles.length > 0
@@ -507,9 +824,47 @@ import {
                   />
                 </label>
 
+                <fieldset className="memory-gender-field">
+                  <legend>איך לפנות אל האדם?</legend>
+
+                  <label>
+                    <input
+                      type="radio"
+                      name="subjectGender"
+                      value="female"
+                      checked={
+                        formData.subjectGender ===
+                        'female'
+                      }
+                      onChange={handleFormChange}
+                      required
+                    />
+                    <span>נקבה</span>
+                  </label>
+
+                  <label>
+                    <input
+                      type="radio"
+                      name="subjectGender"
+                      value="male"
+                      checked={
+                        formData.subjectGender ===
+                        'male'
+                      }
+                      onChange={handleFormChange}
+                      required
+                    />
+                    <span>זכר</span>
+                  </label>
+                </fieldset>
+
                 <label className="form-field">
                   <span>
-                    מה הקשר שלך אליו או אליה?
+                    {formData.subjectGender === 'female'
+                      ? 'מה הקשר שלך אליה?'
+                      : formData.subjectGender === 'male'
+                        ? 'מה הקשר שלך אליו?'
+                        : 'מה הקשר שלך אל האדם?'}
                   </span>
 
                   <input
@@ -525,8 +880,88 @@ import {
                 </label>
               </div>
 
+              <section className="memory-profile-media-fields">
+                <label className="memory-media-field">
+                  <span className="memory-media-field-title">
+                    תמונת האדם
+                  </span>
+
+                  <span className="memory-media-field-copy">
+                    זו תהיה התמונה הראשית של הזיכרון ובהמשך גם תמונת המקור לאווטאר. אם לא תבחרו תמונה יוצג עיצוב זיכרון כללי.
+                  </span>
+
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) =>
+                      setPortraitFile(
+                        event.target.files?.[0] ??
+                        null,
+                      )
+                    }
+                  />
+
+                  {portraitFile && (
+                    <strong>
+                      נבחרה: {portraitFile.name}
+                    </strong>
+                  )}
+                </label>
+
+                <div className="memory-media-field">
+                  <label>
+                    <span className="memory-media-field-title">
+                      דגימת הקול
+                    </span>
+
+                    <span className="memory-media-field-copy">
+                      העלו הקלטה ברורה של האדם. היא תישמר כמקור קולי פרטי לקראת שלב הקול, אך לא תפעיל שכפול קול אוטומטית.
+                    </span>
+
+                    <input
+                      type="file"
+                      accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,audio/webm"
+                      onChange={(event) => {
+                        const file =
+                          event.target.files?.[0] ??
+                          null
+
+                        setVoiceSampleFile(file)
+
+                        if (!file) {
+                          setVoiceRightsConfirmed(false)
+                        }
+                      }}
+                    />
+                  </label>
+
+                  {voiceSampleFile && (
+                    <>
+                      <strong>
+                        נבחרה: {voiceSampleFile.name}
+                      </strong>
+
+                      <label className="memory-voice-rights">
+                        <input
+                          type="checkbox"
+                          checked={voiceRightsConfirmed}
+                          onChange={(event) =>
+                            setVoiceRightsConfirmed(
+                              event.target.checked,
+                            )
+                          }
+                        />
+                        <span>
+                          יש לי רשות לשמור ולהשמיע את ההקלטה בתוך הארכיון המשפחתי.
+                        </span>
+                      </label>
+                    </>
+                  )}
+                </div>
+              </section>
+
               <details className="memory-optional-context">
-                <summary>רוצים להוסיף מעט הקשר? לא חובה</summary>
+                <summary data-aura-tooltip="לפתוח שדה לתיאור קצר של הזיכרון">רוצים להוסיף מעט הקשר? לא חובה</summary>
 
                 <label className="form-field">
                   <span>מה חשוב למשפחה לשמור?</span>
@@ -560,6 +995,9 @@ import {
                   onClick={() => {
                     setShowCreateForm(false)
                     setFormData(emptyForm)
+                    setPortraitFile(null)
+                    setVoiceSampleFile(null)
+                    setVoiceRightsConfirmed(false)
                   }}
                   disabled={isSubmitting}
                 >
@@ -636,12 +1074,15 @@ import {
             </section>
           )}
 
-          <Link
-            className="dashboard-home-link"
-            to="/"
-          >
-            חזרה לעמוד הראשי
-          </Link>
+          <footer className="dashboard-footer">
+            <Link
+              className="dashboard-home-link"
+              to="/"
+              data-aura-tooltip="לחזור לעמוד הפתיחה של זיכרון חי"
+            >
+              חזרה לעמוד הראשי
+            </Link>
+          </footer>
         </section>
       </main>
     )

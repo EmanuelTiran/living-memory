@@ -234,6 +234,7 @@ function MemoryPricingPilotPage({
 
           <Link
             className="secondary-button"
+            data-aura-tooltip="לחזור לפרופיל הזיכרון"
             to={`/app/memories/${memoryId}`}
           >
             חזרה לפרופיל

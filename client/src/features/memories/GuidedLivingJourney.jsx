@@ -5,6 +5,7 @@ function GuidedLivingJourney({
   memoryId,
   subjectName,
   authorizationRole = 'owner',
+  canUseGuidedInterview = true,
 }) {
   const canContribute =
     authorizationRole !== 'viewer'
@@ -13,6 +14,8 @@ function GuidedLivingJourney({
     'owner',
     'steward',
   ].includes(authorizationRole)
+  const profilePath =
+    `/app/memories/${encodeURIComponent(memoryId)}`
 
   return (
     <section
@@ -36,15 +39,27 @@ function GuidedLivingJourney({
         </div>
 
         {canContribute ? (
-          <a
+          <Link
             className="secondary-button guided-living-primary-action"
-            href="#guided-interview"
+            data-aura-tooltip={
+              canUseGuidedInterview
+                ? 'להמשיך לשאלה הבאה בראיון'
+                : 'לכתוב סיפור חדש לארכיון'
+            }
+            to={
+              canUseGuidedInterview
+                ? `${profilePath}?tab=documentation#guided-interview`
+                : `${profilePath}?tab=documentation#stories-title`
+            }
           >
-            שיחה קצרה השבוע
-          </a>
+            {canUseGuidedInterview
+              ? 'שיחה קצרה השבוע'
+              : 'כתיבת סיפור קצר'}
+          </Link>
         ) : (
           <Link
             className="secondary-button guided-living-primary-action"
+            data-aura-tooltip="לשאול שאלה על בסיס המקורות"
             to={`/app/memories/${encodeURIComponent(memoryId)}/chat`}
             state={{ subjectName }}
           >
@@ -60,9 +75,41 @@ function GuidedLivingJourney({
         >
           <span className="guided-living-step-number">1</span>
           <div>
-            <strong>מדברים כמה דקות</strong>
-            <p>שאלה אנושית אחת בקול, בלי שאלון ובלי צורך להתכונן.</p>
-            <a href="#guided-interview">פתיחת הראיון</a>
+            <strong>
+              {canUseGuidedInterview
+                ? 'מדברים כמה דקות'
+                : 'שומרים זיכרון אחד'}
+            </strong>
+            <p>
+              {canUseGuidedInterview
+                ? 'שאלה אנושית אחת בקול, בלי שאלון ובלי צורך להתכונן.'
+                : 'כותבים רגע, סיפור או פרט משפחתי קצר ומוסיפים אותו לארכיון.'}
+            </p>
+            {canContribute ? (
+              <Link
+                data-aura-tooltip={
+                  canUseGuidedInterview
+                    ? 'להתחיל בשאלה הראשונה בראיון'
+                    : 'לכתוב סיפור חדש לארכיון'
+                }
+                to={
+                  canUseGuidedInterview
+                    ? `${profilePath}?tab=documentation#guided-interview`
+                    : `${profilePath}?tab=documentation#stories-title`
+                }
+              >
+                {canUseGuidedInterview
+                  ? 'פתיחת הראיון'
+                  : 'הוספת סיפור'}
+              </Link>
+            ) : (
+              <Link
+                data-aura-tooltip="לפתוח את הסיפורים שנשמרו"
+                to={`${profilePath}?tab=archive`}
+              >
+                צפייה בסיפורים
+              </Link>
+            )}
           </div>
         </li>
 
@@ -71,7 +118,12 @@ function GuidedLivingJourney({
           <div>
             <strong>שומרים סיפור ומקור</strong>
             <p>בודקים את התמלול ושומרים גם את ההקלטה המקורית.</p>
-            <a href="#guided-story-map">צפייה במפת הסיפורים</a>
+            <Link
+              data-aura-tooltip="לראות סיפורים לפי נושאים וקשרים"
+              to={`${profilePath}?tab=archive#guided-story-map`}
+            >
+              צפייה במפת הסיפורים
+            </Link>
           </div>
         </li>
 
@@ -81,6 +133,7 @@ function GuidedLivingJourney({
             <strong>שואלים את הסיפור</strong>
             <p>כל תשובה מסומנת ומציגה על אילו זיכרונות היא מבוססת.</p>
             <Link
+              data-aura-tooltip="לפתוח שיחה המבוססת על מקורות"
               to={`/app/memories/${encodeURIComponent(memoryId)}/chat`}
               state={{ subjectName }}
             >
@@ -96,12 +149,18 @@ function GuidedLivingJourney({
             <p>מזמינים אדם קרוב, משאירים שאלה ומחזירים את השיחה לחיים.</p>
             {canManageFamily ? (
               <Link
+                data-aura-tooltip="להזמין בן משפחה לזיכרון"
                 to={`/app/memories/${encodeURIComponent(memoryId)}/family`}
               >
                 הזמנת בן או בת משפחה
               </Link>
             ) : (
-              <a href="#family-questions">מעבר לשאלות המשפחה</a>
+              <Link
+                data-aura-tooltip="לעבור לשאלות שמחכות למשפחה"
+                to={`${profilePath}?tab=family#family-questions`}
+              >
+                מעבר לשאלות המשפחה
+              </Link>
             )}
           </div>
         </li>

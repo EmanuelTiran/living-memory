@@ -79,6 +79,11 @@ function ChatMessageSpeechButton({
           disabled={isLoading}
           aria-pressed={isPlaying}
           aria-label={buttonLabel}
+          data-aura-tooltip={
+            isPlaying
+              ? 'לעצור את השמעת התשובה'
+              : 'לשמוע את התשובה בקול'
+          }
           onClick={() => onToggle(messageId)}
         >
           <span
@@ -99,6 +104,7 @@ function ChatMessageSpeechButton({
           <button
             className="chat-speech-button chat-avatar-video-button"
             type="button"
+            data-aura-tooltip="להשמיע את התשובה עם האווטאר"
             disabled={
               isLoading ||
               isPlaying ||

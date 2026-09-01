@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { createMemoryProfileSchema } from '../src/modules/memories/validation.js'
+import {
+  createMemoryProfileSchema,
+  updateMemoryProfileSchema,
+} from '../src/modules/memories/validation.js'
 
 describe('Memory-profile validation', () => {
   it('normalizes valid profile input', () => {
     const result =
       createMemoryProfileSchema.parse({
         subjectName: '  Sarah Cohen  ',
+        subjectGender: 'female',
         relationship: '  Grandmother  ',
         description:
           '  Family stories and memories.  ',
@@ -13,10 +17,35 @@ describe('Memory-profile validation', () => {
 
     expect(result).toEqual({
       subjectName: 'Sarah Cohen',
+      subjectGender: 'female',
       relationship: 'Grandmother',
       description:
         'Family stories and memories.',
     })
+  })
+
+  it('accepts designated profile media identifiers and rejects unknown gender values', () => {
+    const profileMediaId =
+      '507f1f77bcf86cd799439011'
+
+    const validResult =
+      updateMemoryProfileSchema.safeParse({
+        subjectGender: 'male',
+        portraitAssetId:
+          profileMediaId,
+        voiceSampleRecordingId:
+          profileMediaId,
+      })
+
+    expect(validResult.success).toBe(true)
+
+    const invalidResult =
+      createMemoryProfileSchema.safeParse({
+        subjectName: 'Sarah Cohen',
+        subjectGender: 'unknown',
+      })
+
+    expect(invalidResult.success).toBe(false)
   })
 
   it('accepts a profile with only a name', () => {

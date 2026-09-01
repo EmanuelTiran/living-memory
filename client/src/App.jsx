@@ -155,6 +155,7 @@ function HomePage({
             <Link
               className="primary-button"
               to="/app"
+              data-aura-tooltip="לפתוח את הזיכרונות המשפחתיים שלך"
             >
               פתיחת הארכיון המשפחתי
             </Link>
@@ -163,6 +164,7 @@ function HomePage({
               <Link
                 className="primary-button"
                 to="/login"
+                data-aura-tooltip="להתחבר לחשבון הפיילוט הפרטי"
               >
                 כניסה לפיילוט הפרטי
               </Link>
@@ -171,6 +173,7 @@ function HomePage({
                 <Link
                   className="primary-button"
                   to="/register"
+                  data-aura-tooltip="ליצור חשבון וארכיון משפחתי"
                 >
                   התחלת ארכיון משפחתי
                 </Link>
@@ -178,6 +181,7 @@ function HomePage({
                 <Link
                   className="secondary-button"
                   to="/login"
+                  data-aura-tooltip="להתחבר לחשבון קיים"
                 >
                   כניסה לחשבון
                 </Link>
@@ -355,7 +359,11 @@ function AuthPage({
           className="surface-card auth-card registration-closed-card"
           aria-labelledby="auth-title"
         >
-          <Link className="back-link" to="/">
+          <Link
+            className="back-link"
+            to="/"
+            data-aura-tooltip="לחזור לעמוד הפתיחה"
+          >
             חזרה לעמוד הראשי
           </Link>
 
@@ -369,7 +377,11 @@ function AuthPage({
             ההזמנה האישי שקיבלתם ממנהל הארכיון
             המשפחתי. אם כבר נרשמתם, אפשר להתחבר.
           </p>
-          <Link className="primary-button" to="/login">
+          <Link
+            className="primary-button"
+            to="/login"
+            data-aura-tooltip="להתחבר לחשבון קיים"
+          >
             כניסה לחשבון קיים
           </Link>
         </section>
@@ -386,6 +398,7 @@ function AuthPage({
         <Link
           className="back-link"
           to="/"
+          data-aura-tooltip="לחזור לעמוד הפתיחה"
         >
           חזרה לעמוד הראשי
         </Link>
@@ -530,6 +543,11 @@ function AuthPage({
                 returnTo,
                 invitationToken,
               }}
+              data-aura-tooltip={
+                isRegistration
+                  ? 'לעבור לכניסה לחשבון קיים'
+                  : 'לעבור ליצירת חשבון חדש'
+              }
             >
               {isRegistration
                 ? 'כניסה לחשבון'

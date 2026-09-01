@@ -1,7 +1,7 @@
 import { createAvatarProvider } from './AvatarProvider.js'
 
-export const DID_AVATAR_ASSET_ID =
-  'emanuel-living-memory-avatar-v1'
+const objectIdPattern =
+  /^[0-9a-f]{24}$/i
 
 export const didAvatarProfileProvider =
   createAvatarProvider({
@@ -9,10 +9,11 @@ export const didAvatarProfileProvider =
 
     async createProfile({ assetId }) {
       if (
-        assetId !== DID_AVATAR_ASSET_ID
+        typeof assetId !== 'string' ||
+        !objectIdPattern.test(assetId)
       ) {
         throw new TypeError(
-          'The approved D-ID avatar asset is required.',
+          'An approved memory portrait asset is required.',
         )
       }
 

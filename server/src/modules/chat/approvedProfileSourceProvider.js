@@ -23,6 +23,13 @@ function createProfileVersion(
 function createProfileNameSource(
   memoryProfile,
 ) {
+  const genderStatement = {
+    female:
+      'יש לפנות אליה בלשון נקבה.',
+    male:
+      'יש לפנות אליו בלשון זכר.',
+  }[memoryProfile.subjectGender] ?? ''
+
   return createApprovedSource({
     sourceType: 'memory_profile',
     sourceId:
@@ -30,7 +37,12 @@ function createProfileNameSource(
     title:
       'שם האדם בפרופיל הארכיון',
     content:
-      `שם האדם המתועד בארכיון הוא ${memoryProfile.subjectName}.`,
+      [
+        `שם האדם המתועד בארכיון הוא ${memoryProfile.subjectName}.`,
+        genderStatement,
+      ]
+        .filter(Boolean)
+        .join(' '),
     approvedAt: null,
     sourceVersion:
       createProfileVersion(
@@ -52,6 +64,7 @@ export async function listApprovedProfileSources(
       .select({
         _id: 1,
         subjectName: 1,
+        subjectGender: 1,
         updatedAt: 1,
       })
       .lean()

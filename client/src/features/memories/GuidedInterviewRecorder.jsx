@@ -740,6 +740,7 @@ function GuidedInterviewRecorder({
         <button
           className="guided-recorder-start"
           type="button"
+          data-aura-tooltip="להתחיל להקליט את התשובה בקול"
           onClick={startRecording}
         >
           <span aria-hidden="true" />
@@ -766,6 +767,7 @@ function GuidedInterviewRecorder({
             <button
               className="guided-recorder-stop"
               type="button"
+              data-aura-tooltip="לעצור ולבדוק את ההקלטה"
               onClick={stopRecording}
             >
               עצירת ההקלטה
@@ -810,6 +812,7 @@ function GuidedInterviewRecorder({
             <button
               className="secondary-button guided-recorder-again"
               type="button"
+              data-aura-tooltip="למחוק את ההקלטה ולהקליט מחדש"
               onClick={discardRecording}
             >
               הקלטה מחדש
@@ -883,6 +886,7 @@ function GuidedInterviewRecorder({
           <button
             className="primary-button guided-recorder-save"
             type="button"
+            data-aura-tooltip="לשמור את ההקלטה ולהתחיל תמלול"
             onClick={saveRecording}
           >
             שמירה והתחלת תמלול

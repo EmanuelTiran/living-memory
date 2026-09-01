@@ -260,7 +260,7 @@ const envSchema = z.object({
       'DID_AVATAR_IMAGE_PATH contains invalid characters',
     )
     .default(
-      './assets/emanuel-living-memory-avatar.png',
+      './assets/default-memory-avatar.png',
     ),
 
   DID_TIMEOUT_MS: z.coerce

@@ -36,7 +36,6 @@ import {
   elevenLabsVoiceProvider,
 } from './providers/elevenLabsVoiceProvider.js'
 import {
-  DID_AVATAR_ASSET_ID,
   didAvatarProfileProvider,
 } from './providers/didAvatarProfileProvider.js'
 import {
@@ -146,6 +145,17 @@ function createVoiceCloneRequiredForAvatarError() {
   )
 }
 
+function createPortraitRequiredForAvatarError() {
+  return new AppError(
+    'A portrait must be selected for this memory before D-ID can be enabled.',
+    {
+      statusCode: 409,
+      code:
+        'DID_PORTRAIT_REQUIRED',
+    },
+  )
+}
+
 function toPublicObject(document) {
   if (!document) {
     return null
@@ -223,10 +233,12 @@ function createPublicSetup({
     publicAvatarProfile
       ?.isPhotorealistic === false
 
+  const portraitAssetId =
+    memoryProfile.portraitAssetId
+      ?.toString() ?? null
+
   const localAvatarIsAvailable =
-    Boolean(consent) &&
-    publicAvatarProfile?.status ===
-      'ready'
+    Boolean(portraitAssetId)
 
   const didRealtimeAvatarIsAvailable =
     didAvatarIsActive &&
@@ -289,10 +301,8 @@ function createPublicSetup({
       active: didAvatarIsActive,
       localFallbackAvailable:
         localAvatarIsAvailable,
-      localAssetUrl:
-        localAvatarIsAvailable
-          ? '/assets/emanuel-living-memory-avatar.png'
-          : null,
+      portraitAssetId,
+      localAssetUrl: null,
       resultDelivery:
         'server_private_stream',
       remoteResourcesTemporary: true,
@@ -486,6 +496,7 @@ async function createExternalAvatarProfile({
   userId,
   memoryId,
   consent,
+  portraitAssetId,
 }) {
   const disabledAt = new Date()
 
@@ -505,8 +516,7 @@ async function createExternalAvatarProfile({
   const providerResult =
     await didAvatarProfileProvider
       .createProfile({
-        assetId:
-          DID_AVATAR_ASSET_ID,
+        assetId: portraitAssetId,
       })
 
   try {
@@ -930,6 +940,14 @@ export async function activateDIDAvatar(
 
   const acceptedAt = new Date()
 
+  const portraitAssetId =
+    memoryProfile.portraitAssetId
+      ?.toString()
+
+  if (!portraitAssetId) {
+    throw createPortraitRequiredForAvatarError()
+  }
+
   const updateResult =
     await ConsentRecord.updateOne(
       {
@@ -947,7 +965,7 @@ export async function activateDIDAvatar(
             modelFamily:
               'talks-v2-photo',
             providerAssetId:
-              DID_AVATAR_ASSET_ID,
+              portraitAssetId,
             attestations: {
               confirmsOwnLikeness:
                 avatarConsent
@@ -986,6 +1004,7 @@ export async function activateDIDAvatar(
     userId,
     memoryId: validatedMemoryId,
     consent,
+    portraitAssetId,
   })
 
   return loadPublicSetup(

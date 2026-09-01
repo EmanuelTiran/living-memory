@@ -27,6 +27,17 @@ function createPngBuffer() {
   ])
 }
 
+function createJpegBuffer() {
+  return Buffer.concat([
+    Buffer.from([
+      0xff,
+      0xd8,
+      0xff,
+    ]),
+    Buffer.alloc(24),
+  ])
+}
+
 function createMp4Buffer() {
   return Buffer.concat([
     Buffer.from([
@@ -277,6 +288,38 @@ describe('D-ID photo avatar provider', () => {
             options.method === 'DELETE',
         ),
     ).toBe(true)
+  })
+
+  it('uploads the selected JPEG portrait with its real media type', async () => {
+    const fetchImplementation =
+      createSuccessfulFetch()
+
+    await generateDIDAvatarVideo(
+      {
+        ...createInput(),
+        imageBuffer:
+          createJpegBuffer(),
+        imageContentType:
+          'image/jpeg',
+      },
+      {
+        ...createOptions(
+          fetchImplementation,
+        ),
+        imageBuffer: undefined,
+      },
+    )
+
+    const imageUpload =
+      fetchImplementation.mock.calls[0][1]
+        .body.get('image')
+
+    expect(imageUpload.type).toBe(
+      'image/jpeg',
+    )
+    expect(imageUpload.name).toBe(
+      'living-memory-avatar.jpg',
+    )
   })
 
   it('maps NetFree-style HTTP 418 download failure and still cleans temporary resources', async () => {

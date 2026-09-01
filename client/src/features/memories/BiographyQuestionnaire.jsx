@@ -143,7 +143,7 @@
             className="biography-written-answer"
             open={!showVoiceRecorder}
           >
-            <summary>
+            <summary data-aura-tooltip="לפתוח אפשרות למענה כתוב">
               {showVoiceRecorder
                 ? 'מעדיפים לענות בקצרה בכתב?'
                 : 'עריכת התשובה הכתובה'}
@@ -257,6 +257,7 @@
             <button
               className="primary-button biography-save-button"
               type="submit"
+              data-aura-tooltip="לשמור את התשובה בזיכרון"
               disabled={
                 isSaving ||
                 draft.mode === '' ||
@@ -283,11 +284,33 @@
     subjectName,
     runAuthenticatedRequest,
     initiallyExpanded = false,
+    expansionRequestId = '',
+    viewMode = 'conversation',
+    onTopicQuestionSelected,
+    onTopicPickerRequested,
   }) {
     const [
       isExpanded,
       setIsExpanded,
-    ] = useState(initiallyExpanded)
+    ] = useState(
+      initiallyExpanded ||
+        Boolean(expansionRequestId),
+    )
+    const [
+      handledExpansionRequestId,
+      setHandledExpansionRequestId,
+    ] = useState(expansionRequestId)
+
+    if (
+      expansionRequestId &&
+      expansionRequestId !==
+        handledExpansionRequestId
+    ) {
+      setHandledExpansionRequestId(
+        expansionRequestId,
+      )
+      setIsExpanded(true)
+    }
 
     const [
       questionnaire,
@@ -327,8 +350,16 @@
       setRepeatQuestionKey,
     ] = useState('')
 
+    const [
+      topicQuestionKey,
+      setTopicQuestionKey,
+    ] = useState('')
+
     const [isLoading, setIsLoading] =
-      useState(initiallyExpanded)
+      useState(
+        initiallyExpanded ||
+          Boolean(expansionRequestId),
+      )
 
     const [
       isVoiceRecorderBusy,
@@ -368,7 +399,8 @@
 
           for (
             const question
-            of result.questions
+            of result.unansweredQuestions ??
+              result.questions
           ) {
             nextDrafts[question.key] =
               createEmptyDraft()
@@ -400,7 +432,10 @@
       ])
 
     useEffect(() => {
-      if (!initiallyExpanded) {
+      if (
+        !initiallyExpanded &&
+        !expansionRequestId
+      ) {
         return undefined
       }
 
@@ -422,7 +457,8 @@
 
           for (
             const question
-            of result.questions
+            of result.unansweredQuestions ??
+              result.questions
           ) {
             nextDrafts[question.key] =
               createEmptyDraft()
@@ -456,6 +492,7 @@
       }
     }, [
       initiallyExpanded,
+      expansionRequestId,
       memoryId,
       runAuthenticatedRequest,
     ])
@@ -533,6 +570,48 @@
           repeatQuestionKey,
         ],
       )
+
+    const topicQuestion =
+      useMemo(
+        () =>
+          questionnaire
+            ?.unansweredQuestions
+            ?.find(
+              (question) =>
+                question.key ===
+                topicQuestionKey,
+            ) ?? null,
+        [
+          questionnaire,
+          topicQuestionKey,
+        ],
+      )
+
+    const unansweredQuestionsByCategory =
+      useMemo(() => {
+        const groups = new Map()
+
+        for (
+          const question
+          of questionnaire
+            ?.unansweredQuestions ?? []
+        ) {
+          const questions =
+            groups.get(
+              question.category,
+            ) ?? []
+
+          questions.push(question)
+          groups.set(
+            question.category,
+            questions,
+          )
+        }
+
+        return Array.from(
+          groups.entries(),
+        )
+      }, [questionnaire])
 
     const currentBatchIsComplete =
       Boolean(
@@ -683,6 +762,13 @@
             ...current,
             answers,
             answeredQuestions,
+            unansweredQuestions:
+              current.unansweredQuestions
+                ?.filter(
+                  (unansweredQuestion) =>
+                    unansweredQuestion.key !==
+                    question.key,
+                ) ?? [],
             progress: {
               ...current.progress,
               completedCount,
@@ -725,6 +811,13 @@
         ) {
           setRepeatPromptSearch('')
           setRepeatQuestionKey('')
+        }
+
+        if (
+          topicQuestionKey ===
+          question.key
+        ) {
+          setTopicQuestionKey('')
         }
 
         setSuccessMessage(
@@ -828,10 +921,32 @@
 
     const currentQuestion =
       repeatQuestion ??
+      topicQuestion ??
       suggestedQuestion
 
     const isRepeatingQuestion =
       Boolean(repeatQuestion)
+
+    const isTopicQuestion =
+      Boolean(topicQuestion)
+
+    function selectTopicQuestion(
+      question,
+    ) {
+      setDrafts((current) => ({
+        ...current,
+        [question.key]:
+          current[question.key] ??
+          createEmptyDraft(),
+      }))
+      setTopicQuestionKey(question.key)
+      setRepeatQuestionKey('')
+      setErrorMessage('')
+      setSuccessMessage('')
+      onTopicQuestionSelected?.(
+        question,
+      )
+    }
 
     return (
       <section
@@ -846,20 +961,29 @@
             </p>
 
             <h2 id="biography-questionnaire-title">
-              שיחה קצרה עם{' '}
-              {subjectName}
+              {viewMode === 'topics'
+                ? `בחירת נושא לשיחה עם ${subjectName}`
+                : `שיחה קצרה עם ${subjectName}`}
             </h2>
 
             <p>
-              בכל פעם מופיעה שאלה אנושית אחת.
-              אין צורך להשלים שאלון או לענות
-              על הכול ברצף.
+              {viewMode === 'topics'
+                ? 'בחרו נושא ושאלה אחת שעדיין לא נענתה. לאחר הבחירה תחזרו לשיחה הקצרה.'
+                : 'בכל פעם מופיעה שאלה אנושית אחת. אין צורך להשלים שאלון או לענות על הכול ברצף.'}
             </p>
           </div>
 
-          <button
+          {viewMode !== 'topics' && (
+            <button
             className="primary-button biography-toggle-button"
             type="button"
+            data-aura-tooltip={
+              isExpanded
+                ? 'לסגור את הראיון ולחזור בהמשך'
+                : questionnaire
+                  ? 'להמשיך מהמקום שבו עצרת'
+                  : 'להתחיל בשאלה הראשונה'
+            }
             onClick={handleToggle}
             disabled={isVoiceRecorderBusy}
             aria-expanded={isExpanded}
@@ -869,7 +993,8 @@
               : questionnaire
                 ? 'המשך הראיון'
                 : 'התחלת ראיון קצר'}
-          </button>
+            </button>
+          )}
         </div>
 
         {isExpanded && (
@@ -912,6 +1037,7 @@
                 <button
                   className="secondary-button"
                   type="button"
+                  data-aura-tooltip="לנסות לטעון שוב את שאלות הראיון"
                   onClick={
                     loadQuestionnaire
                   }
@@ -921,7 +1047,88 @@
               )}
 
             {!isLoading &&
-              questionnaire && (
+              questionnaire &&
+              viewMode === 'topics' && (
+                <section
+                  id="biography-topic-picker"
+                  className="biography-topic-picker"
+                  aria-labelledby="biography-topic-picker-title"
+                >
+                  <div className="biography-topic-picker-heading">
+                    <div>
+                      <h3 id="biography-topic-picker-title">
+                        שאלות שעדיין לא נענו
+                      </h3>
+
+                      <p>
+                        בוחרים רק שאלה אחת. אפשר לחזור לכאן בכל ביקור ולבחור נושא אחר.
+                      </p>
+                    </div>
+
+                    <span>
+                      {
+                        questionnaire.progress
+                          .remainingCount
+                      }
+                    </span>
+                  </div>
+
+                  {unansweredQuestionsByCategory.length === 0 ? (
+                    <div className="biography-topic-picker-empty">
+                      כל השאלות במאגר כבר נענו. אפשר לחזור לשיחה ולבחור שאלה שנענתה בעבר.
+                    </div>
+                  ) : (
+                    <div className="biography-topic-groups">
+                      {unansweredQuestionsByCategory.map(
+                        ([category, questions]) => (
+                          <section
+                            className="biography-topic-group"
+                            key={category}
+                            aria-labelledby={`biography-topic-${category}`}
+                          >
+                            <div>
+                              <h4 id={`biography-topic-${category}`}>
+                                {CATEGORY_LABELS[category] ?? 'שאלות חיים'}
+                              </h4>
+                              <span>
+                                {questions.length}
+                              </span>
+                            </div>
+
+                            <div className="biography-topic-questions">
+                              {questions.map(
+                                (question) => (
+                                  <button
+                                    type="button"
+                                    key={question.key}
+                                    data-aura-tooltip="לבחור שאלה זו לשיחה"
+                                    onClick={() =>
+                                      selectTopicQuestion(
+                                        question,
+                                      )
+                                    }
+                                  >
+                                    <span>
+                                      {question.question}
+                                    </span>
+                                    <strong>
+                                      בחירת השאלה
+                                    </strong>
+                                  </button>
+                                ),
+                              )}
+                            </div>
+                          </section>
+                        ),
+                      )}
+                    </div>
+                  )}
+                </section>
+              )}
+
+            {!isLoading &&
+              questionnaire &&
+              viewMode !== 'topics' && (
                 <>
                   <div className="guided-interview-context">
                     <strong>
@@ -936,13 +1143,30 @@
                     </p>
                   </div>
 
-                  {questionnaire
-                    .answeredQuestions
-                    ?.length > 0 && (
-                    <section
-                      className="guided-repeat-search"
-                      aria-labelledby="guided-repeat-search-title"
-                    >
+                  <details className="guided-question-alternatives">
+                    <summary data-aura-tooltip="לבחור נושא או שאלה אחרת">
+                      בחירת שאלה אחרת
+                    </summary>
+
+                    <div className="guided-question-alternatives-content">
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        data-aura-tooltip="לראות שאלות לפי נושאי חיים"
+                        onClick={
+                          onTopicPickerRequested
+                        }
+                      >
+                        בחירה לפי נושא
+                      </button>
+
+                      {questionnaire
+                        .answeredQuestions
+                        ?.length > 0 && (
+                        <section
+                          className="guided-repeat-search"
+                          aria-labelledby="guided-repeat-search-title"
+                        >
                       <div className="guided-repeat-search-heading">
                         <div>
                           <h3 id="guided-repeat-search-title">
@@ -999,6 +1223,7 @@
                                 <button
                                   type="button"
                                   key={question.key}
+                                  data-aura-tooltip="לבחור לענות שוב על השאלה"
                                   disabled={isVoiceRecorderBusy}
                                   onClick={() =>
                                     selectQuestionToRepeat(
@@ -1031,8 +1256,10 @@
                           </p>
                         )
                       )}
-                    </section>
-                  )}
+                        </section>
+                        )}
+                    </div>
+                  </details>
 
                   {progress.isComplete &&
                   !isRepeatingQuestion ? (
@@ -1058,6 +1285,7 @@
                     <div className="biography-question-list">
                       {currentQuestion &&
                         (isRepeatingQuestion ||
+                          isTopicQuestion ||
                           !currentBatchIsComplete) && (
                           <article
                             className={`biography-question-card ${
@@ -1129,11 +1357,34 @@
                                 <button
                                   className="secondary-button"
                                   type="button"
+                                  data-aura-tooltip="לחזור לשאלה שהמערכת הציעה"
                                   disabled={
                                     Boolean(savingQuestionKey) ||
                                     isVoiceRecorderBusy
                                   }
                                   onClick={cancelQuestionRepeat}
+                                >
+                                  חזרה לשאלה המוצעת
+                                </button>
+                              </nav>
+                            ) : isTopicQuestion ? (
+                              <nav
+                                className="guided-question-navigation guided-repeat-navigation"
+                                aria-label="בחירת שאלה אחרת"
+                              >
+                                <button
+                                  className="secondary-button"
+                                  type="button"
+                                  data-aura-tooltip="לחזור לשאלה שהמערכת הציעה"
+                                  disabled={
+                                    Boolean(savingQuestionKey) ||
+                                    isVoiceRecorderBusy
+                                  }
+                                  onClick={() => {
+                                    setTopicQuestionKey('')
+                                    setErrorMessage('')
+                                    setSuccessMessage('')
+                                  }}
                                 >
                                   חזרה לשאלה המוצעת
                                 </button>
@@ -1146,6 +1397,7 @@
                                 <button
                                   className="secondary-button"
                                   type="button"
+                                  data-aura-tooltip="לחזור לשאלה הקודמת בראיון"
                                   disabled={
                                     activeQuestionIndex === 0 ||
                                     Boolean(savingQuestionKey) ||
@@ -1164,6 +1416,7 @@
                                 <button
                                   className="secondary-button"
                                   type="button"
+                                  data-aura-tooltip="לעבור לשאלה מוצעת אחרת"
                                   disabled={
                                     activeQuestionIndex >=
                                       questionnaire.questions.length - 1 ||
@@ -1199,6 +1452,7 @@
                           <button
                             className="primary-button"
                             type="button"
+                            data-aura-tooltip="לקבל שאלה חדשה להמשך השיחה"
                             onClick={
                               loadQuestionnaire
                             }
@@ -1219,6 +1473,7 @@
                       <button
                         className="biography-saved-toggle"
                         type="button"
+                        data-aura-tooltip="לפתוח תשובות שכבר נשמרו"
                         onClick={() =>
                           setShowSavedAnswers(
                             (current) =>
@@ -1358,6 +1613,7 @@
                                         <button
                                           className="story-action-button story-action-edit"
                                           type="button"
+                                          data-aura-tooltip="לערוך את התשובה השמורה"
                                           onClick={() =>
                                             startEditingAnswer(
                                               answer,

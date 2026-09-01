@@ -73,11 +73,15 @@ export async function createMemoryRecordingMetadata(
       input,
     )
 
-  await requireMemoryPermission(
-    userId,
-    validatedMemoryId,
-    MEMORY_PERMISSIONS.CONTRIBUTE,
-  )
+  const access =
+    await requireMemoryPermission(
+      userId,
+      validatedMemoryId,
+      MEMORY_PERMISSIONS.CONTRIBUTE,
+    )
+
+  const memoryProfile =
+    access?.memoryProfile ?? {}
 
   const recordingInput = {
     memoryId: validatedMemoryId,
@@ -123,6 +127,12 @@ export async function createMemoryRecordingMetadata(
         questionKey:
           recordingData.interviewPrompt
             .questionKey,
+        subject: {
+          subjectName:
+            memoryProfile.subjectName,
+          subjectGender:
+            memoryProfile.subjectGender,
+        },
       })
 
     interviewSession = interview.session

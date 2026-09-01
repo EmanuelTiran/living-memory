@@ -295,6 +295,7 @@ function AdminDashboard({
             <button
               className="secondary-button"
               type="button"
+              data-aura-tooltip="לטעון מחדש את נתוני הניהול"
               onClick={() => {
                 setIsLoading(true)
                 setErrorMessage('')
@@ -310,6 +311,7 @@ function AdminDashboard({
             <Link
               className="secondary-button"
               to="/app"
+              data-aura-tooltip="לחזור לאזור האישי"
             >
               חזרה לאזור האישי
             </Link>

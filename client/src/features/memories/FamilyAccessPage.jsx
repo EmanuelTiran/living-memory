@@ -378,6 +378,7 @@ function FamilyAccessPage({
       >
         <Link
           className="back-link"
+          data-aura-tooltip="לחזור לפרופיל הזיכרון"
           to={
             memoryId
               ? `/app/memories/${memoryId}`
@@ -490,6 +491,7 @@ function FamilyAccessPage({
                 <button
                   className="primary-button"
                   type="submit"
+                  data-aura-tooltip="ליצור קישור הזמנה אישי למשפחה"
                   disabled={busyKey === 'create'}
                 >
                   {busyKey === 'create'
@@ -519,6 +521,7 @@ function FamilyAccessPage({
                     <button
                       className="secondary-button"
                       type="button"
+                      data-aura-tooltip="להעתיק את קישור ההזמנה"
                       onClick={
                         handleCopyInvitation
                       }
@@ -620,6 +623,7 @@ function FamilyAccessPage({
                             <button
                               className="secondary-button"
                               type="button"
+                              data-aura-tooltip="לשמור את התפקיד החדש"
                               onClick={() =>
                                 handleUpdateMember(
                                   member,
@@ -635,6 +639,7 @@ function FamilyAccessPage({
                             <button
                               className="danger-button"
                               type="button"
+                              data-aura-tooltip="לבטל את הגישה לזיכרון"
                               onClick={() =>
                                 handleRevokeMember(
                                   member,
@@ -710,6 +715,7 @@ function FamilyAccessPage({
                           <button
                             className="danger-button"
                             type="button"
+                            data-aura-tooltip="לבטל את קישור ההזמנה"
                             onClick={() =>
                               handleRevokeInvitation(
                                 invitation.id,

@@ -281,6 +281,8 @@ function MemoryAssetPreview({
 }
 
 function MemoryAssets({
+  canContribute = true,
+  canEdit = true,
   memoryId,
   subjectName,
   runAuthenticatedRequest,
@@ -684,7 +686,10 @@ function MemoryAssets({
             תמונות ומסמכים של {subjectName}
           </h2>
           <p>
-            העלו תמונות או מסמכי PDF. הקבצים נשמרים
+            {canContribute
+              ? 'העלו תמונות או מסמכי PDF. '
+              : 'כאן נשמרים התמונות והמסמכים של הארכיון. '}
+            הקבצים נשמרים
             באופן פרטי ואינם נשלחים לשירות AI או לספק
             חיצוני.
           </p>
@@ -713,7 +718,14 @@ function MemoryAssets({
         </p>
       )}
 
-      <div className="memory-assets-layout">
+      <div
+        className={`memory-assets-layout ${
+          canContribute
+            ? ''
+            : 'memory-assets-layout-view-only'
+        }`}
+      >
+        {canContribute && (
         <form
           className="memory-asset-upload-form"
           onSubmit={handleSubmit}
@@ -770,6 +782,7 @@ function MemoryAssets({
           <button
             className="primary-button"
             type="submit"
+            data-aura-tooltip="להעלות את הקובץ לארכיון הפרטי"
             disabled={isSubmitting}
           >
             {isSubmitting
@@ -777,6 +790,7 @@ function MemoryAssets({
               : 'העלאת הקובץ'}
           </button>
         </form>
+        )}
 
         <div className="memory-assets-list-panel">
           <h3>הקבצים שנשמרו</h3>
@@ -819,7 +833,8 @@ function MemoryAssets({
                   </div>
 
                   <div className="memory-asset-card-body">
-                    {editingAssetId === asset.id ? (
+                    {canEdit &&
+                    editingAssetId === asset.id ? (
                       <form
                         className="memory-asset-metadata-form"
                         onSubmit={(event) =>
@@ -858,6 +873,7 @@ function MemoryAssets({
                         <div>
                           <button
                             type="submit"
+                            data-aura-tooltip="לשמור את שם הקובץ ותיאורו"
                             disabled={
                               busyAssetId === asset.id ||
                               metadataDraft.displayName.trim().length < 2
@@ -957,20 +973,24 @@ function MemoryAssets({
 
                     {editingAssetId !== asset.id && (
                       <div className="memory-asset-actions">
-                        <button
-                          type="button"
-                          disabled={
-                            busyAssetId === asset.id
-                          }
-                          onClick={() =>
-                            startEditingMetadata(asset)
-                          }
-                        >
-                          עריכת פרטים
-                        </button>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            data-aura-tooltip="לערוך את שם הקובץ ותיאורו"
+                            disabled={
+                              busyAssetId === asset.id
+                            }
+                            onClick={() =>
+                              startEditingMetadata(asset)
+                            }
+                          >
+                            עריכת פרטים
+                          </button>
+                        )}
 
                         <button
                           type="button"
+                          data-aura-tooltip="לפתוח תצוגה פרטית של הקובץ"
                           disabled={
                             busyAssetId === asset.id
                           }
@@ -986,6 +1006,7 @@ function MemoryAssets({
 
                         <button
                           type="button"
+                          data-aura-tooltip="להוריד עותק פרטי של הקובץ"
                           disabled={
                             busyAssetId === asset.id
                           }
@@ -999,18 +1020,21 @@ function MemoryAssets({
                           הורדה
                         </button>
 
-                        <button
-                          className="memory-asset-archive-button"
-                          type="button"
-                          disabled={
-                            busyAssetId === asset.id
-                          }
-                          onClick={() =>
-                            handleArchive(asset)
-                          }
-                        >
-                          העברה לארכיון
-                        </button>
+                        {canEdit && (
+                          <button
+                            className="memory-asset-archive-button"
+                            type="button"
+                            data-aura-tooltip="להעביר את הקובץ מהארכיון הפעיל"
+                            disabled={
+                              busyAssetId === asset.id
+                            }
+                            onClick={() =>
+                              handleArchive(asset)
+                            }
+                          >
+                            העברה לארכיון
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

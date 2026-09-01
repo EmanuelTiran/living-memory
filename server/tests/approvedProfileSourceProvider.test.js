@@ -60,6 +60,7 @@ describe(
           createProfileQuery({
             _id: memoryId,
             subjectName: 'אורה',
+            subjectGender: 'female',
             updatedAt,
           }),
         )
@@ -83,7 +84,7 @@ describe(
             title:
               'שם האדם בפרופיל הארכיון',
             content:
-              'שם האדם המתועד בארכיון הוא אורה.',
+              'שם האדם המתועד בארכיון הוא אורה. יש לפנות אליה בלשון נקבה.',
             approvedAt: null,
             sourceVersion:
               updatedAt.toISOString(),

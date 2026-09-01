@@ -1,5 +1,32 @@
 import { z } from 'zod'
 
+const objectIdPattern =
+  /^[0-9a-f]{24}$/i
+
+const optionalObjectIdSchema =
+  (label) =>
+    z
+      .string({
+        error: `${label} must be a string.`,
+      })
+      .trim()
+      .regex(objectIdPattern, {
+        error: `${label} must be valid.`,
+      })
+      .optional()
+
+const subjectGenderSchema = z.enum(
+  [
+    'female',
+    'male',
+    'unspecified',
+  ],
+  {
+    error:
+      'Subject gender is invalid.',
+  },
+)
+
 function optionalTextSchema({
   maxLength,
   typeMessage,
@@ -141,6 +168,9 @@ export const createMemoryProfileSchema =
   z.strictObject({
     subjectName: subjectNameSchema,
 
+    subjectGender:
+      subjectGenderSchema.optional(),
+
     relationship: optionalTextSchema({
       maxLength: 80,
       typeMessage:
@@ -179,6 +209,19 @@ export const updateMemoryProfileSchema =
         lengthMessage:
           'Description must not exceed 1000 characters.',
       }),
+
+      subjectGender:
+        subjectGenderSchema.optional(),
+
+      portraitAssetId:
+        optionalObjectIdSchema(
+          'Portrait asset ID',
+        ),
+
+      voiceSampleRecordingId:
+        optionalObjectIdSchema(
+          'Voice sample recording ID',
+        ),
     })
     .refine(
       (data) =>

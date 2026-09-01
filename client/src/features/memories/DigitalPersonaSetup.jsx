@@ -68,6 +68,8 @@ function getErrorMessage(error) {
       'יש להגדיר DID_API_KEY בשרת ולהפעיל אותו מחדש.',
     DID_VOICE_CLONE_REQUIRED:
       'יש להפעיל תחילה את הקול האישי של ElevenLabs.',
+    DID_PORTRAIT_REQUIRED:
+      'יש להוסיף תחילה תמונה של האדם בפרטי הזיכרון.',
     DID_AUTHENTICATION_FAILED:
       'מפתח D‑ID נדחה. יש לבדוק את DID_API_KEY בשרת.',
     DID_BILLING_REQUIRED:
@@ -154,6 +156,9 @@ function ProfileStatusCard({
 function DigitalPersonaSetup({
   memoryId,
   subjectName,
+  portraitUrl = '',
+  hasPortrait = false,
+  onRequestPortrait,
   runAuthenticatedRequest,
 }) {
   const [setup, setSetup] = useState(null)
@@ -709,6 +714,7 @@ function DigitalPersonaSetup({
               <button
                 className="primary-button persona-primary-action"
                 type="submit"
+                data-aura-tooltip="לשמור את ההסכמה להפעלת השכבה הדיגיטלית"
                 disabled={
                   activeAction === 'consent'
                 }
@@ -746,6 +752,7 @@ function DigitalPersonaSetup({
                 <button
                   className="persona-revoke-button"
                   type="button"
+                  data-aura-tooltip="לבטל את ההסכמה לקול ולאווטאר"
                   disabled={
                     activeAction === 'revoke'
                   }
@@ -801,6 +808,7 @@ function DigitalPersonaSetup({
                 <button
                   className="primary-button persona-primary-action"
                   type="button"
+                  data-aura-tooltip="ליצור פרופילי קול ואווטאר לבדיקה"
                   disabled={
                     activeAction ===
                     'profiles'
@@ -1017,6 +1025,7 @@ function DigitalPersonaSetup({
                     <button
                       className="primary-button persona-primary-action"
                       type="submit"
+                      data-aura-tooltip="לאשר ולהפעיל קלט קולי בצ׳אט"
                       disabled={
                         activeAction ===
                         'chat-voice-input'
@@ -1226,6 +1235,7 @@ function DigitalPersonaSetup({
                     <button
                       className="primary-button persona-primary-action"
                       type="submit"
+                      data-aura-tooltip="לאשר ולהפעיל את הקול האישי"
                       disabled={
                         activeAction ===
                         'voice-clone'
@@ -1268,21 +1278,32 @@ function DigitalPersonaSetup({
                   </span>
                 </div>
 
-                <div className="persona-avatar-preview">
-                  <img
-                    src={
-                      avatar?.localAssetUrl ??
-                      '/assets/emanuel-living-memory-avatar.png'
-                    }
-                    alt="אווטאר AI מסוגנן של עמנואל"
-                  />
+                <button
+                  className="persona-avatar-preview"
+                  type="button"
+                  data-aura-tooltip="להוסיף או להחליף את תמונת הזיכרון"
+                  onClick={onRequestPortrait}
+                >
+                  {portraitUrl ? (
+                    <img
+                      src={portraitUrl}
+                      alt={`תמונת האווטאר של ${subjectName}`}
+                    />
+                  ) : (
+                    <span
+                      className="persona-avatar-placeholder"
+                      aria-hidden="true"
+                    >
+                      {subjectName.trim().charAt(0)}
+                    </span>
+                  )}
 
                   <p>
-                    התמונה הזאת נשמרת מקומית
-                    ותוצג מייד גם כאשר D‑ID אינו
-                    זמין או שהווידאו נחסם על ידי נטפרי.
+                    {hasPortrait
+                      ? 'זו תמונת האדם שנבחרה בפרטי הזיכרון. לחצו כדי להחליף אותה.'
+                      : 'עדיין לא הוזנה תמונה של האדם. לחצו כאן כדי לפתוח את עריכת פרטי הזיכרון ולהוסיף תמונה.'}
                   </p>
-                </div>
+                </button>
 
                 {didAvatarIsActive ? (
                   <div className="persona-voice-active">
@@ -1311,6 +1332,16 @@ function DigitalPersonaSetup({
                       הפעילו מעל את ElevenLabs v3.
                       האווטאר משתמש בקובץ הקול המוכן
                       ולא בדגימת הקול המקורית.
+                    </p>
+                  </div>
+                ) : !hasPortrait ? (
+                  <div className="persona-provider-warning">
+                    <strong>
+                      נדרשת תמונה של האדם
+                    </strong>
+
+                    <p>
+                      תמונת הזיכרון היא גם תמונת המקור של האווטאר. הוסיפו אותה בעריכת פרטי הזיכרון לפני ההפעלה.
                     </p>
                   </div>
                 ) : !avatar?.providerConfigured ? (
@@ -1444,6 +1475,7 @@ function DigitalPersonaSetup({
                     <button
                       className="primary-button persona-primary-action"
                       type="submit"
+                      data-aura-tooltip="לאשר ולהפעיל את האווטאר המדבר"
                       disabled={
                         activeAction === 'did-avatar'
                       }

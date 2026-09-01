@@ -32,6 +32,28 @@ const memoryProfileSchema = new Schema(
       default: '',
     },
 
+    subjectGender: {
+      type: String,
+      enum: [
+        'female',
+        'male',
+        'unspecified',
+      ],
+      default: 'unspecified',
+    },
+
+    portraitAssetId: {
+      type: Schema.Types.ObjectId,
+      ref: 'MemoryAsset',
+      default: null,
+    },
+
+    voiceSampleRecordingId: {
+      type: Schema.Types.ObjectId,
+      ref: 'MemoryRecording',
+      default: null,
+    },
+
     visibility: {
       type: String,
       enum: ['private', 'shared'],
@@ -59,6 +81,19 @@ const memoryProfileSchema = new Schema(
             safeObject._id.toString()
 
           delete safeObject._id
+        }
+
+        for (
+          const mediaField of [
+            'portraitAssetId',
+            'voiceSampleRecordingId',
+          ]
+        ) {
+          if (safeObject[mediaField]) {
+            safeObject[mediaField] =
+              safeObject[mediaField]
+                .toString()
+          }
         }
 
         return safeObject

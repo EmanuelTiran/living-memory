@@ -3,8 +3,13 @@
   background: #f3eee5;
   font-family: 'Rubik', 'Noto Sans Hebrew', 'Segoe UI', Arial, sans-serif;
 
-  --font-display: 'Frank Ruhl Libre', 'Noto Serif Hebrew', Georgia, serif;
+  --font-display: var(--font-body);
   --font-body: 'Rubik', 'Noto Sans Hebrew', 'Segoe UI', Arial, sans-serif;
+  --aura-canvas: #f3eee5;
+  --aura-amber: #d7a24c;
+  --aura-clay: #a4573e;
+  --aura-olive: #486b5d;
+  --aura-ink: #24332e;
   --color-canvas: #f3eee5;
   --color-surface: #fffcf6;
   --color-surface-muted: #f8f4ec;
@@ -36,17 +41,27 @@
   --radius-secondary: 18px;
   --radius-primary: 28px;
   --radius-hero: 38px;
-  --shadow-primary: 0 14px 40px rgb(36 51 46 / 10%);
-  --shadow-hero: 0 28px 72px rgb(36 51 46 / 14%);
+  --shadow-primary: 0 10px 28px rgb(36 51 46 / 7%);
+  --shadow-hero: 0 20px 56px rgb(36 51 46 / 10%);
+  --aura-border-soft: rgb(36 51 46 / 12%);
+  --aura-border-warm: rgb(164 87 62 / 18%);
+  --aura-focus-ring: 0 0 0 4px rgb(72 107 93 / 20%);
 }
 
 html,
-body {
+body,
+#root,
+button,
+input,
+textarea,
+select {
   background: var(--color-canvas);
+  font-family: var(--font-body);
 }
 
 body {
   color: var(--color-ink);
+  font-weight: 400;
   line-height: 1.72;
 }
 
@@ -57,6 +72,19 @@ h3,
   font-family: var(--font-display);
   font-weight: 600;
   letter-spacing: -0.025em;
+}
+
+button,
+input,
+textarea,
+select {
+  background: initial;
+}
+
+button,
+label,
+summary {
+  font-weight: 500;
 }
 
 time,

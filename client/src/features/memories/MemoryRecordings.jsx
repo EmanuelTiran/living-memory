@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../api/authApi.js'
 import {
+  revealAuraTarget,
+} from '../../auraMotion.js'
+import {
   approveMemoryRecordingTranscript,
   createMemoryRecording,
   getMemoryRecordingAudio,
@@ -278,7 +281,14 @@ function notifyRecordingsUpdated(
   )
 }
 
-function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
+function MemoryRecordings({
+  canContribute = true,
+  canEdit = true,
+  focusRecordingId = '',
+  memoryId,
+  subjectName,
+  runAuthenticatedRequest,
+}) {
   const fileInputRef = useRef(null)
   const audioUrlRegistryRef = useRef(new Map())
 
@@ -356,6 +366,40 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
       isActive = false
     }
   }, [fetchRecordings])
+
+  useEffect(() => {
+    if (
+      isLoading ||
+      !focusRecordingId
+    ) {
+      return undefined
+    }
+
+    const frameId =
+      window.requestAnimationFrame(() => {
+        const target =
+          document.getElementById(
+            `memory-recording-${focusRecordingId}`,
+          )
+
+        revealAuraTarget(target, {
+          block: 'center',
+        })
+        target?.focus({
+          preventScroll: true,
+        })
+      })
+
+    return () => {
+      window.cancelAnimationFrame(
+        frameId,
+      )
+    }
+  }, [
+    focusRecordingId,
+    isLoading,
+    recordings,
+  ])
 
   useEffect(() => {
     let isActive = true
@@ -1304,14 +1348,16 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
           <h2 id="recordings-title">הקלטות ותמלולים</h2>
 
           <p>
-            העלו הקלטה של {subjectName}, הפיקו ממנה תמלול, בדקו אותו ורק לאחר מכן אשרו
-            אותו כמקור מידע.
+            {canContribute
+              ? `העלו הקלטה של ${subjectName}, הפיקו ממנה תמלול ושמרו אותה בארכיון.`
+              : `כאן אפשר להאזין להקלטות של ${subjectName} ולקרוא תמלולים זמינים.`}
           </p>
         </div>
 
         <button
           className="secondary-button recordings-refresh-button"
           type="button"
+          data-aura-tooltip="לטעון מחדש את רשימת ההקלטות"
           disabled={isLoading || hasActiveUpload}
           onClick={handleRefresh}
         >
@@ -1340,7 +1386,14 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
         </p>
       )}
 
-      <div className="recordings-layout">
+      <div
+        className={`recordings-layout ${
+          canContribute
+            ? ''
+            : 'recordings-layout-view-only'
+        }`}
+      >
+        {canContribute && (
         <form
           className="recording-upload-form"
           onSubmit={handleUploadSubmit}
@@ -1526,6 +1579,7 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
           <button
             className="primary-button recording-submit-button"
             type="submit"
+            data-aura-tooltip="לשמור את ההקלטה ולהתחיל תמלול"
             disabled={hasActiveUpload}
           >
             {isSubmitting
@@ -1533,6 +1587,7 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
               : 'שמירה ושליחה לתמלול'}
           </button>
         </form>
+        )}
 
         <div className="recording-list-panel">
           <div className="recording-list-heading">
@@ -1593,12 +1648,14 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                   )
 
                 const canRequestTranscription =
+                  canContribute &&
                   recording.storageStatus === 'stored' &&
                   ['not_requested', 'failed'].includes(
                     recording.transcriptionStatus,
                   )
 
                 const canRetryUpload =
+                  canContribute &&
                   ['pending', 'failed'].includes(
                     recording.storageStatus,
                   )
@@ -1623,7 +1680,12 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                   loadingAudioRecordingId === recording.id
 
                 return (
-                  <article className="recording-card" key={recording.id}>
+                  <article
+                    id={`memory-recording-${recording.id}`}
+                    className="recording-card"
+                    key={recording.id}
+                    tabIndex={-1}
+                  >
                     {recording.interviewContext && (
                       <div className="recording-interview-context">
                         <span>
@@ -1750,6 +1812,7 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                           <button
                             className="secondary-button"
                             type="button"
+                            data-aura-tooltip="לשמוע את ההקלטה המקורית"
                             disabled={isLoadingAudio}
                             onClick={() => handleLoadOriginalAudio(recording)}
                           >
@@ -1821,6 +1884,7 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                         <button
                           className="secondary-button"
                           type="button"
+                          data-aura-tooltip="לנסות להעלות שוב את אותו קובץ"
                           disabled={
                             !retryFile ||
                             Boolean(retryingRecordingId)
@@ -1841,6 +1905,7 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                         <button
                           className="story-action-button story-action-approve"
                           type="button"
+                          data-aura-tooltip="לשלוח את ההקלטה לתמלול"
                           disabled={
                             isTranscribing ||
                             Boolean(retryingRecordingId)
@@ -1861,6 +1926,11 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                         <button
                           className="story-action-button story-action-edit"
                           type="button"
+                          data-aura-tooltip={
+                            isTranscriptOpen
+                              ? 'לסגור את תמלול ההקלטה'
+                              : 'לפתוח ולבדוק את התמלול'
+                          }
                           disabled={isLoadingTranscript}
                           onClick={() =>
                             handleToggleTranscript(recording)
@@ -1892,8 +1962,9 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                           </span>
                         </div>
 
-                        {transcript.reviewStatus === 'draft' ||
-                        isEditingApprovedTranscript ? (
+                        {canEdit &&
+                        (transcript.reviewStatus === 'draft' ||
+                        isEditingApprovedTranscript) ? (
                           <>
                             {isEditingApprovedTranscript && (
                               <p className="approved-source-edit-notice">
@@ -1927,6 +1998,7 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                               <button
                                 className="secondary-button"
                                 type="button"
+                                data-aura-tooltip="לשמור את תיקוני התמלול"
                                 disabled={
                                   isSavingTranscript ||
                                   isApprovingTranscript ||
@@ -1988,6 +2060,7 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                                   <button
                                     className="primary-button"
                                     type="button"
+                                    data-aura-tooltip="לאשר את התמלול כמקור מידע"
                                     disabled={
                                       isSavingTranscript ||
                                       isApprovingTranscript ||
@@ -2023,35 +2096,47 @@ function MemoryRecordings({ memoryId, subjectName, runAuthenticatedRequest }) {
                               {transcript.content}
                             </p>
 
-                            <p className="approved-transcript-note">
-                              התמלול הזה יכול לשמש את הצ׳אט כמקור מאושר. הוא אינו מעניק
-                              הרשאה ליצירת קול מלאכותי.
-                            </p>
+                            {transcript.reviewStatus === 'approved' ? (
+                              <>
+                                <p className="approved-transcript-note">
+                                  התמלול הזה יכול לשמש את הצ׳אט כמקור מאושר. הוא אינו מעניק
+                                  הרשאה ליצירת קול מלאכותי.
+                                </p>
 
-                            <p className="approved-transcript-note">
-                              {transcript.sourceIndexStatus === 'indexed'
-                                ? `מאונדקס במאגר המקורות · גרסה ${transcript.sourceIndexRevision}`
-                                : 'מקור מאושר ותיק: ייכנס לאינדקס בעדכון האישור הבא.'}
-                            </p>
+                                <p className="approved-transcript-note">
+                                  {transcript.sourceIndexStatus === 'indexed'
+                                    ? `מאונדקס במאגר המקורות · גרסה ${transcript.sourceIndexRevision}`
+                                    : 'מקור מאושר ותיק: ייכנס לאינדקס בעדכון האישור הבא.'}
+                                </p>
 
-                            <button
-                              className="story-action-button story-action-edit"
-                              type="button"
-                              disabled={isSavingTranscript}
-                              onClick={() =>
-                                startEditingApprovedTranscript(
-                                  recording.id,
-                                )
-                              }
-                            >
-                              עריכת התמלול המאושר
-                            </button>
+                                {canEdit && (
+                                  <button
+                                    className="story-action-button story-action-edit"
+                                    type="button"
+                                    data-aura-tooltip="לערוך מחדש את התמלול המאושר"
+                                    disabled={isSavingTranscript}
+                                    onClick={() =>
+                                      startEditingApprovedTranscript(
+                                        recording.id,
+                                      )
+                                    }
+                                  >
+                                    עריכת התמלול המאושר
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <p className="approved-transcript-note">
+                                התמלול עדיין טיוטה. בעל הרשאת עריכה יכול לבדוק ולאשר אותו
+                                כמקור מידע.
+                              </p>
+                            )}
                           </>
                         )}
 
                         {transcript.revisionHistory?.length > 0 && (
                           <details className="transcript-revision-history">
-                            <summary>
+                            <summary data-aura-tooltip="לפתוח גרסאות קודמות של התמלול">
                               היסטוריית עריכות
                               {' · '}
                               {transcript.revisionHistory.length}

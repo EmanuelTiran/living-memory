@@ -52,6 +52,10 @@
     minmax(0, 1.28fr);
 }
 
+.memory-assets-layout-view-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .memory-asset-upload-form,
 .memory-assets-list-panel {
   padding: 22px;

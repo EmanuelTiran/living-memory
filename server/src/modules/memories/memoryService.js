@@ -50,6 +50,12 @@ export async function createMemoryProfile(
         profileData.relationship ?? '',
       description:
         profileData.description ?? '',
+      ...(profileData.subjectGender
+        ? {
+            subjectGender:
+              profileData.subjectGender,
+          }
+        : {}),
     })
 
   return memoryProfile.toJSON()

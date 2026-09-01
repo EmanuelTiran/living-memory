@@ -1,0 +1,144 @@
+.memory-documentation {
+  display: grid;
+  gap: 24px;
+}
+
+.memory-documentation-heading {
+  max-width: 760px;
+}
+
+.memory-documentation-heading h2 {
+  margin: 0;
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 4vw, 2.3rem);
+}
+
+.memory-documentation-heading > p:last-child {
+  margin: 10px 0 0;
+  color: var(--color-ink-muted);
+  line-height: 1.7;
+}
+
+.memory-documentation-tools {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.memory-documentation-tools-single {
+  max-width: 520px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.memory-documentation-tool {
+  display: grid;
+  min-height: 170px;
+  align-content: start;
+  padding: 20px;
+  gap: 7px;
+  color: inherit;
+  text-align: start;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-secondary);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.memory-documentation-tool:hover {
+  border-color: var(--color-olive);
+  transform: translateY(-2px);
+}
+
+.memory-documentation-tool:focus-visible {
+  outline: 3px solid rgba(77, 123, 104, 0.3);
+  outline-offset: 2px;
+}
+
+.memory-documentation-tool[aria-pressed='true'] {
+  background: #f0f4ef;
+  border-color: var(--color-olive);
+  box-shadow: 0 10px 28px rgb(54 85 72 / 12%);
+}
+
+.memory-documentation-tool > span {
+  color: var(--color-clay);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.memory-documentation-tool > strong {
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+}
+
+.memory-documentation-tool > small {
+  color: var(--color-ink-muted);
+  font-size: 0.84rem;
+  line-height: 1.65;
+}
+
+.memory-documentation-permission-note,
+.memory-documentation-choice-prompt {
+  margin: 0;
+  padding: 18px 20px;
+  color: var(--color-ink-muted);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-secondary);
+  line-height: 1.7;
+}
+
+.memory-documentation-choice-prompt {
+  text-align: center;
+}
+
+.memory-documentation-choice-prompt strong {
+  color: var(--color-ink);
+}
+
+.memory-documentation-choice-prompt p {
+  margin: 6px 0 0;
+}
+
+.memory-documentation [hidden] {
+  display: none;
+}
+
+.memory-documentation-completion-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-block-start: -10px;
+  padding: 18px 20px;
+  gap: 12px;
+  background: var(--color-verified-bg);
+  border: 1px solid rgba(55, 100, 81, 0.2);
+  border-radius: var(--radius-secondary);
+}
+
+@media (max-width: 760px) {
+  .memory-documentation-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .memory-documentation-tool {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .memory-documentation-completion-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .memory-documentation-completion-actions a {
+    width: 100%;
+  }
+}

@@ -291,6 +291,7 @@ function MemoryPilotPage({
 
           <Link
             className="secondary-button"
+            data-aura-tooltip="לחזור לפרופיל הזיכרון"
             to={`/app/memories/${memoryId}`}
           >
             חזרה לפרופיל
@@ -364,6 +365,7 @@ function MemoryPilotPage({
               <button
                 className="primary-button"
                 type="button"
+                data-aura-tooltip="להתחיל את מסלול ארבעת השבועות"
                 onClick={() => {
                   void handleStart()
                 }}
@@ -538,18 +540,21 @@ function MemoryPilotPage({
               <div className="pilot-actions">
                 <Link
                   className="primary-button"
-                  to={`/app/memories/${memoryId}`}
+                  data-aura-tooltip="להקליט סיפור קצר לשבוע הנוכחי"
+                  to={`/app/memories/${memoryId}?tab=documentation#guided-interview`}
                 >
                   הקלטת סיפור קצר
                 </Link>
                 <Link
                   className="secondary-button"
+                  data-aura-tooltip="להזמין בן משפחה לזיכרון"
                   to={`/app/memories/${memoryId}/family`}
                 >
                   צירוף בן משפחה
                 </Link>
                 <Link
                   className="secondary-button"
+                  data-aura-tooltip="לשאול שאלה על בסיס המקורות"
                   to={`/app/memories/${memoryId}/chat`}
                 >
                   שאלת המשפחה
@@ -562,6 +567,7 @@ function MemoryPilotPage({
                 <button
                   className="pilot-withdraw-button"
                   type="button"
+                  data-aura-tooltip="להפסיק השתתפות בלי למחוק תוכן"
                   onClick={() => {
                     void handleWithdraw()
                   }}
@@ -582,6 +588,7 @@ function MemoryPilotPage({
           <button
             className="pilot-refresh-button"
             type="button"
+            data-aura-tooltip="לטעון מחדש את התקדמות הפיילוט"
             onClick={() => {
               setIsLoading(true)
               setErrorMessage('')

@@ -38,6 +38,9 @@ import {
   getMemoryRecordingAudio,
 } from '../../api/recordingApi.js'
 import {
+  createMemoryAssetAccessLink,
+} from '../../api/assetApi.js'
+import {
   createMemoryChatConversation,
   getMemoryChatHistory,
   sendMemoryChatMessage,
@@ -571,7 +574,7 @@ function MemoryChatPage({
 
     async function loadDigitalPersona() {
       try {
-        const loadedSetup =
+        let loadedSetup =
           await runAuthenticatedRequest(
             (accessToken) =>
               getDigitalPersonaSetup(
@@ -579,6 +582,32 @@ function MemoryChatPage({
                 memoryId,
               ),
           )
+
+        const portraitAssetId =
+          loadedSetup?.avatar
+            ?.portraitAssetId
+
+        if (portraitAssetId) {
+          const portraitAccess =
+            await runAuthenticatedRequest(
+              (accessToken) =>
+                createMemoryAssetAccessLink(
+                  accessToken,
+                  memoryId,
+                  portraitAssetId,
+                  'inline',
+                ),
+            )
+
+          loadedSetup = {
+            ...loadedSetup,
+            avatar: {
+              ...loadedSetup.avatar,
+              localAssetUrl:
+                portraitAccess.url,
+            },
+          }
+        }
 
         if (isActive) {
           setDigitalPersonaSetup(loadedSetup)
@@ -1154,7 +1183,8 @@ function MemoryChatPage({
 
           <Link
             className="chat-secondary-link"
-            to={`/app/memories/${encodeURIComponent(memoryId)}`}
+            data-aura-tooltip="לחזור לשאלות ולמשפחה בזיכרון"
+            to={`/app/memories/${encodeURIComponent(memoryId)}?tab=family`}
           >
             חזרה לזיכרון
           </Link>
@@ -1173,7 +1203,8 @@ function MemoryChatPage({
           <div>
             <Link
               className="chat-back-link"
-              to={`/app/memories/${encodeURIComponent(memoryId)}`}
+              data-aura-tooltip="לחזור לשאלות ולמשפחה בזיכרון"
+              to={`/app/memories/${encodeURIComponent(memoryId)}?tab=family`}
             >
               חזרה לזיכרון
             </Link>
@@ -1209,7 +1240,7 @@ function MemoryChatPage({
 
         {pilotAvatarEnabled && (
           <details className="optional-avatar-experience">
-            <summary>
+            <summary data-aura-tooltip="לפתוח אפשרויות קול ושיחת וידאו">
               פתיחת אפשרויות קול ושיחת וידאו
             </summary>
 
@@ -1252,6 +1283,7 @@ function MemoryChatPage({
             <button
               className="load-earlier-button"
               type="button"
+              data-aura-tooltip="לטעון הודעות ישנות יותר בשיחה"
               disabled={isLoadingEarlier}
               onClick={handleLoadEarlier}
             >
@@ -1284,6 +1316,7 @@ function MemoryChatPage({
                   <button
                     type="button"
                     key={starterQuestion}
+                    data-aura-tooltip="להעביר את השאלה לשדה הכתיבה"
                     onClick={() => {
                       setMessage(starterQuestion)
 
@@ -1509,6 +1542,7 @@ function MemoryChatPage({
                                               to={
                                                 citation.sourceRoute
                                               }
+                                              data-aura-tooltip="לפתוח את המקור בתוך הארכיון"
                                               state={{
                                                 subjectName,
                                               }}
@@ -1522,6 +1556,7 @@ function MemoryChatPage({
                                             !audioUrl && (
                                               <button
                                                 type="button"
+                                                data-aura-tooltip="לשמוע את ההקלטה המקורית"
                                                 disabled={
                                                   isLoadingAudio
                                                 }
@@ -1579,6 +1614,7 @@ function MemoryChatPage({
                             <button
                               className="chat-action-button chat-action-button-creative"
                               type="button"
+                              data-aura-tooltip="לבדוק ולאשר את התשובה כמקור"
                               onClick={() =>
                                 openPromotionForm(
                                   chatMessage,
@@ -1718,6 +1754,7 @@ function MemoryChatPage({
                             <button
                               className="chat-action-button chat-action-button-creative"
                               type="submit"
+                              data-aura-tooltip="לאשר ולשמור את התשובה כמקור"
                               disabled={
                                 promotionForm.isSaving ||
                                 !promotionForm.confirmed ||
@@ -1807,7 +1844,8 @@ function MemoryChatPage({
 
                   <Link
                     className="chat-voice-settings-link"
-                    to={`/app/memories/${encodeURIComponent(memoryId)}`}
+                    data-aura-tooltip="לעבור לניהול הסכמות הקול"
+                    to={`/app/memories/${encodeURIComponent(memoryId)}?tab=family#optional-ai-layer-title`}
                   >
                     ניהול הסכמות
                   </Link>
@@ -1827,6 +1865,7 @@ function MemoryChatPage({
                   <button
                     className="chat-voice-button chat-voice-button-recording"
                     type="button"
+                    data-aura-tooltip="לעצור ולהכין את השאלה לתמלול"
                     disabled={isSending}
                     onClick={
                       voiceInputState.stopRecording
@@ -1888,6 +1927,7 @@ function MemoryChatPage({
                 <button
                   className="chat-voice-button"
                   type="button"
+                  data-aura-tooltip="להקליט את השאלה בקול"
                   disabled={isSending}
                   onClick={
                     () => {
@@ -1943,6 +1983,7 @@ function MemoryChatPage({
 
             <button
               type="submit"
+              data-aura-tooltip="לשלוח שאלה המבוססת על מקורות הזיכרון"
               disabled={
                 isSending ||
                 voiceInputState.isBusy ||

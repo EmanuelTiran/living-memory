@@ -41,7 +41,7 @@ function createBiographySource(
     sourceVersion:
       `revision:${biographyAnswer.revision}`,
     sourceRoute:
-      `/app/memories/${memoryId}#guided-interview`,
+      `/app/memories/${memoryId}?tab=documentation#guided-interview`,
   })
 }
 
