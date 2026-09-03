@@ -28,6 +28,7 @@ import MemoryDashboard from './features/memories/MemoryDashboard.jsx'
 import MemoryPilotPage from './features/memories/MemoryPilotPage.jsx'
 import MemoryPricingPilotPage from './features/memories/MemoryPricingPilotPage.jsx'
 import MemoryProfilePage from './features/memories/MemoryProfilePage.jsx'
+import BrandLogo from './BrandLogo.jsx'
 import './App.css'
 
 const principles = [
@@ -105,10 +106,9 @@ function LoadingScreen() {
         className="surface-card loading-card"
         aria-live="polite"
       >
-        <span
-          className="loading-indicator"
-          aria-hidden="true"
-        />
+        <span className="loading-brand" aria-hidden="true">
+          <img src="/favicon-32x32.png" alt="" />
+        </span>
 
         <p>בודקים את מצב ההתחברות...</p>
       </section>
@@ -127,12 +127,7 @@ function HomePage({
         className="surface-card welcome-card"
         aria-labelledby="welcome-title"
       >
-        <div
-          className="brand-line"
-          aria-hidden="true"
-        />
-
-        <p className="eyebrow">Living Memory · זיכרון חי</p>
+        <BrandLogo className="welcome-brand-logo" />
 
         <h1
           className="hero-title"
@@ -367,7 +362,7 @@ function AuthPage({
             חזרה לעמוד הראשי
           </Link>
 
-          <div className="brand-line" aria-hidden="true" />
+          <BrandLogo className="auth-brand-logo" compact />
           <p className="eyebrow">פיילוט פרטי</p>
           <h1 className="auth-title" id="auth-title">
             ההרשמה נפתחת בהזמנה בלבד
@@ -403,14 +398,7 @@ function AuthPage({
           חזרה לעמוד הראשי
         </Link>
 
-        <div
-          className="brand-line"
-          aria-hidden="true"
-        />
-
-        <p className="eyebrow">
-          זיכרון חי
-        </p>
+        <BrandLogo className="auth-brand-logo" compact />
 
         <h1
           className="auth-title"

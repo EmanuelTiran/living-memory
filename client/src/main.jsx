@@ -23,3 +23,35 @@ createRoot(document.getElementById('root')).render(
     <AuraTooltipLayer />
   </StrictMode>,
 )
+
+const bootSplash = document.getElementById(
+  'boot-splash',
+)
+
+if (bootSplash) {
+  const removeBootSplash = () => {
+    bootSplash.remove()
+  }
+
+  if (
+    window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
+  ) {
+    removeBootSplash()
+  } else {
+    requestAnimationFrame(() => {
+      bootSplash.classList.add(
+        'boot-splash-exit',
+      )
+    })
+
+    bootSplash.addEventListener(
+      'transitionend',
+      removeBootSplash,
+      { once: true },
+    )
+
+    window.setTimeout(removeBootSplash, 250)
+  }
+}

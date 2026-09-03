@@ -18,6 +18,17 @@
   min-width: 0;
 }
 
+.dashboard-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: clamp(18px, 3vw, 32px);
+}
+
+.dashboard-brand-logo {
+  flex: 0 0 auto;
+}
+
 .dashboard-card .dashboard-title {
   margin: 0;
   font-size: clamp(2.55rem, 5vw, 4rem);
@@ -802,6 +813,12 @@
   .dashboard-card .dashboard-header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .dashboard-identity {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
   }
 
   .dashboard-header-actions {

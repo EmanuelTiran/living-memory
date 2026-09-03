@@ -56,6 +56,25 @@
   border-radius: 999px;
 }
 
+.brand-logo {
+  display: block;
+  width: clamp(170px, 28vw, 250px);
+  height: auto;
+  object-fit: contain;
+}
+
+.brand-logo-compact {
+  width: clamp(138px, 22vw, 190px);
+}
+
+.welcome-brand-logo {
+  margin: 0 auto 24px;
+}
+
+.auth-brand-logo {
+  margin-block: 28px 18px;
+}
+
 .eyebrow {
   margin: 0 0 12px;
   color: #80633d;
@@ -394,6 +413,24 @@
   gap: 14px;
 }
 
+.loading-brand {
+  display: grid;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  background: rgb(243 238 229 / 72%);
+  border: 1px solid rgb(72 107 93 / 18%);
+  border-radius: 13px;
+  animation: loading-breathe 1.6s ease-in-out infinite;
+}
+
+.loading-brand img {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+
 .loading-card p {
   margin: 0;
   color: #59635f;
@@ -504,6 +541,13 @@
   }
 }
 
+@keyframes loading-breathe {
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 6px 18px rgb(72 107 93 / 12%);
+  }
+}
+
 @media (max-width: 760px) {
   .surface-card {
     border-radius: 24px;
@@ -564,6 +608,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .loading-brand {
+    animation: none;
+  }
+
   .primary-button,
   .secondary-button {
     transition: none;

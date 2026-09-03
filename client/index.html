@@ -2,17 +2,87 @@
 <html lang="he" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f4f0e8" />
+    <meta name="theme-color" content="#F3EEE5" />
     <meta
       name="description"
       content="זיכרון חי — מערכת מכבדת לשימור סיפורי חיים ומורשת משפחתית."
     />
-    <title>זיכרון חי</title>
+    <title>זיכרון חי | שומרים סיפורי חיים לדורות</title>
+    <style>
+      .boot-splash {
+        position: fixed;
+        z-index: 9999;
+        display: grid;
+        inset: 0;
+        place-items: center;
+        background: #f3eee5;
+        opacity: 1;
+        transition:
+          opacity 180ms ease,
+          visibility 180ms ease;
+      }
+
+      .boot-splash-symbol {
+        display: grid;
+        width: 88px;
+        height: 88px;
+        place-items: center;
+        background: rgb(255 252 246 / 72%);
+        border: 1px solid rgb(72 107 93 / 14%);
+        border-radius: 26px;
+        box-shadow: 0 18px 48px rgb(36 51 46 / 9%);
+        animation: boot-symbol-breathe 1.6s ease-in-out infinite;
+      }
+
+      .boot-splash-symbol img {
+        display: block;
+        width: 68px;
+        height: 68px;
+      }
+
+      .boot-splash-exit {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .boot-splash-exit .boot-splash-symbol {
+        transform: scale(0.97);
+      }
+
+      @keyframes boot-symbol-breathe {
+        50% {
+          transform: scale(1.035);
+          box-shadow: 0 20px 54px rgb(72 107 93 / 13%);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .boot-splash {
+          transition: none;
+        }
+
+        .boot-splash-symbol {
+          animation: none;
+        }
+      }
+    </style>
   </head>
 
   <body>
+    <div
+      class="boot-splash"
+      id="boot-splash"
+      role="status"
+      aria-label="זיכרון חי נטען"
+    >
+      <span class="boot-splash-symbol" aria-hidden="true">
+        <img src="/apple-touch-icon.png" alt="" />
+      </span>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

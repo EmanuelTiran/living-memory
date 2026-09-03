@@ -7,6 +7,7 @@ import {
     Link,
     useNavigate,
   } from 'react-router'
+  import BrandLogo from '../../BrandLogo.jsx'
   import {
     ApiError,
     logoutSession,
@@ -653,19 +654,23 @@ import {
           aria-labelledby="dashboard-title"
         >
           <header className="dashboard-header">
-            <div>
-              <p className="eyebrow">
-                האזור האישי
-              </p>
+            <div className="dashboard-identity">
+              <BrandLogo className="dashboard-brand-logo" compact />
 
-              <h1
-                className="dashboard-title"
-                id="dashboard-title"
-              >
-                שלום, {user.displayName}
-              </h1>
+              <div>
+                <p className="eyebrow">
+                  האזור האישי
+                </p>
 
-              <p>{user.email}</p>
+                <h1
+                  className="dashboard-title"
+                  id="dashboard-title"
+                >
+                  שלום, {user.displayName}
+                </h1>
+
+                <p>{user.email}</p>
+              </div>
             </div>
 
             <div className="dashboard-header-actions">
