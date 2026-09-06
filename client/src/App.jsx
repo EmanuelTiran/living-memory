@@ -91,11 +91,25 @@ function getSafeReturnTo(value) {
   return value
 }
 
-function PageShell({ children }) {
+function PageShell({ children, className = '' }) {
+  const classes = ['page-shell', className]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <main className="page-shell">
+    <main className={classes}>
       {children}
     </main>
+  )
+}
+
+function AuthFrame() {
+  return (
+    <div className="auth-frame" aria-hidden="true">
+      <span className="auth-frame-segment auth-frame-ink" />
+      <span className="auth-frame-segment auth-frame-clay" />
+      <span className="auth-frame-segment auth-frame-olive" />
+    </div>
   )
 }
 
@@ -349,11 +363,13 @@ function AuthPage({
     !invitationToken
   ) {
     return (
-      <PageShell>
+      <PageShell className="auth-page-shell">
         <section
           className="surface-card auth-card registration-closed-card"
           aria-labelledby="auth-title"
         >
+          <AuthFrame />
+
           <Link
             className="back-link"
             to="/"
@@ -385,11 +401,17 @@ function AuthPage({
   }
 
   return (
-    <PageShell>
+    <PageShell className="auth-page-shell">
       <section
-        className="surface-card auth-card"
+        className={`surface-card auth-card ${
+          isRegistration
+            ? 'auth-card-registration'
+            : 'auth-card-login'
+        }`}
         aria-labelledby="auth-title"
       >
+        <AuthFrame />
+
         <Link
           className="back-link"
           to="/"

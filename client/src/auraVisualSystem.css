@@ -927,6 +927,684 @@ summary:focus-visible {
   box-shadow: var(--aura-shadow-subtle);
 }
 
+/* Standalone authenticated workspaces: shared AURA hierarchy and surfaces. */
+.admin-dashboard,
+.family-access-page,
+.memory-pilot-page,
+.pricing-pilot-page {
+  max-width: 1180px;
+}
+
+.admin-dashboard-header,
+.family-access-header,
+.pilot-header,
+.pricing-pilot-header {
+  margin-block-start: 0;
+  padding-block-end: 24px;
+  border-bottom: 1px solid var(--aura-border-soft);
+}
+
+.admin-dashboard-header h1,
+.family-access-header h1,
+.invitation-heading h1,
+.pilot-header h1,
+.pricing-pilot-header h1 {
+  margin-block-start: 0;
+  color: var(--aura-ink);
+  font-size: clamp(2.05rem, 4vw, 3.35rem);
+  line-height: 1.12;
+}
+
+.admin-dashboard-header > div > p:last-child,
+.family-access-header > p:last-child,
+.invitation-heading > p:last-child,
+.pilot-header > div > p:last-child,
+.pricing-pilot-header p:last-child {
+  color: var(--color-ink-muted);
+}
+
+.admin-privacy-note,
+.pilot-measurement-note,
+.pricing-safety-note,
+.invitation-link-box {
+  color: var(--aura-ink);
+  background: #f7f1e6;
+  border: 1px solid var(--aura-border-soft);
+  border-inline-start: 3px solid var(--aura-amber);
+  border-radius: var(--radius-compact);
+  box-shadow: none;
+}
+
+.admin-section,
+.family-access-section,
+.pilot-section,
+.pilot-start-panel,
+.pilot-actions-panel,
+.pricing-gate-card,
+.pricing-decision-card,
+.invitation-summary,
+.invitation-auth-actions,
+.participation-consent {
+  margin-block-start: 24px;
+  padding: clamp(22px, 3vw, 32px);
+  background: var(--aura-surface-card);
+  border: 1px solid var(--aura-border-default);
+  border-radius: var(--radius-primary);
+  box-shadow: var(--aura-shadow-subtle);
+}
+
+.admin-section,
+.family-access-section,
+.pilot-section,
+.invitation-auth-actions,
+.participation-consent {
+  border-top: 1px solid var(--aura-border-default);
+}
+
+.admin-section-heading,
+.pilot-section-heading {
+  padding-block-end: 18px;
+  border-bottom: 1px solid var(--aura-border-soft);
+}
+
+.admin-section-heading h2,
+.family-access-section h2,
+.invitation-summary h2,
+.invitation-auth-actions h2,
+.participation-consent h2,
+.pilot-section-heading h2,
+.pilot-actions-panel h2,
+.pilot-start-panel h2,
+.pricing-gate-card h2,
+.pricing-decision-card h2 {
+  color: var(--aura-ink);
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+  line-height: 1.25;
+}
+
+.admin-metric-card,
+.admin-pilot-detail-grid article,
+.admin-pilot-gates article,
+.family-member-card,
+.family-invitation-card {
+  background: var(--aura-surface-raised);
+  border: 1px solid var(--aura-border-default);
+  border-radius: var(--radius-secondary);
+  box-shadow: none;
+}
+
+.admin-metric-card {
+  border-inline-start: 3px solid var(--aura-amber);
+}
+
+.admin-metric-card strong,
+.admin-pilot-detail-grid strong,
+.admin-pilot-gates strong,
+.family-member-card span {
+  color: var(--aura-olive);
+}
+
+.admin-metric-card p,
+.admin-metric-card span,
+.admin-pilot-detail-grid article,
+.admin-pilot-gates span,
+.admin-pilot-gates small,
+.family-member-card p,
+.family-invitation-card p,
+.family-invitation-card small,
+.family-empty-note {
+  color: var(--color-ink-muted);
+}
+
+.admin-table-scroll {
+  border: 1px solid var(--aura-border-default);
+  border-radius: var(--radius-secondary);
+  background: var(--aura-surface-raised);
+}
+
+.admin-table thead th {
+  color: var(--aura-ink);
+  background: #f1eadf;
+}
+
+.admin-table th,
+.admin-table td {
+  border-bottom-color: var(--aura-border-soft);
+}
+
+.family-invitation-form,
+.pricing-operations-form {
+  padding: clamp(18px, 3vw, 26px);
+  background: var(--aura-surface-raised);
+  border: 1px solid var(--aura-border-default);
+  border-radius: var(--radius-secondary);
+}
+
+.family-invitation-form select,
+.member-actions select,
+.pricing-operations-form input {
+  min-height: 48px;
+  color: var(--aura-ink);
+  background: var(--aura-surface-main);
+  border-color: var(--aura-border-soft);
+  border-radius: var(--radius-control);
+}
+
+.danger-button {
+  min-height: 44px;
+  color: var(--aura-clay);
+  background: #fff8f5;
+  border-color: rgb(164 87 62 / 34%);
+  border-radius: var(--radius-control);
+}
+
+.invitation-page {
+  max-width: 780px;
+}
+
+.invitation-heading {
+  margin-block-start: 28px;
+  padding-block-end: 22px;
+  border-bottom: 1px solid var(--aura-border-soft);
+}
+
+.invitation-summary {
+  color: var(--aura-ink);
+  border-inline-start: 3px solid var(--aura-olive);
+}
+
+.invitation-summary dl > div,
+.participation-consent > label {
+  background: var(--aura-surface-raised);
+  border: 1px solid var(--aura-border-soft);
+  border-radius: var(--radius-compact);
+}
+
+.participation-consent input {
+  accent-color: var(--aura-olive);
+}
+
+/* Pilot and pricing retain their task-specific layouts with AURA materials. */
+.pilot-status-strip > div,
+.pilot-gate,
+.pilot-week,
+.pricing-status-line,
+.participant-code,
+.pricing-next-step,
+.pricing-paid-note,
+.pricing-refund-note,
+.pricing-research-gate {
+  background: var(--aura-surface-raised);
+  border: 1px solid var(--aura-border-soft);
+  border-radius: var(--radius-compact);
+  box-shadow: none;
+}
+
+.pilot-status-strip > div {
+  border-inline-start: 3px solid var(--aura-amber);
+}
+
+.pilot-status-strip span,
+.pilot-gate p,
+.pilot-week p,
+.pilot-week > span,
+.pilot-week dt,
+.pricing-research-gate span {
+  color: var(--color-ink-muted);
+}
+
+.pilot-status-strip strong,
+.pilot-gate strong,
+.pilot-week dd,
+.participant-code code {
+  color: var(--aura-olive);
+}
+
+.pilot-gate-state,
+.pilot-week-number {
+  color: var(--color-amber-ink);
+  background: #f5e8c9;
+}
+
+.pilot-gate-completed {
+  background: #edf5f0;
+  border-color: rgb(72 107 93 / 28%);
+}
+
+.pilot-gate-missed {
+  background: #fff8f5;
+  border-color: rgb(164 87 62 / 26%);
+}
+
+.pilot-week-current,
+.pricing-offer-card {
+  border-color: rgb(215 162 76 / 58%);
+  box-shadow: inset 0 3px 0 var(--aura-amber);
+}
+
+.pilot-actions-panel {
+  align-items: center;
+}
+
+.pilot-withdraw-button {
+  color: var(--aura-clay);
+}
+
+.pilot-refresh-button {
+  color: var(--aura-olive);
+}
+
+.pricing-pilot-page {
+  gap: 24px;
+}
+
+.pricing-offer-card {
+  padding: clamp(24px, 4vw, 36px);
+  color: #fffdf8;
+  background: var(--aura-olive);
+  border: 1px solid rgb(215 162 76 / 58%);
+  border-radius: var(--radius-primary);
+}
+
+.pricing-offer-card span {
+  color: #e3eee8;
+}
+
+.pricing-status-line,
+.participant-code {
+  margin-block-start: 10px;
+  padding: 14px 16px;
+}
+
+.participant-code code {
+  background: #e7f0eb;
+  border-radius: 8px;
+}
+
+.pricing-next-step {
+  border-inline-start: 3px solid var(--aura-amber);
+}
+
+.pricing-paid-note {
+  background: #edf5f0;
+  border-color: rgb(72 107 93 / 24%);
+}
+
+.pricing-refund-note {
+  background: #f8f2eb;
+  border-color: rgb(164 87 62 / 20%);
+}
+
+/* Conversational workspace: calmer AURA surfaces without changing chat flow. */
+.chat-page-shell {
+  padding: clamp(16px, 4vw, 56px);
+  background: var(--aura-canvas);
+}
+
+.memory-chat-page {
+  width: min(1080px, 100%);
+  padding: clamp(24px, 4vw, 44px);
+  gap: 22px;
+  background: var(--aura-surface-main);
+  border: 1px solid var(--aura-border-default);
+  border-radius: var(--radius-hero);
+  box-shadow: var(--shadow-primary);
+}
+
+.chat-page-header {
+  padding-block-end: 22px;
+  border-bottom: 1px solid var(--aura-border-soft);
+}
+
+.chat-page-header h1 {
+  color: var(--aura-ink);
+  font-size: clamp(2rem, 4vw, 3.3rem);
+}
+
+.chat-back-link,
+.chat-secondary-link {
+  color: var(--aura-olive);
+}
+
+.chat-text-badge {
+  color: var(--aura-olive);
+  background: #e4eee8;
+  border: 1px solid rgb(72 107 93 / 18%);
+}
+
+.chat-ai-disclosure,
+.optional-avatar-experience {
+  background: #f7f1e6;
+  border-color: var(--aura-border-soft);
+  border-radius: var(--radius-compact);
+}
+
+.chat-ai-disclosure > span {
+  background: var(--aura-clay);
+}
+
+.chat-ai-disclosure p,
+.optional-avatar-experience > p {
+  color: var(--color-ink-muted);
+}
+
+.optional-avatar-experience summary {
+  color: var(--aura-ink);
+}
+
+.chat-window {
+  padding: clamp(18px, 3vw, 28px);
+  background: #f3ede2;
+  border: 1px solid var(--aura-border-default);
+  border-radius: var(--radius-primary);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%);
+}
+
+.chat-empty-state {
+  padding: clamp(22px, 4vw, 38px);
+  background: var(--aura-surface-raised);
+  border: 1px dashed var(--aura-border-strong);
+  border-radius: var(--radius-secondary);
+}
+
+.chat-empty-state > span {
+  background: var(--aura-olive);
+}
+
+.chat-starter-questions button,
+.load-earlier-button,
+.chat-citation-actions a,
+.chat-citation-actions button,
+.chat-action-button,
+.chat-voice-button,
+.chat-voice-cancel-button,
+.chat-secondary-link {
+  color: var(--aura-olive);
+  background: var(--aura-surface-raised);
+  border-color: rgb(72 107 93 / 32%);
+  border-radius: var(--radius-control);
+}
+
+.chat-starter-questions button:hover,
+.load-earlier-button:hover:not(:disabled),
+.chat-citation-actions a:hover,
+.chat-citation-actions button:hover:not(:disabled),
+.chat-action-button:hover:not(:disabled),
+.chat-voice-button:hover:not(:disabled),
+.chat-voice-cancel-button:hover:not(:disabled) {
+  background: #eaf2ec;
+  border-color: rgb(72 107 93 / 48%);
+}
+
+.chat-message {
+  border: 1px solid var(--aura-border-soft);
+  border-radius: var(--radius-secondary);
+  box-shadow: var(--aura-shadow-subtle);
+}
+
+.chat-message-user {
+  color: var(--aura-ink);
+  background: #e3eee8;
+  border-color: rgb(72 107 93 / 20%);
+}
+
+.chat-message-assistant {
+  color: var(--aura-ink);
+  background: var(--aura-surface-raised);
+}
+
+.chat-answer-state-creative,
+.chat-answer-state-insufficient-context {
+  background: #fff8f5;
+  border-color: rgb(164 87 62 / 24%);
+}
+
+.chat-answer-state-general-knowledge {
+  background: #f5f1e8;
+  border-color: rgb(215 162 76 / 28%);
+}
+
+.chat-answer-badge-grounded,
+.chat-promoted-notice {
+  color: var(--aura-olive);
+  background: #e3eee8;
+}
+
+.chat-answer-badge-inferred,
+.chat-answer-badge-general-knowledge {
+  color: var(--color-amber-ink);
+  background: #f5e8c9;
+}
+
+.chat-answer-badge-creative,
+.chat-answer-badge-insufficient-context {
+  color: var(--aura-clay);
+  background: #f4e5de;
+}
+
+.chat-citations li,
+.creative-source-form,
+.chat-voice-input {
+  color: var(--aura-ink);
+  background: #f7f1e6;
+  border: 1px solid var(--aura-border-soft);
+  border-radius: var(--radius-compact);
+}
+
+.chat-composer {
+  padding: clamp(16px, 3vw, 22px);
+  background: var(--aura-surface-raised);
+  border: 1px solid var(--aura-border-default);
+  border-radius: var(--radius-secondary);
+  box-shadow: var(--aura-shadow-subtle);
+}
+
+.chat-composer textarea,
+.creative-source-form input[type='text'],
+.creative-source-form textarea {
+  color: var(--aura-ink);
+  background: var(--aura-surface-main);
+  border-color: var(--aura-border-soft);
+  border-radius: var(--radius-control);
+}
+
+.chat-composer-footer button {
+  min-height: 48px;
+  padding-inline: 22px;
+  background: var(--aura-olive);
+  border-color: var(--aura-olive);
+  border-radius: var(--radius-control);
+}
+
+.chat-composer-footer button:hover:not(:disabled) {
+  background: var(--color-olive-strong);
+  border-color: var(--color-olive-strong);
+}
+
+.chat-state-card {
+  background: var(--aura-surface-main);
+  border: 1px solid var(--aura-border-default);
+  border-radius: var(--radius-primary);
+  box-shadow: var(--aura-shadow-featured);
+}
+
+.chat-state-card h1 {
+  color: var(--aura-ink);
+}
+
+.chat-state-card p {
+  color: var(--color-ink-muted);
+}
+
+/* Embedded guided-recording and persona surfaces use the same AURA grammar. */
+.guided-recorder {
+  padding: clamp(20px, 3vw, 28px);
+  background: var(--aura-surface-card);
+  border: 1px solid var(--aura-border-default);
+  border-radius: var(--radius-primary);
+  box-shadow: var(--aura-shadow-subtle);
+}
+
+.guided-recorder-heading {
+  padding-block-end: 16px;
+  border-bottom: 1px solid var(--aura-border-soft);
+}
+
+.guided-recorder-heading h3 {
+  color: var(--aura-ink);
+}
+
+.guided-recorder-kicker {
+  color: var(--aura-clay);
+}
+
+.guided-recorder-guidance,
+.guided-recorder-status,
+.guided-recorder-live p {
+  color: var(--color-ink-muted);
+}
+
+.guided-recorder-timer {
+  color: var(--aura-ink);
+  background: #eee6d9;
+}
+
+.guided-recorder-timer-active {
+  color: var(--aura-clay);
+  background: #f4e5de;
+}
+
+.guided-recorder-start {
+  background: var(--aura-clay);
+  border-radius: var(--radius-control);
+}
+
+.guided-recorder-stop {
+  background: var(--aura-ink);
+  border-radius: var(--radius-control);
+}
+
+.guided-recorder-review,
+.guided-recorder-checkbox {
+  background: var(--aura-surface-raised);
+  border: 1px solid var(--aura-border-soft);
+  border-radius: var(--radius-compact);
+}
+
+.guided-recorder-consent select {
+  color: var(--aura-ink);
+  background: var(--aura-surface-main);
+  border-color: var(--aura-border-soft);
+  border-radius: var(--radius-control);
+}
+
+.guided-recorder-checkbox input {
+  accent-color: var(--aura-olive);
+}
+
+.guided-recorder-unavailable {
+  color: var(--aura-ink);
+  background: #fff8f5;
+  border: 1px solid rgb(164 87 62 / 22%);
+  border-inline-start: 3px solid var(--aura-clay);
+  border-radius: var(--radius-compact);
+}
+
+.digital-persona-setup {
+  background: var(--aura-surface-card);
+  border-color: var(--aura-border-default);
+  border-radius: var(--radius-primary);
+  box-shadow: var(--aura-shadow-subtle);
+}
+
+.persona-heading {
+  padding-block-end: 18px;
+  border-bottom: 1px solid var(--aura-border-soft);
+}
+
+.persona-heading h2,
+.persona-consent-intro h3,
+.persona-consent-status h3,
+.persona-profile-card h3 {
+  color: var(--aura-ink);
+}
+
+.persona-heading > div > p:last-child,
+.persona-consent-intro p,
+.persona-consent-status p,
+.persona-profile-card p,
+.persona-next-stage,
+.persona-profile-card small {
+  color: var(--color-ink-muted);
+}
+
+.persona-mode-badge {
+  color: var(--color-amber-ink);
+  background: #f5e8c9;
+}
+
+.persona-loading,
+.persona-provider-summary,
+.persona-provider-warning {
+  color: var(--aura-ink);
+  background: #f7f1e6;
+  border-color: var(--aura-border-soft);
+  border-radius: var(--radius-compact);
+}
+
+.persona-name-confirmation input,
+.persona-name-confirmation select {
+  color: var(--aura-ink);
+  background: var(--aura-surface-main);
+  border-color: var(--aura-border-soft);
+  border-radius: var(--radius-control);
+}
+
+.persona-consent-checks label,
+.persona-profile-card,
+.persona-voice-clone-panel,
+.persona-avatar-panel,
+.persona-transcription-panel {
+  color: var(--aura-ink);
+  background: var(--aura-surface-raised);
+  border-color: var(--aura-border-default);
+  border-radius: var(--radius-secondary);
+  box-shadow: none;
+}
+
+.persona-consent-checks input {
+  accent-color: var(--aura-olive);
+}
+
+.persona-consent-status,
+.persona-voice-active {
+  background: #edf5f0;
+  border-color: rgb(72 107 93 / 24%);
+}
+
+.persona-approved-mark {
+  background: var(--aura-olive);
+}
+
+.persona-status-ready {
+  color: var(--aura-olive);
+  background: #e3eee8;
+}
+
+.persona-next-stage {
+  background: #f7f1e6;
+  border-inline-start: 3px solid var(--aura-amber);
+  border-right: 0;
+}
+
+.persona-revoke-button {
+  min-height: 44px;
+  color: var(--aura-clay);
+  background: #fff8f5;
+  border-color: rgb(164 87 62 / 34%);
+  border-radius: var(--radius-control);
+}
+
 @media (max-width: 760px) {
   :root {
     --motion-normal: 160ms;
@@ -1025,6 +1703,80 @@ summary:focus-visible {
   .memory-today-primary-action {
     padding: 28px 22px;
   }
+
+  .admin-dashboard-header,
+  .family-access-header,
+  .pilot-header,
+  .pricing-pilot-header,
+  .chat-page-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .admin-section,
+  .family-access-section,
+  .pilot-section,
+  .pilot-start-panel,
+  .pilot-actions-panel,
+  .pricing-gate-card,
+  .pricing-decision-card,
+  .invitation-summary,
+  .invitation-auth-actions,
+  .participation-consent {
+    padding: 22px 18px;
+    border-radius: var(--radius-secondary);
+  }
+
+  .admin-header-actions,
+  .pilot-actions,
+  .pricing-actions,
+  .invitation-auth-actions > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-header-actions > *,
+  .pilot-actions > *,
+  .pricing-actions > *,
+  .invitation-auth-actions > div > * {
+    width: 100%;
+  }
+
+  .family-member-card,
+  .family-invitation-card {
+    padding: 16px;
+  }
+
+  .chat-page-shell {
+    padding: 10px;
+  }
+
+  .memory-chat-page {
+    min-height: calc(100svh - 20px);
+    padding: 22px 14px;
+    gap: 16px;
+    border-radius: 22px;
+  }
+
+  .chat-window {
+    min-height: 300px;
+    padding: 14px 10px;
+    border-radius: var(--radius-secondary);
+  }
+
+  .chat-message {
+    width: 94%;
+  }
+
+  .chat-composer-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .chat-composer-footer button {
+    width: 100%;
+  }
 }
 
 /* AURA motion system: restrained feedback without delaying navigation. */
@@ -1082,12 +1834,23 @@ summary:focus-visible {
     var(--motion-ease-out) both;
 }
 
+.chat-page-shell > .memory-chat-page,
+.chat-page-shell > .chat-state-card {
+  animation: aura-page-enter var(--motion-slow)
+    var(--motion-ease-out) both;
+}
+
 .memory-profile-tab-panel:not([hidden]),
 .memory-archive-view-panel,
 .story-workspace:not([hidden]),
 .memory-documentation
   > div:not([hidden])
-  > .biography-questionnaire {
+  > .biography-questionnaire,
+.admin-section,
+.family-access-section,
+.pilot-section,
+.pricing-gate-card,
+.pricing-decision-card {
   animation: aura-content-enter var(--motion-normal)
     var(--motion-ease-out) both;
 }
@@ -1162,12 +1925,19 @@ details[open] > :not(summary) {
   }
 
   .page-shell > .surface-card,
+  .chat-page-shell > .memory-chat-page,
+  .chat-page-shell > .chat-state-card,
   .memory-profile-tab-panel:not([hidden]),
   .memory-archive-view-panel,
   .story-workspace:not([hidden]),
   .memory-documentation
     > div:not([hidden])
     > .biography-questionnaire,
+  .admin-section,
+  .family-access-section,
+  .pilot-section,
+  .pricing-gate-card,
+  .pricing-decision-card,
   details[open] > :not(summary),
   .profile-edit-panel,
   .form-error,
