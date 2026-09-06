@@ -42,6 +42,19 @@ if (env.trustProxyHops > 0) {
 app.use(requestId)
 app.use(requestLogger)
 app.use(securityHeaders)
+app.use((req, res, next) => {
+  const nonIndexablePath =
+    /^\/(?:api|login|register|invitation|app)(?:\/|$)/i
+
+  if (nonIndexablePath.test(req.path)) {
+    res.setHeader(
+      'X-Robots-Tag',
+      'noindex, nofollow',
+    )
+  }
+
+  next()
+})
 app.use(cookieParser())
 app.use(
   express.json({
