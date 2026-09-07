@@ -1,5 +1,6 @@
 .family-access-page {
   width: min(1040px, 100%);
+  overflow: visible;
 }
 
 .family-access-header {
@@ -31,9 +32,15 @@
 }
 
 .family-access-section {
+  position: relative;
   margin-block-start: 30px;
+  overflow: visible;
   padding-block-start: 26px;
   border-top: 1px solid rgba(83, 98, 91, 0.14);
+}
+
+.family-access-section:has(.role-selector-open) {
+  z-index: 40;
 }
 
 .family-invitation-form {
@@ -47,15 +54,152 @@
     auto;
 }
 
-.family-invitation-form select,
-.member-actions select {
+.role-selector {
+  position: relative;
+  z-index: 1;
+  width: 240px;
+  min-width: 240px;
+}
+
+.family-invitation-form .role-selector {
+  width: 100%;
+  min-width: 0;
+}
+
+.role-selector-open {
+  z-index: 80;
+}
+
+.role-selector-trigger {
+  display: flex;
   width: 100%;
   min-height: 46px;
+  align-items: center;
+  justify-content: space-between;
   padding: 10px 12px;
+  gap: 16px;
   color: #33413d;
+  font: inherit;
+  font-weight: 600;
+  text-align: right;
   background: #fffefa;
   border: 1px solid rgba(83, 98, 91, 0.24);
   border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(59, 52, 40, 0.05);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.role-selector-trigger > span:first-child {
+  min-width: 0;
+  flex: 1;
+  white-space: nowrap;
+}
+
+.role-selector-trigger:hover,
+.role-selector-open .role-selector-trigger {
+  background: #fffdf8;
+  border-color: rgba(72, 107, 93, 0.42);
+}
+
+.role-selector-trigger:focus-visible {
+  outline: none;
+  border-color: var(--aura-olive, #486b5d);
+  box-shadow: 0 0 0 4px rgba(72, 107, 93, 0.14);
+}
+
+.role-selector-chevron {
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  margin-block-end: 4px;
+  border-inline-end: 2px solid #5f6e68;
+  border-block-end: 2px solid #5f6e68;
+  transform: rotate(45deg);
+  transition: transform 160ms ease;
+}
+
+.role-selector-open .role-selector-chevron {
+  margin-block: 4px 0;
+  transform: rotate(225deg);
+}
+
+.role-selector-panel {
+  position: absolute;
+  z-index: 100;
+  inset-block-start: calc(100% + 8px);
+  inset-inline-start: 0;
+  width: 360px;
+  max-width: calc(100vw - 40px);
+  overflow: hidden;
+  padding: 6px;
+  background: #fffefa;
+  border: 1px solid rgba(83, 98, 91, 0.2);
+  border-radius: 14px;
+  box-shadow: 0 18px 44px rgba(59, 52, 40, 0.16);
+}
+
+.role-selector-option {
+  display: grid;
+  width: 100%;
+  align-items: start;
+  padding: 12px;
+  gap: 10px;
+  color: #33413d;
+  font: inherit;
+  text-align: right;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  grid-template-columns: 22px minmax(0, 1fr);
+}
+
+.role-selector-option:hover,
+.role-selector-option:focus-visible {
+  outline: none;
+  background: rgba(72, 107, 93, 0.08);
+}
+
+.role-selector-option[aria-selected='true'] {
+  background: #e7f1ec;
+}
+
+.role-selector-check {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  color: #fffefa;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(72, 107, 93, 0.16);
+  border-radius: 50%;
+}
+
+.role-selector-option[aria-selected='true']
+  .role-selector-check {
+  background: var(--aura-olive, #486b5d);
+}
+
+.role-selector-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.role-selector-copy strong {
+  color: #33413d;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.role-selector-copy small {
+  color: #68706c;
+  font-size: 0.8rem;
+  line-height: 1.45;
 }
 
 .invitation-link-box {
@@ -86,11 +230,13 @@
 .family-invitation-list {
   display: grid;
   margin-block-start: 18px;
+  overflow: visible;
   gap: 12px;
 }
 
 .family-member-card,
 .family-invitation-card {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -101,6 +247,14 @@
   border-radius: 14px;
 }
 
+.family-member-card {
+  overflow: visible;
+}
+
+.family-member-card:has(.role-selector-open) {
+  z-index: 60;
+}
+
 .family-member-card p,
 .family-invitation-card p,
 .family-invitation-card small {
@@ -108,7 +262,7 @@
   color: #68706c;
 }
 
-.family-member-card span {
+.family-member-role-badge {
   display: inline-block;
   margin-block-start: 8px;
   padding: 5px 9px;
@@ -120,8 +274,10 @@
 }
 
 .member-actions {
+  position: relative;
   display: flex;
   align-items: center;
+  overflow: visible;
   gap: 8px;
   flex-wrap: wrap;
 }
@@ -163,5 +319,21 @@
   .member-actions,
   .member-actions > * {
     width: 100%;
+  }
+
+  .member-actions .role-selector {
+    min-width: 0;
+  }
+
+  .role-selector-panel {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .role-selector-trigger,
+  .role-selector-chevron {
+    transition: none;
   }
 }

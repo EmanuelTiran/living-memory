@@ -1,6 +1,8 @@
 import {
   useCallback,
   useEffect,
+  useId,
+  useRef,
   useState,
 } from 'react'
 import {
@@ -21,12 +23,45 @@ import {
 } from '../../api/familyAccessApi.js'
 import './FamilyAccessPage.css'
 
+const roleOptions = [
+  {
+    value: 'viewer',
+    label: 'צפייה ושאלות',
+    summary: 'צפייה בארכיון ושאלת שאלות בלבד',
+    tooltip:
+      'מאפשר צפייה בארכיון ושאלת שאלות על החומרים המאושרים. ללא הוספת תוכן, עריכה או ניהול הרשאות.',
+  },
+  {
+    value: 'contributor',
+    label: 'מספר/ת ותיעוד',
+    summary: 'הוספת סיפורים, זיכרונות והקלטות',
+    tooltip:
+      'כולל צפייה ושאלות, ובנוסף אפשרות להוסיף סיפורים, זיכרונות, תשובות והקלטות לארכיון. ללא עריכת חומרים קיימים או ניהול גישה.',
+  },
+  {
+    value: 'editor',
+    label: 'עריכת הארכיון',
+    summary: 'עריכה, ארגון ושיפור חומרים קיימים',
+    tooltip:
+      'כולל צפייה, שאלות ותיעוד, ובנוסף עריכת חומרים קיימים, ארגון ושיפור תוכן הארכיון. ללא ניהול בני משפחה והרשאות.',
+  },
+  {
+    value: 'steward',
+    label: 'נאמן/ת משפחתי/ת',
+    summary: 'ניהול גישה, הזמנות ותפקידי בני משפחה',
+    tooltip:
+      'מתאים למי שמסייע/ת בניהול הארכיון המשפחתי בפועל. כולל צפייה, שאלות, תיעוד ועריכה, וגם הזמנת בני משפחה, עדכון תפקידים וניהול הגישה לארכיון. מינוי או ניהול של נאמן/ת משפחתי/ת נוסף/ת שמור לבעל/ת הארכיון.',
+  },
+]
+
 const roleLabels = {
   owner: 'בעלים',
-  viewer: 'צפייה ושאלות',
-  contributor: 'מספר/ת ותיעוד',
-  editor: 'עריכת הארכיון',
-  steward: 'נאמן/ת משפחתי/ת',
+  ...Object.fromEntries(
+    roleOptions.map((option) => [
+      option.value,
+      option.label,
+    ]),
+  ),
 }
 
 const invitationStatusLabels = {
@@ -86,6 +121,146 @@ function createMemberRoleMap(familyAccess) {
         member.membershipId,
         member.role,
       ]),
+  )
+}
+
+function RoleSelector({
+  value,
+  onChange,
+  canAssignSteward,
+  ariaLabel,
+}) {
+  const [isOpen, setIsOpen] =
+    useState(false)
+  const selectorRef = useRef(null)
+  const triggerRef = useRef(null)
+  const listboxId = useId()
+  const availableOptions = canAssignSteward
+    ? roleOptions
+    : roleOptions.filter(
+        (option) =>
+          option.value !== 'steward',
+      )
+  const selectedOption =
+    roleOptions.find(
+      (option) => option.value === value,
+    ) ?? availableOptions[0]
+
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined
+    }
+
+    function handlePointerDown(event) {
+      if (
+        !selectorRef.current?.contains(
+          event.target,
+        )
+      ) {
+        setIsOpen(false)
+      }
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setIsOpen(false)
+        triggerRef.current?.focus()
+      }
+    }
+
+    document.addEventListener(
+      'pointerdown',
+      handlePointerDown,
+    )
+    document.addEventListener(
+      'keydown',
+      handleKeyDown,
+    )
+
+    return () => {
+      document.removeEventListener(
+        'pointerdown',
+        handlePointerDown,
+      )
+      document.removeEventListener(
+        'keydown',
+        handleKeyDown,
+      )
+    }
+  }, [isOpen])
+
+  function handleSelect(nextValue) {
+    onChange(nextValue)
+    setIsOpen(false)
+    triggerRef.current?.focus()
+  }
+
+  return (
+    <div
+      className={`role-selector ${
+        isOpen ? 'role-selector-open' : ''
+      }`}
+      ref={selectorRef}
+    >
+      <button
+        className="role-selector-trigger"
+        type="button"
+        ref={triggerRef}
+        aria-label={`${ariaLabel}: ${selectedOption.label}`}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-controls={listboxId}
+        onClick={() => {
+          setIsOpen((current) => !current)
+        }}
+      >
+        <span>{selectedOption.label}</span>
+        <span
+          className="role-selector-chevron"
+          aria-hidden="true"
+        />
+      </button>
+
+      {isOpen && (
+        <div
+          className="role-selector-panel"
+          id={listboxId}
+          role="listbox"
+          aria-label={ariaLabel}
+        >
+          {availableOptions.map((option) => {
+            const isSelected =
+              option.value === value
+
+            return (
+              <button
+                className="role-selector-option"
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                data-aura-tooltip={option.tooltip}
+                key={option.value}
+                onClick={() => {
+                  handleSelect(option.value)
+                }}
+              >
+                <span
+                  className="role-selector-check"
+                  aria-hidden="true"
+                >
+                  {isSelected ? '✓' : ''}
+                </span>
+                <span className="role-selector-copy">
+                  <strong>{option.label}</strong>
+                  <small>{option.summary}</small>
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -463,30 +638,19 @@ function FamilyAccessPage({
                   />
                 </label>
 
-                <label className="form-field">
+                <div className="form-field">
                   <span>תפקיד משפחתי</span>
-                  <select
+                  <RoleSelector
                     value={role}
-                    onChange={(event) => {
-                      setRole(event.target.value)
+                    onChange={(nextRole) => {
+                      setRole(nextRole)
                     }}
-                  >
-                    <option value="viewer">
-                      {roleLabels.viewer}
-                    </option>
-                    <option value="contributor">
-                      {roleLabels.contributor}
-                    </option>
-                    <option value="editor">
-                      {roleLabels.editor}
-                    </option>
-                    {canAssignSteward && (
-                      <option value="steward">
-                        {roleLabels.steward}
-                      </option>
-                    )}
-                  </select>
-                </label>
+                    canAssignSteward={
+                      canAssignSteward
+                    }
+                    ariaLabel="תפקיד משפחתי להזמנה החדשה"
+                  />
+                </div>
 
                 <button
                   className="primary-button"
@@ -571,7 +735,7 @@ function FamilyAccessPage({
                           <p dir="ltr">
                             {member.email}
                           </p>
-                          <span>
+                          <span className="family-member-role-badge">
                             {isRevoked
                               ? 'הגישה בוטלה'
                               : roleLabels[
@@ -582,44 +746,27 @@ function FamilyAccessPage({
 
                         {canManage && (
                           <div className="member-actions">
-                            <select
+                            <RoleSelector
                               value={
                                 memberRoles[
                                   member
                                     .membershipId
                                 ] ?? member.role
                               }
-                              onChange={(event) => {
+                              onChange={(nextRole) => {
                                 setMemberRoles(
                                   (current) => ({
                                     ...current,
                                     [member.membershipId]:
-                                      event.target
-                                        .value,
+                                      nextRole,
                                   }),
                                 )
                               }}
-                              aria-label={`תפקיד עבור ${member.displayName}`}
-                            >
-                              <option value="viewer">
-                                {roleLabels.viewer}
-                              </option>
-                              <option value="contributor">
-                                {
-                                  roleLabels.contributor
-                                }
-                              </option>
-                              <option value="editor">
-                                {roleLabels.editor}
-                              </option>
-                              {canAssignSteward && (
-                                <option value="steward">
-                                  {
-                                    roleLabels.steward
-                                  }
-                                </option>
-                              )}
-                            </select>
+                              canAssignSteward={
+                                canAssignSteward
+                              }
+                              ariaLabel={`תפקיד עבור ${member.displayName}`}
+                            />
                             <button
                               className="secondary-button"
                               type="button"
