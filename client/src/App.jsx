@@ -17,7 +17,6 @@ import {
   registerAccount,
 } from './api/authApi.js'
 import {
-  pilotAvatarEnabled,
   pilotInviteOnly,
 } from './config/pilotFeatures.js'
 import AdminDashboard from './features/admin/AdminDashboard.jsx'
@@ -31,21 +30,80 @@ import MemoryProfilePage from './features/memories/MemoryProfilePage.jsx'
 import BrandLogo from './BrandLogo.jsx'
 import './App.css'
 
-const principles = [
+const archiveItems = [
   {
-    title: 'הסיפור קודם לטכנולוגיה',
+    title: 'סיפורים ופרטי חיים',
     description:
-      'מתחילים בשיחה קצרה, שומרים את הקול ובודקים את הסיפור לפני שהוא נכנס לארכיון.',
+      'זיכרונות מהילדות, אנשים משמעותיים, מקומות ותחנות בדרך — עם השמות והפרטים שעוזרים להבין את הסיפור.',
+  },
+  {
+    title: 'הקלטות ותמלולים',
+    description:
+      'הקול המקורי, עם המילים והדרך שבה נאמרו. תמלולים עוברים בדיקה ואישור בנפרד מההקלטה.',
+  },
+  {
+    title: 'תמונות וחומרים משפחתיים',
+    description:
+      'תמונות וחומרים משפחתיים נשמרים לצד הסיפורים שאליהם הם שייכים.',
+  },
+  {
+    title: 'שאלות מהמשפחה',
+    description:
+      'מה תמיד רציתם לשאול? שומרים גם את השאלות שעוד מחכות לסיפור שלהן.',
+  },
+]
+
+const processSteps = [
+  {
+    title: 'בוחרים מאיפה להתחיל',
+    description:
+      'שאלה מהמשפחה, סיפור שרוצים לשמור או ראיון חיים מודרך שעוזר למצוא את המילים.',
+  },
+  {
+    title: 'מתעדים ובודקים',
+    description:
+      'מקליטים, כותבים או מוסיפים תמונה. עוברים על הטיוטות והתמלולים לפני שמאשרים אותם.',
+  },
+  {
+    title: 'חוזרים ומוסיפים',
+    description:
+      'מקשיבים שוב, קוראים יחד ומוסיפים פרטים וסיפורים לאורך השנים. בהדרגה נבנה ארכיון של מורשת משפחתית.',
+  },
+]
+
+const conversationFeatures = [
+  {
+    title: 'שאלות שמחזירות לסיפור',
+    description:
+      'השיחה מחברת בין השאלה לחומרים הרלוונטיים בארכיון. כשהמידע קיים, אפשר לחזור גם אל המקור שממנו התשובה נשענת.',
+  },
+  {
+    title: 'תשובות בקול מותאם',
+    description:
+      'למי שיבחרו בכך, אפשר להוסיף שכבה של קול מלאכותי המותאם להקלטות של האדם שסיפורו נשמר. ההקלטות המקוריות נשארות נפרדות מהדיבור שנוצר.',
+  },
+  {
+    title: 'גם עם אווטאר',
+    description:
+      'אווטאר חזותי יכול להוסיף נוכחות לחוויית השיחה — כשכבה אופציונלית נוספת.',
+  },
+]
+
+const trustPrinciples = [
+  {
+    title: 'אתם בוחרים מה לאשר ואת מי לשתף',
+    description:
+      'המשפחה מנהלת את הגישה לארכיון ואת התכנים המאושרים בו.',
+  },
+  {
+    title: 'טיוטה נשארת טיוטה עד לאישור',
+    description:
+      'תמלולים וטיוטות נבדקים לפני שהם הופכים לחלק המאושר של הארכיון.',
   },
   {
     title: 'מקור שאפשר לחזור אליו',
     description:
-      'תשובות הארכיון נשענות על סיפורים מאושרים ומפנות בחזרה למקור המשפחתי.',
-  },
-  {
-    title: 'בשליטה משפחתית',
-    description:
-      'החומרים נשארים פרטיים כברירת מחדל, והמשפחה מחליטה מה לאשר ולשתף.',
+      'ההקלטה המקורית והחומרים שנשמרו נשארים לצד העיבודים שלהם, כדי שאפשר יהיה לחזור להקשר שבו תועד הסיפור.',
   },
 ]
 
@@ -135,128 +193,350 @@ function HomePage({
   initializing,
   startupError,
 }) {
+  const primaryAction = user
+    ? {
+        label: 'פתיחת הארכיון המשפחתי',
+        to: '/app',
+        tooltip: 'לפתוח את הזיכרונות המשפחתיים שלך',
+      }
+    : pilotInviteOnly
+      ? {
+          label: 'כניסה לפיילוט הפרטי',
+          to: '/login',
+          tooltip: 'להתחבר לחשבון הפיילוט הפרטי',
+        }
+      : {
+          label: 'התחלת ארכיון משפחתי',
+          to: '/register',
+          tooltip: 'ליצור חשבון וארכיון משפחתי',
+        }
+
   return (
-    <PageShell>
+    <PageShell className="home-page-shell">
       <section
-        className="surface-card welcome-card"
-        aria-labelledby="welcome-title"
+        className="home-hero"
+        aria-labelledby="home-title"
       >
-        <BrandLogo className="welcome-brand-logo" />
-
-        <h1
-          className="hero-title"
-          id="welcome-title"
-        >
-          הסיפורים של המשפחה שלכם.
-          <span>
-            בקולם. מוכנים לשאלה הבאה.
+        <div className="home-hero-brand">
+          <BrandLogo className="home-brand-logo" />
+          <span className="home-brand-divider" aria-hidden="true" />
+          <span className="home-brand-english" dir="ltr">
+            Living Memory
           </span>
-        </h1>
-
-        <p className="lead">
-          תעדו אותם בשיחות קצרות וטבעיות,
-          בנו ארכיון משפחתי חי ושאלו אותו
-          שאלות שמבוססות על מה שנאמר באמת.
-        </p>
-
-        <div className="hero-actions">
-          {user ? (
-            <Link
-              className="primary-button"
-              to="/app"
-              data-aura-tooltip="לפתוח את הזיכרונות המשפחתיים שלך"
-            >
-              פתיחת הארכיון המשפחתי
-            </Link>
-          ) : (
-            pilotInviteOnly ? (
-              <Link
-                className="primary-button"
-                to="/login"
-                data-aura-tooltip="להתחבר לחשבון הפיילוט הפרטי"
-              >
-                כניסה לפיילוט הפרטי
-              </Link>
-            ) : (
-              <>
-                <Link
-                  className="primary-button"
-                  to="/register"
-                  data-aura-tooltip="ליצור חשבון וארכיון משפחתי"
-                >
-                  התחלת ארכיון משפחתי
-                </Link>
-
-                <Link
-                  className="secondary-button"
-                  to="/login"
-                  data-aura-tooltip="להתחבר לחשבון קיים"
-                >
-                  כניסה לחשבון
-                </Link>
-              </>
-            )
-          )}
         </div>
 
-        {pilotInviteOnly && !user && (
-          <p className="private-pilot-notice">
-            הפיילוט נפתח כעת למספר מצומצם של
-            משפחות ובהזמנה אישית בלבד.
-          </p>
-        )}
+        <div className="home-hero-layout">
+          <div className="home-hero-copy">
+            <p className="home-eyebrow">
+              זיכרון חי — ארכיון משפחתי לסיפורי חיים
+            </p>
 
-        <aside
-          className="ai-disclosure"
-          aria-label="הבהרה חשובה"
-        >
-          <span
-            className="disclosure-mark"
-            aria-hidden="true"
+            <h1 className="home-title" id="home-title">
+              <span>הסיפורים של המשפחה שלכם.</span>
+              <span>במילים שלהם. בקול שלהם.</span>
+            </h1>
+
+            <p className="home-lead">
+              שומרים סיפורי חיים, הקלטות ותמונות בארכיון משפחתי אחד,
+              כדי שתוכלו לחזור לסיפורים ולשתף אותם גם עם הדורות הבאים.
+              מתחילים בזיכרון אחד, ומוסיפים עוד עם הזמן.
+            </p>
+
+            <p className="home-trust-line">
+              <span aria-hidden="true">✓</span>
+              אתם בוחרים מה לאשר ואת מי לשתף.
+            </p>
+
+            <div className="home-actions">
+              <Link
+                className="primary-button"
+                to={primaryAction.to}
+                data-aura-tooltip={primaryAction.tooltip}
+              >
+                {primaryAction.label}
+              </Link>
+
+              <a
+                className="secondary-button"
+                href="#how-it-works"
+                data-aura-tooltip="לעבור להסבר על תהליך התיעוד"
+              >
+                איך זה עובד
+              </a>
+            </div>
+
+            {!user && !pilotInviteOnly && (
+              <Link
+                className="home-account-link"
+                to="/login"
+                data-aura-tooltip="להתחבר לחשבון קיים"
+              >
+                כבר יש לכם חשבון? כניסה לחשבון
+              </Link>
+            )}
+
+            {pilotInviteOnly && (
+              <p className="home-pilot-notice">
+                זיכרון חי פועל כעת בפיילוט פרטי ומצומצם.
+                ההצטרפות בהזמנה בלבד.
+              </p>
+            )}
+
+            {(initializing || startupError) && (
+              <p
+                className={
+                  startupError
+                    ? 'development-status status-error'
+                    : 'development-status'
+                }
+                aria-live="polite"
+              >
+                <span aria-hidden="true" />
+                {startupError || 'בודקים אם קיים חיבור פעיל'}
+              </p>
+            )}
+          </div>
+
+          <aside
+            className="home-archive-preview"
+            aria-label="המחשה של ארכיון משפחתי"
           >
+            <div className="home-preview-heading">
+              <span>ארכיון משפחתי</span>
+              <span aria-hidden="true">01</span>
+            </div>
+
+            <div className="home-preview-story">
+              <span className="home-preview-label">סיפור חיים</span>
+              <strong>הזיכרון נשמר עם הפרטים שנותנים לו משמעות</strong>
+              <span className="home-preview-lines" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+            </div>
+
+            <div className="home-preview-source">
+              <span className="home-preview-play" aria-hidden="true">
+                ▶
+              </span>
+              <span>
+                <strong>הקלטה מקורית</strong>
+                <small>נשמרת לצד התמלול המאושר</small>
+              </span>
+              <span className="home-preview-wave" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+              </span>
+            </div>
+
+            <div className="home-preview-footer">
+              <span>סיפורים</span>
+              <span>הקלטות</span>
+              <span>תמונות</span>
+              <span>שאלות</span>
+            </div>
+          </aside>
+        </div>
+
+        <aside className="home-advanced-preview">
+          <span className="home-advanced-mark" aria-hidden="true">
             AI
           </span>
-
           <p>
-            ה־AI אינו מחליף את האדם ואינו
-            ממציא מה הוא היה אומר. התשובות
-            מסומנות לפי רמת הביסוס שלהן;
-            שכבות קול מלאכותי
-            {pilotAvatarEnabled
-              ? ' ואווטאר'
-              : ''}{' '}
-            הן אפשרויות נפרדות בלבד.
+            בהמשך אפשר יהיה גם לשאול על הזיכרונות שנשמרו,
+            ולבחור לשמוע תשובות בקול מלאכותי מותאם
+            או לחוות את השיחה באמצעות אווטאר.
           </p>
         </aside>
+      </section>
 
-        <ul
-          className="principles"
-          aria-label="עקרונות המערכת"
-        >
-          {principles.map((principle) => (
+      <section
+        className="home-section"
+        aria-labelledby="archive-section-title"
+      >
+        <div className="home-section-intro">
+          <div>
+            <p className="home-section-label">הארכיון המשפחתי</p>
+            <h2 id="archive-section-title">הסיפור שמאחורי התמונות</h2>
+            <p className="home-section-lead">
+              זיכרון חי הוא ארכיון משפחתי שבו שומרים את סיפורי החיים,
+              הזיכרונות והקול של בני המשפחה, כדי שאפשר יהיה לחזור אליהם
+              ולהעביר אותם לדורות הבאים.
+            </p>
+          </div>
+
+          <p className="home-section-support">
+            לצד תמונה אפשר לשמור מי מופיע בה ומה קרה באותו יום.
+            לצד סיפור כתוב — את ההקלטה שבה סופר.
+            כך נשמרים גם הפרטים שנותנים לזיכרון את המשמעות שלו.
+          </p>
+        </div>
+
+        <ol className="archive-items">
+          {archiveItems.map((item, index) => (
+            <li key={item.title}>
+              <span className="home-item-number" aria-hidden="true">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <div>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section
+        className="home-section process-section"
+        id="how-it-works"
+        tabIndex={-1}
+        aria-labelledby="process-section-title"
+      >
+        <div className="home-centered-intro">
+          <p className="home-section-label">תהליך פשוט ומתמשך</p>
+          <h2 id="process-section-title">מתחילים מסיפור אחד</h2>
+          <p>
+            אין צורך לתעד חיים שלמים בבת אחת.
+            אפשר להתחיל משאלה, מתמונה או מזיכרון שעולה בשיחה.
+          </p>
+        </div>
+
+        <ol className="process-steps">
+          {processSteps.map((step, index) => (
+            <li key={step.title}>
+              <span className="process-step-number" aria-hidden="true">
+                {index + 1}
+              </span>
+              <h3>{step.title}</h3>
+              <p>{step.description}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section
+        className="home-section experience-section"
+        aria-labelledby="experience-section-title"
+      >
+        <div className="experience-glow" aria-hidden="true" />
+        <div className="experience-intro">
+          <p className="experience-label">שיחה, קול מותאם ואווטאר</p>
+          <h2 id="experience-section-title">
+            <span>לשאול על הסיפורים.</span>
+            <span>לשמוע אותם בדרך נוספת.</span>
+          </h2>
+          <p>
+            הארכיון נועד להיות גם בסיס לשיחה על מה שתועד.
+            ככל שנשמרים בו סיפורים ומקורות מאושרים,
+            אפשר לבנות חוויה שבה שואלים שאלות בשפה טבעית
+            ומקבלים תשובות המבוססות על החומרים שנשמרו.
+          </p>
+        </div>
+
+        <ul className="conversation-prompts" aria-label="דוגמאות לשאלות">
+          <li>איך נראו החיים בבית שבו גדלו?</li>
+          <li>מה הם סיפרו על הילדות?</li>
+          <li>מה עמד מאחורי החלטה משפחתית חשובה?</li>
+        </ul>
+
+        <div className="experience-features">
+          {conversationFeatures.map((feature, index) => (
+            <article key={feature.title}>
+              <span aria-hidden="true">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <h3>{feature.title}</h3>
+              <p>{feature.description}</p>
+            </article>
+          ))}
+        </div>
+
+        <aside className="experience-disclosure" aria-label="הבהרה חשובה">
+          <span className="experience-disclosure-mark" aria-hidden="true">
+            AI
+          </span>
+          <p>
+            <strong>
+              הקול המלאכותי והאווטאר הם ייצוגים שנוצרים באמצעות בינה מלאכותית,
+              ולא האדם עצמו.
+            </strong>
+            אפשר לשמור, לקרוא ולהקשיב לסיפורים גם בלעדיהם.
+          </p>
+        </aside>
+      </section>
+
+      <section
+        className="home-section"
+        aria-labelledby="trust-section-title"
+      >
+        <div className="home-centered-intro">
+          <p className="home-section-label">בחירה, אישור ומקור</p>
+          <h2 id="trust-section-title">הסיפור קודם לטכנולוגיה</h2>
+        </div>
+
+        <ol className="trust-principles">
+          {trustPrinciples.map((principle, index) => (
             <li key={principle.title}>
-              <h2>{principle.title}</h2>
+              <span aria-hidden="true">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <h3>{principle.title}</h3>
               <p>{principle.description}</p>
             </li>
           ))}
-        </ul>
-
-        <p
-          className={
-            startupError
-              ? 'development-status status-error'
-              : 'development-status'
-          }
-          aria-live="polite"
-        >
-          <span aria-hidden="true" />
-
-          {startupError ??
-            (initializing
-              ? 'בודקים אם קיים חיבור פעיל'
-              : 'מערכת ההרשמה וההתחברות פעילה')}
-        </p>
+        </ol>
       </section>
+
+      <section
+        className="home-section final-cta-section"
+        aria-labelledby="final-cta-title"
+      >
+        <div className="final-cta-copy">
+          <p className="home-section-label">הצעד הראשון</p>
+          <h2 id="final-cta-title">איזה סיפור תרצו לשמור ראשון?</h2>
+          <p>
+            סיפור מהילדות, זיכרון משפחתי
+            או השאלה שתמיד רציתם לשאול.
+            אפשר להתחיל משם.
+          </p>
+
+          {pilotInviteOnly && (
+            <p className="final-pilot-note">
+              זיכרון חי נמצא כעת בפיילוט פרטי ומצומצם.
+              ההצטרפות בהזמנה בלבד.
+            </p>
+          )}
+
+          {!user && pilotInviteOnly && (
+            <p className="final-login-hint">
+              יש לכם הזמנה? התחברו לחשבון כדי להתחיל.
+            </p>
+          )}
+        </div>
+
+        <Link
+          className="primary-button final-cta-button"
+          to={primaryAction.to}
+          data-aura-tooltip={primaryAction.tooltip}
+        >
+          {primaryAction.label}
+        </Link>
+      </section>
+
+      <footer className="home-footer">
+        <p>
+          <strong>זיכרון חי</strong>
+          <span aria-hidden="true"> | </span>
+          <span dir="ltr">Living Memory</span>
+        </p>
+        <p>שומרים סיפורי חיים לדורות.</p>
+      </footer>
     </PageShell>
   )
 }
