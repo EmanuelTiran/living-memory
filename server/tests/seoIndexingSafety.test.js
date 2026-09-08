@@ -9,6 +9,8 @@ describe('SEO indexing safety', () => {
     '/app/memories/example',
     '/login',
     '/register',
+    '/forgot-password',
+    '/reset-password?token=example',
     '/invitation',
   ])('prevents indexing %s', async (path) => {
     const response = await request(app).get(path)

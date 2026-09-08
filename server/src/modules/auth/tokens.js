@@ -10,6 +10,8 @@ import {
   const ACCESS_TOKEN_AUDIENCE = 'living-memory-client'
   const ACCESS_TOKEN_ALGORITHM = 'HS256'
   const REFRESH_TOKEN_BYTES = 48
+  const PASSWORD_RESET_TOKEN_BYTES = 32
+  const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000
 
   const allowedSystemRoles = new Set(['user', 'admin'])
 
@@ -142,4 +144,36 @@ import {
     )
 
     return expiresAt
+  }
+
+  export function createPasswordResetToken() {
+    return randomBytes(
+      PASSWORD_RESET_TOKEN_BYTES,
+    ).toString('base64url')
+  }
+
+  export function hashPasswordResetToken(token) {
+    validateTokenString(
+      token,
+      'Password reset token',
+    )
+
+    return createHash('sha256')
+      .update(token, 'utf8')
+      .digest('hex')
+  }
+
+  export function createPasswordResetExpirationDate(
+    now = new Date(),
+  ) {
+    if (
+      !(now instanceof Date) ||
+      Number.isNaN(now.getTime())
+    ) {
+      throw new TypeError('Current date must be valid.')
+    }
+
+    return new Date(
+      now.getTime() + PASSWORD_RESET_TTL_MS,
+    )
   }

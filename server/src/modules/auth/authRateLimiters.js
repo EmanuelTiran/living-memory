@@ -1,4 +1,5 @@
 import { AppError } from '../../errors/AppError.js'
+import { createHash } from 'node:crypto'
 import {
   createFixedWindowRateLimiter,
 } from '../../middleware/createFixedWindowRateLimiter.js'
@@ -36,6 +37,17 @@ function createAuthRateLimiter(
   })
 }
 
+function resolveEmailHash(req) {
+  const email =
+    typeof req.validatedBody?.email === 'string'
+      ? req.validatedBody.email
+      : 'invalid'
+
+  return createHash('sha256')
+    .update(email, 'utf8')
+    .digest('hex')
+}
+
 export const registrationRateLimiter =
   createAuthRateLimiter('register', 10)
 
@@ -44,3 +56,25 @@ export const loginRateLimiter =
 
 export const refreshRateLimiter =
   createAuthRateLimiter('refresh', 120)
+
+export const forgotPasswordRateLimiter =
+  createAuthRateLimiter(
+    'forgot-password',
+    10,
+  )
+
+export const forgotPasswordEmailRateLimiter =
+  createFixedWindowRateLimiter({
+    windowMs: FIFTEEN_MINUTES_MS,
+    maxRequests: 3,
+    resolveKey: (req) =>
+      `forgot-password-email:${resolveEmailHash(req)}`,
+    createRateLimitError:
+      createAuthRateLimitError,
+  })
+
+export const resetPasswordRateLimiter =
+  createAuthRateLimiter(
+    'reset-password',
+    10,
+  )

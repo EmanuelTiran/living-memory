@@ -37,6 +37,7 @@ import {
 
   import {
     createRefreshSession,
+    revokeAllUserSessions,
     revokeRefreshSession,
     rotateRefreshSession,
   } from '../src/modules/auth/sessionService.js'
@@ -303,6 +304,32 @@ import {
             revokedAt: expect.any(Date),
             revocationReason: 'logout',
             lastUsedAt: expect.any(Date),
+          },
+        },
+      )
+    })
+
+    it('revokes only active sessions belonging to one user', async () => {
+      mocks.sessionUpdateMany.mockResolvedValue({
+        acknowledged: true,
+      })
+
+      await revokeAllUserSessions(
+        'user-id',
+        'security',
+      )
+
+      expect(
+        mocks.sessionUpdateMany,
+      ).toHaveBeenCalledWith(
+        {
+          userId: 'user-id',
+          revokedAt: null,
+        },
+        {
+          $set: {
+            revokedAt: expect.any(Date),
+            revocationReason: 'security',
           },
         },
       )

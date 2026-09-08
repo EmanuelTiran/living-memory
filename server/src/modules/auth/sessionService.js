@@ -103,6 +103,29 @@ export async function revokeRefreshSessionFamily(
   )
 }
 
+export async function revokeAllUserSessions(
+  userId,
+  reason = 'security',
+) {
+  validateRequiredString(userId, 'User ID')
+  validateRevocationReason(reason)
+
+  const revokedAt = new Date()
+
+  await Session.updateMany(
+    {
+      userId,
+      revokedAt: null,
+    },
+    {
+      $set: {
+        revokedAt,
+        revocationReason: reason,
+      },
+    },
+  )
+}
+
 export async function rotateRefreshSession(
   refreshToken,
 ) {

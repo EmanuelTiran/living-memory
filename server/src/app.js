@@ -44,7 +44,7 @@ app.use(requestLogger)
 app.use(securityHeaders)
 app.use((req, res, next) => {
   const nonIndexablePath =
-    /^\/(?:api|login|register|invitation|app)(?:\/|$)/i
+    /^\/(?:api|login|register|forgot-password|reset-password|invitation|app)(?:\/|$)/i
 
   if (nonIndexablePath.test(req.path)) {
     res.setHeader(

@@ -92,6 +92,20 @@ export function loginAccount(input) {
     })
 }
 
+export function requestPasswordReset(input) {
+    return request('/forgot-password', {
+        method: 'POST',
+        body: input,
+    })
+}
+
+export function resetPassword(input) {
+    return request('/reset-password', {
+        method: 'POST',
+        body: input,
+    })
+}
+
 let activeRefreshRequest = null
 
 export function refreshSession() {

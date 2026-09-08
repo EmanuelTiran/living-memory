@@ -408,6 +408,52 @@
   color: #88452f;
 }
 
+.auth-page-shell .auth-forgot-link {
+  justify-self: start;
+  color: var(--aura-clay, #a4573e);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+.auth-page-shell .auth-forgot-link:hover {
+  color: #88452f;
+}
+
+.auth-page-shell .auth-forgot-link:focus-visible,
+.auth-page-shell .auth-recovery-links a:focus-visible {
+  outline: 3px solid rgb(72 107 93 / 32%);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.auth-page-shell .auth-recovery-result,
+.auth-page-shell .auth-recovery-links {
+  display: grid;
+  width: min(700px, 100%);
+  margin-block-start: 24px;
+  gap: 14px;
+}
+
+.auth-page-shell .auth-recovery-result .form-notice {
+  width: 100%;
+  margin: 0;
+}
+
+.auth-page-shell .auth-recovery-links {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.auth-page-shell .auth-recovery-links > :only-child {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 520px) {
+  .auth-page-shell .auth-recovery-links {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (min-width: 761px) {
   .auth-page-shell .auth-card-registration .auth-brand-logo {
     width: 300px;

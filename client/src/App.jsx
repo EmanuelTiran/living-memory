@@ -15,6 +15,8 @@ import {
   loginAccount,
   refreshSession,
   registerAccount,
+  requestPasswordReset,
+  resetPassword as submitNewPassword,
 } from './api/authApi.js'
 import {
   pilotInviteOnly,
@@ -123,6 +125,8 @@ function getErrorMessage(error) {
       'ההרשמה לפיילוט זמינה דרך קישור הזמנה אישי בלבד.',
     REGISTRATION_INVITATION_INVALID:
       'ההזמנה אינה תקינה, פגה או מיועדת לכתובת אימייל אחרת.',
+    PASSWORD_RESET_INVALID_OR_EXPIRED:
+      'קישור איפוס הסיסמה אינו תקף או שפג תוקפו. בקשו קישור חדש.',
     AUTH_RATE_LIMITED:
       'בוצעו יותר מדי ניסיונות בזמן קצר. המתינו מעט ונסו שוב.',
     VALIDATION_ERROR:
@@ -795,6 +799,19 @@ function AuthPage({
             )}
           </label>
 
+          {!isRegistration && (
+            <Link
+              className="auth-forgot-link"
+              to="/forgot-password"
+              state={{
+                email: formData.email.trim(),
+              }}
+              data-aura-tooltip="לעבור לאיפוס הסיסמה"
+            >
+              שכחתם את הסיסמה?
+            </Link>
+          )}
+
           {errorMessage && (
             <p
               className="form-error"
@@ -847,6 +864,307 @@ function AuthPage({
         )}
       </section>
     </PageShell>
+  )
+}
+
+function PasswordRecoveryCard({
+  title,
+  description,
+  children,
+}) {
+  return (
+    <PageShell className="auth-page-shell">
+      <section
+        className="surface-card auth-card auth-recovery-card"
+        aria-labelledby="auth-recovery-title"
+        aria-live="polite"
+      >
+        <AuthFrame />
+
+        <Link
+          className="back-link"
+          to="/login"
+          data-aura-tooltip="לחזור לכניסה לחשבון"
+        >
+          חזרה לכניסה
+        </Link>
+
+        <BrandLogo className="auth-brand-logo" compact />
+
+        <h1
+          className="auth-title"
+          id="auth-recovery-title"
+        >
+          {title}
+        </h1>
+
+        <p className="auth-description">
+          {description}
+        </p>
+
+        {children}
+      </section>
+    </PageShell>
+  )
+}
+
+function ForgotPasswordPage() {
+  const location = useLocation()
+  const [email, setEmail] = useState(
+    typeof location.state?.email === 'string'
+      ? location.state.email
+      : '',
+  )
+  const [isSubmitting, setIsSubmitting] =
+    useState(false)
+  const [isSubmitted, setIsSubmitted] =
+    useState(false)
+  const [errorMessage, setErrorMessage] =
+    useState('')
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    setErrorMessage('')
+    setIsSubmitting(true)
+
+    try {
+      await requestPasswordReset({ email })
+      setIsSubmitted(true)
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <PasswordRecoveryCard
+      title="איפוס סיסמה"
+      description="הזינו את כתובת האימייל שאיתה נרשמתם לזיכרון חי."
+    >
+      {isSubmitted ? (
+        <div className="auth-recovery-result">
+          <p
+            className="form-notice"
+            role="status"
+          >
+            אם קיים חשבון עם כתובת האימייל הזאת,
+            שלחנו אליו קישור לאיפוס הסיסמה.
+          </p>
+          <Link
+            className="primary-button"
+            to="/login"
+            data-aura-tooltip="לחזור לכניסה לחשבון"
+          >
+            חזרה לכניסה לחשבון
+          </Link>
+        </div>
+      ) : (
+        <form
+          className="auth-form"
+          onSubmit={handleSubmit}
+          aria-busy={isSubmitting}
+        >
+          <label className="form-field">
+            <span>כתובת אימייל</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value)
+              }}
+              maxLength={254}
+              autoComplete="email"
+              autoFocus
+              dir="ltr"
+              required
+            />
+          </label>
+
+          {errorMessage && (
+            <p className="form-error" role="alert">
+              {errorMessage}
+            </p>
+          )}
+
+          <button
+            className="primary-button submit-button"
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? 'שולחים...'
+              : 'שלחו לי קישור לאיפוס הסיסמה'}
+          </button>
+        </form>
+      )}
+    </PasswordRecoveryCard>
+  )
+}
+
+function ResetPasswordPage({
+  onAuthenticationChange,
+}) {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [token] = useState(() =>
+    new URLSearchParams(
+      location.search,
+    ).get('token') ?? '',
+  )
+  const [password, setPassword] =
+    useState('')
+  const [passwordConfirmation, setPasswordConfirmation] =
+    useState('')
+  const [isSubmitting, setIsSubmitting] =
+    useState(false)
+  const [isComplete, setIsComplete] =
+    useState(false)
+  const [errorMessage, setErrorMessage] =
+    useState('')
+  const hasValidTokenShape =
+    /^[A-Za-z0-9_-]{43}$/.test(token)
+
+  useEffect(() => {
+    if (location.search.includes('token=')) {
+      navigate('/reset-password', {
+        replace: true,
+      })
+    }
+  }, [location.search, navigate])
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    setErrorMessage('')
+
+    if (password !== passwordConfirmation) {
+      setErrorMessage('הסיסמאות אינן זהות.')
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      await submitNewPassword({
+        token,
+        password,
+      })
+      onAuthenticationChange(null)
+      setIsComplete(true)
+      setPassword('')
+      setPasswordConfirmation('')
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (!hasValidTokenShape) {
+    return (
+      <PasswordRecoveryCard
+        title="קישור איפוס לא תקין"
+        description="קישור איפוס הסיסמה אינו תקף או שפג תוקפו. בקשו קישור חדש."
+      >
+        <div className="auth-recovery-links">
+          <Link
+            className="primary-button"
+            to="/forgot-password"
+          >
+            בקשת קישור חדש
+          </Link>
+          <Link
+            className="secondary-button"
+            to="/login"
+          >
+            כניסה לחשבון
+          </Link>
+        </div>
+      </PasswordRecoveryCard>
+    )
+  }
+
+  if (isComplete) {
+    return (
+      <PasswordRecoveryCard
+        title="הסיסמה עודכנה בהצלחה"
+        description="כעת אפשר להיכנס לחשבון באמצעות הסיסמה החדשה."
+      >
+        <div className="auth-recovery-links">
+          <Link
+            className="primary-button"
+            to="/login"
+            data-aura-tooltip="להיכנס באמצעות הסיסמה החדשה"
+          >
+            כניסה לחשבון
+          </Link>
+        </div>
+      </PasswordRecoveryCard>
+    )
+  }
+
+  return (
+    <PasswordRecoveryCard
+      title="בחירת סיסמה חדשה"
+      description="בחרו סיסמה חדשה לחשבון. הסיסמה צריכה להכיל 15 תווים לפחות."
+    >
+      <form
+        className="auth-form"
+        onSubmit={handleSubmit}
+        aria-busy={isSubmitting}
+      >
+        <label className="form-field">
+          <span>סיסמה חדשה</span>
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value)
+            }}
+            minLength={15}
+            maxLength={128}
+            autoComplete="new-password"
+            autoFocus
+            dir="ltr"
+            required
+          />
+        </label>
+
+        <label className="form-field">
+          <span>אימות הסיסמה החדשה</span>
+          <input
+            type="password"
+            value={passwordConfirmation}
+            onChange={(event) => {
+              setPasswordConfirmation(
+                event.target.value,
+              )
+            }}
+            minLength={15}
+            maxLength={128}
+            autoComplete="new-password"
+            dir="ltr"
+            required
+          />
+        </label>
+
+        {errorMessage && (
+          <p className="form-error" role="alert">
+            {errorMessage}
+          </p>
+        )}
+
+        <button
+          className="primary-button submit-button"
+          type="submit"
+          disabled={isSubmitting}
+        >
+          {isSubmitting
+            ? 'מעדכנים...'
+            : 'עדכון הסיסמה'}
+        </button>
+      </form>
+    </PasswordRecoveryCard>
   )
 }
 
@@ -963,6 +1281,22 @@ function App() {
               }
             />
           )
+        }
+      />
+
+      <Route
+        path="/forgot-password"
+        element={<ForgotPasswordPage />}
+      />
+
+      <Route
+        path="/reset-password"
+        element={
+          <ResetPasswordPage
+            onAuthenticationChange={
+              setAuthentication
+            }
+          />
         }
       />
 

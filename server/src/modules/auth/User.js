@@ -3,6 +3,8 @@ import mongoose from 'mongoose'
 const { Schema, model, models } = mongoose
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const passwordResetTokenHashPattern =
+  /^[a-f0-9]{64}$/
 
 const userSchema = new Schema(
   {
@@ -29,6 +31,20 @@ const userSchema = new Schema(
     passwordHash: {
       type: String,
       required: true,
+      select: false,
+    },
+
+    passwordResetTokenHash: {
+      type: String,
+      select: false,
+      match: [
+        passwordResetTokenHashPattern,
+        'Password reset token hash is invalid.',
+      ],
+    },
+
+    passwordResetExpiresAt: {
+      type: Date,
       select: false,
     },
 
@@ -62,6 +78,8 @@ const userSchema = new Schema(
         }
 
         delete safeObject.passwordHash
+        delete safeObject.passwordResetTokenHash
+        delete safeObject.passwordResetExpiresAt
 
         return safeObject
       },
@@ -76,6 +94,17 @@ userSchema.index(
   {
     unique: true,
     name: 'users_email_unique',
+  },
+)
+
+userSchema.index(
+  {
+    passwordResetTokenHash: 1,
+    passwordResetExpiresAt: 1,
+  },
+  {
+    sparse: true,
+    name: 'users_password_reset_token',
   },
 )
 

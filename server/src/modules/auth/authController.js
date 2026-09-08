@@ -13,6 +13,10 @@ import {
   logoutUser,
   refreshAuthentication,
 } from './sessionAuthService.js'
+import {
+  requestPasswordReset,
+  resetPassword as resetUserPassword,
+} from './passwordResetService.js'
 
 function sendAuthenticationResponse(
   res,
@@ -62,6 +66,35 @@ export async function login(req, res) {
     res,
     authentication,
   )
+}
+
+export async function forgotPassword(
+  req,
+  res,
+) {
+  await requestPasswordReset(
+    req.validatedBody,
+  )
+
+  res.status(202).json({
+    success: true,
+    data: {
+      accepted: true,
+    },
+  })
+}
+
+export async function resetPassword(req, res) {
+  await resetUserPassword(
+    req.validatedBody,
+  )
+
+  res.status(200).json({
+    success: true,
+    data: {
+      reset: true,
+    },
+  })
 }
 
 export async function refresh(req, res) {

@@ -26,6 +26,16 @@ const registrationPasswordSchema = z
     error: 'Password must not exceed 128 characters.',
   })
 
+const passwordResetTokenSchema = z
+  .string({
+    error: 'Password reset token must be a string.',
+  })
+  .trim()
+  .regex(
+    /^[A-Za-z0-9_-]{43}$/,
+    'Password reset token is invalid.',
+  )
+
 const loginPasswordSchema = z
   .string({
     error: 'Password must be a string.',
@@ -68,3 +78,14 @@ export const loginSchema = z.strictObject({
   email: emailSchema,
   password: loginPasswordSchema,
 })
+
+export const forgotPasswordSchema =
+  z.strictObject({
+    email: emailSchema,
+  })
+
+export const resetPasswordSchema =
+  z.strictObject({
+    token: passwordResetTokenSchema,
+    password: registrationPasswordSchema,
+  })

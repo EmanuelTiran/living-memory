@@ -7,6 +7,26 @@ const optionalBooleanSchema = z
   .transform((value) => value === 'true')
   .optional()
 
+function isValidOptionalHttpUrl(value) {
+  if (value.length === 0) {
+    return true
+  }
+
+  try {
+    const url = new URL(value)
+
+    return (
+      ['http:', 'https:'].includes(
+        url.protocol,
+      ) &&
+      !url.username &&
+      !url.password
+    )
+  } catch {
+    return false
+  }
+}
+
 export const OPENAI_SPEECH_VOICES =
   Object.freeze([
     'alloy',
@@ -98,6 +118,47 @@ const envSchema = z.object({
     .min(0)
     .max(2)
     .optional(),
+
+  POSTMARK_SERVER_TOKEN: z
+    .string()
+    .trim()
+    .max(500)
+    .default(''),
+
+  MAIL_FROM_ADDRESS: z
+    .string()
+    .trim()
+    .max(254)
+    .refine(
+      (value) =>
+        value.length === 0 ||
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+          value,
+        ),
+      'MAIL_FROM_ADDRESS must be a valid email address',
+    )
+    .default(''),
+
+  MAIL_FROM_NAME: z
+    .string()
+    .trim()
+    .min(1)
+    .max(100)
+    .refine(
+      (value) => !/[\r\n]/.test(value),
+      'MAIL_FROM_NAME must not contain line breaks',
+    )
+    .default('זיכרון חי'),
+
+  PUBLIC_APP_URL: z
+    .string()
+    .trim()
+    .max(2000)
+    .refine(
+      isValidOptionalHttpUrl,
+      'PUBLIC_APP_URL must be a valid HTTP or HTTPS URL',
+    )
+    .default(''),
 
   OPENAI_API_KEY: z
     .string()
@@ -340,6 +401,31 @@ if (!result.success) {
 const isProduction =
   result.data.NODE_ENV === 'production'
 
+if (isProduction) {
+  const missingMailSettings = [
+    'POSTMARK_SERVER_TOKEN',
+    'MAIL_FROM_ADDRESS',
+    'PUBLIC_APP_URL',
+  ].filter(
+    (name) => result.data[name].length === 0,
+  )
+
+  if (missingMailSettings.length > 0) {
+    throw new Error(
+      `Invalid environment configuration: production password reset requires ${missingMailSettings.join(', ')}`,
+    )
+  }
+
+  if (
+    new URL(result.data.PUBLIC_APP_URL)
+      .protocol !== 'https:'
+  ) {
+    throw new Error(
+      'Invalid environment configuration: PUBLIC_APP_URL must use HTTPS in production',
+    )
+  }
+}
+
 const persistentStorageRequired =
   result.data.PERSISTENT_STORAGE_REQUIRED ??
   isProduction
@@ -384,6 +470,14 @@ export const env = Object.freeze({
   trustProxyHops:
     result.data.TRUST_PROXY_HOPS ??
     (isProduction ? 1 : 0),
+  postmarkServerToken:
+    result.data.POSTMARK_SERVER_TOKEN,
+  mailFromAddress:
+    result.data.MAIL_FROM_ADDRESS,
+  mailFromName:
+    result.data.MAIL_FROM_NAME,
+  publicAppUrl:
+    result.data.PUBLIC_APP_URL,
   openaiApiKey:
     result.data.OPENAI_API_KEY,
   openaiModel:
