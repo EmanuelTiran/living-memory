@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('../src/modules/auth/authService.js', () => ({
+  assertUserCanAuthenticate: vi.fn(),
+  createAuthenticationForUser: vi.fn(),
   registerUser: mocks.registerUser,
   loginUser: mocks.loginUser,
 }))

@@ -1,8 +1,15 @@
 export function securityHeaders(
-  _req,
+  req,
   res,
   next,
 ) {
+  const googlePopupDocument =
+    req.method === 'GET' &&
+    /^\/(?:login|register)\/?$/.test(
+      req.path,
+    ) &&
+    req.accepts('html')
+
   res.setHeader(
     'X-Content-Type-Options',
     'nosniff',
@@ -18,7 +25,9 @@ export function securityHeaders(
   )
   res.setHeader(
     'Cross-Origin-Opener-Policy',
-    'same-origin',
+    googlePopupDocument
+      ? 'same-origin-allow-popups'
+      : 'same-origin',
   )
 
   next()

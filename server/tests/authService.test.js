@@ -314,6 +314,38 @@ import {
         ).not.toHaveBeenCalled()
       })
 
+      it('returns a generic error for a Google-only account', async () => {
+        const user = createStoredUser({
+          passwordHash: undefined,
+        })
+
+        configureUserLookup(user)
+
+        mocks.hashPassword.mockResolvedValue(
+          'unused-password-hash',
+        )
+
+        await expect(
+          loginUser(validLogin),
+        ).rejects.toMatchObject({
+          name: 'AppError',
+          statusCode: 401,
+          code: 'INVALID_CREDENTIALS',
+        })
+
+        expect(mocks.hashPassword).toHaveBeenCalledWith(
+          'existing-password',
+        )
+
+        expect(
+          mocks.verifyPassword,
+        ).not.toHaveBeenCalled()
+
+        expect(
+          mocks.createAccessToken,
+        ).not.toHaveBeenCalled()
+      })
+
       it('rejects a suspended account after password verification', async () => {
         const user = createStoredUser({
           status: 'suspended',

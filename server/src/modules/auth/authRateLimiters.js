@@ -54,6 +54,21 @@ export const registrationRateLimiter =
 export const loginRateLimiter =
   createAuthRateLimiter('login', 20)
 
+export const googleAuthenticationRateLimiter =
+  createAuthRateLimiter('google', 20)
+
+export const googleRedirectStateCreationRateLimiter =
+  createAuthRateLimiter(
+    'google-state-create',
+    30,
+  )
+
+export const googleRedirectStateResolutionRateLimiter =
+  createAuthRateLimiter(
+    'google-state-resolve',
+    30,
+  )
+
 export const refreshRateLimiter =
   createAuthRateLimiter('refresh', 120)
 

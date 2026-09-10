@@ -45,6 +45,36 @@ function createSuspendedAccountError() {
   )
 }
 
+export function assertUserCanAuthenticate(user) {
+  if (user.status !== 'active') {
+    throw createSuspendedAccountError()
+  }
+}
+
+export async function createAuthenticationForUser(
+  user,
+) {
+  assertUserCanAuthenticate(user)
+
+  const userId = user._id.toString()
+
+  const accessToken = await createAccessToken({
+    userId,
+    systemRole: user.systemRole,
+  })
+
+  const refreshSession = await createRefreshSession({
+    userId,
+  })
+
+  return {
+    user: user.toJSON(),
+    accessToken,
+    refreshToken: refreshSession.refreshToken,
+    refreshTokenExpiresAt: refreshSession.expiresAt,
+  }
+}
+
 export async function registerUser(input) {
   const registrationData = registerSchema.parse(input)
 
@@ -90,7 +120,7 @@ export async function loginUser(input) {
     email: credentials.email,
   }).select('+passwordHash')
 
-  if (!user) {
+  if (!user || !user.passwordHash) {
     await hashPassword(credentials.password)
     throw createInvalidCredentialsError()
   }
@@ -104,9 +134,7 @@ export async function loginUser(input) {
     throw createInvalidCredentialsError()
   }
 
-  if (user.status !== 'active') {
-    throw createSuspendedAccountError()
-  }
+  assertUserCanAuthenticate(user)
 
   if (passwordNeedsRehash(user.passwordHash)) {
     user.passwordHash = await hashPassword(
@@ -116,21 +144,5 @@ export async function loginUser(input) {
     await user.save()
   }
 
-  const userId = user._id.toString()
-
-  const accessToken = await createAccessToken({
-    userId,
-    systemRole: user.systemRole,
-  })
-
-  const refreshSession = await createRefreshSession({
-    userId,
-  })
-
-  return {
-    user: user.toJSON(),
-    accessToken,
-    refreshToken: refreshSession.refreshToken,
-    refreshTokenExpiresAt: refreshSession.expiresAt,
-  }
+  return createAuthenticationForUser(user)
 }

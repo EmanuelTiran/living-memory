@@ -5,6 +5,174 @@ const { Schema, model, models } = mongoose
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const passwordResetTokenHashPattern =
   /^[a-f0-9]{64}$/
+const authenticationMethodErrorMessage =
+  'A user must have at least one authentication method.'
+
+function hasOwn(object, field) {
+  return Object.prototype.hasOwnProperty.call(
+    object ?? {},
+    field,
+  )
+}
+
+function updateRemovesField(update, field) {
+  return (
+    (hasOwn(update, field) && !update[field]) ||
+    hasOwn(update?.$unset, field) ||
+    (hasOwn(update?.$set, field) &&
+      !update.$set[field])
+  )
+}
+
+function renameTouchesField(update, field) {
+  return (
+    hasOwn(update?.$rename, field) ||
+    Object.values(update?.$rename ?? {}).includes(
+      field,
+    )
+  )
+}
+
+function updateTouchesField(update, field) {
+  if (hasOwn(update, field)) {
+    return true
+  }
+
+  return Object.entries(update ?? {}).some(
+    ([operator, value]) => {
+      if (!operator.startsWith('$')) {
+        return false
+      }
+
+      if (hasOwn(value, field)) {
+        return true
+      }
+
+      return (
+        operator === '$rename' &&
+        Object.values(value ?? {}).includes(field)
+      )
+    },
+  )
+}
+
+function updateSetsField(update, field) {
+  return (
+    hasOwn(update?.$set, field) &&
+    typeof update.$set[field] === 'string' &&
+    update.$set[field].length > 0
+  )
+}
+
+function pipelineTouchesAuthenticationMethod(
+  value,
+) {
+  if (Array.isArray(value)) {
+    return value.some(
+      pipelineTouchesAuthenticationMethod,
+    )
+  }
+
+  if (
+    typeof value === 'string'
+  ) {
+    return [
+      'passwordHash',
+      'googleSubject',
+      '$passwordHash',
+      '$googleSubject',
+    ].includes(value)
+  }
+
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  return Object.entries(value).some(
+    ([field, nestedValue]) =>
+      field === 'passwordHash' ||
+      field === 'googleSubject' ||
+      pipelineTouchesAuthenticationMethod(
+        nestedValue,
+      ),
+  )
+}
+
+function assertSafeAuthenticationMethodUpdate(update) {
+  if (!update) {
+    return
+  }
+
+  if (Array.isArray(update)) {
+    if (
+      pipelineTouchesAuthenticationMethod(update)
+    ) {
+      throw new Error(
+        authenticationMethodErrorMessage,
+      )
+    }
+
+    return
+  }
+
+  if (updateTouchesField(update, 'googleSubject')) {
+    throw new Error(
+      'An existing Google subject cannot be changed.',
+    )
+  }
+
+  if (renameTouchesField(update, 'passwordHash')) {
+    throw new Error(authenticationMethodErrorMessage)
+  }
+
+  const removesPassword = updateRemovesField(
+    update,
+    'passwordHash',
+  )
+  const removesGoogle = updateRemovesField(
+    update,
+    'googleSubject',
+  )
+
+  if (
+    (removesPassword &&
+      !updateSetsField(update, 'googleSubject')) ||
+    (removesGoogle &&
+      !updateSetsField(update, 'passwordHash'))
+  ) {
+    throw new Error(authenticationMethodErrorMessage)
+  }
+}
+
+function rejectUnsafeAuthenticationMethodUpdate() {
+  assertSafeAuthenticationMethodUpdate(
+    this.getUpdate(),
+  )
+}
+
+function rejectAuthenticationMethodReplacement() {
+  throw new Error(
+    'User replacement operations are not allowed.',
+  )
+}
+
+function rejectUnsafeAuthenticationBulkWrite(
+  operations,
+) {
+  for (const operation of operations) {
+    const update =
+      operation?.updateOne?.update ??
+      operation?.updateMany?.update
+
+    if (update) {
+      assertSafeAuthenticationMethodUpdate(update)
+    }
+
+    if (operation?.replaceOne) {
+      rejectAuthenticationMethodReplacement()
+    }
+  }
+}
 
 const userSchema = new Schema(
   {
@@ -30,8 +198,21 @@ const userSchema = new Schema(
 
     passwordHash: {
       type: String,
-      required: true,
       select: false,
+    },
+
+    googleSubject: {
+      type: String,
+      select: false,
+      immutable: true,
+      set: (value) =>
+        value === null ? undefined : value,
+      minlength: 1,
+      maxlength: 255,
+      match: [
+        /^[A-Za-z0-9_-]+$/,
+        'Google subject is invalid.',
+      ],
     },
 
     passwordResetTokenHash: {
@@ -78,6 +259,7 @@ const userSchema = new Schema(
         }
 
         delete safeObject.passwordHash
+        delete safeObject.googleSubject
         delete safeObject.passwordResetTokenHash
         delete safeObject.passwordResetExpiresAt
 
@@ -85,6 +267,39 @@ const userSchema = new Schema(
       },
     },
   },
+)
+
+userSchema.pre('validate', function ensureAuthenticationMethod() {
+  const authenticationFieldsAreSelected =
+    this.isNew ||
+    (this.isSelected('passwordHash') &&
+      this.isSelected('googleSubject'))
+
+  if (
+    authenticationFieldsAreSelected &&
+    !this.passwordHash &&
+    !this.googleSubject
+  ) {
+    this.invalidate(
+      'passwordHash',
+      authenticationMethodErrorMessage,
+    )
+  }
+})
+
+userSchema.pre(
+  ['findOneAndUpdate', 'updateMany', 'updateOne'],
+  rejectUnsafeAuthenticationMethodUpdate,
+)
+
+userSchema.pre(
+  ['findOneAndReplace', 'replaceOne'],
+  rejectAuthenticationMethodReplacement,
+)
+
+userSchema.pre(
+  'bulkWrite',
+  rejectUnsafeAuthenticationBulkWrite,
 )
 
 userSchema.index(
@@ -105,6 +320,17 @@ userSchema.index(
   {
     sparse: true,
     name: 'users_password_reset_token',
+  },
+)
+
+userSchema.index(
+  {
+    googleSubject: 1,
+  },
+  {
+    unique: true,
+    sparse: true,
+    name: 'users_google_subject_unique',
   },
 )
 

@@ -66,6 +66,7 @@ describe('Password reset password integration', () => {
         toString: () => 'user-id',
       },
       status: 'active',
+      googleSubject: 'google-subject-123',
       passwordHash: await hashPassword(oldPassword),
       passwordResetTokenHash: createHash('sha256')
         .update(token, 'utf8')
@@ -123,10 +124,75 @@ describe('Password reset password integration', () => {
     expect(record).not.toHaveProperty(
       'passwordResetExpiresAt',
     )
+    expect(record.googleSubject).toBe(
+      'google-subject-123',
+    )
     expect(
       mocks.revokeAllUserSessions,
     ).toHaveBeenCalledWith(
       'user-id',
+      'security',
+    )
+  })
+
+  it('sets a first password for a Google-only user without unlinking Google', async () => {
+    const token = 'C'.repeat(43)
+    const newPassword =
+      'the first secure password'
+    const record = {
+      _id: {
+        toString: () => 'google-only-user-id',
+      },
+      status: 'active',
+      googleSubject: 'google-subject-456',
+      passwordResetTokenHash: createHash('sha256')
+        .update(token, 'utf8')
+        .digest('hex'),
+      passwordResetExpiresAt: new Date(
+        Date.now() + 30 * 60 * 1000,
+      ),
+    }
+
+    mocks.findOneAndUpdate.mockImplementation(
+      async (filter, update) => {
+        if (
+          filter.passwordResetTokenHash !==
+            record.passwordResetTokenHash ||
+          filter.status !== record.status ||
+          record.passwordResetExpiresAt <=
+            filter.passwordResetExpiresAt.$gt
+        ) {
+          return null
+        }
+
+        record.passwordHash =
+          update.$set.passwordHash
+        delete record.passwordResetTokenHash
+        delete record.passwordResetExpiresAt
+
+        return record
+      },
+    )
+    mocks.revokeAllUserSessions.mockResolvedValue()
+
+    await resetPassword({
+      token,
+      password: newPassword,
+    })
+
+    await expect(
+      verifyPassword(
+        record.passwordHash,
+        newPassword,
+      ),
+    ).resolves.toBe(true)
+    expect(record.googleSubject).toBe(
+      'google-subject-456',
+    )
+    expect(
+      mocks.revokeAllUserSessions,
+    ).toHaveBeenCalledWith(
+      'google-only-user-id',
       'security',
     )
   })

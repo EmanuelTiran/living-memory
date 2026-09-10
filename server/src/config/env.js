@@ -7,6 +7,23 @@ const optionalBooleanSchema = z
   .transform((value) => value === 'true')
   .optional()
 
+const GOOGLE_CLIENT_ID_PATTERN =
+  /^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/
+const MAX_GOOGLE_CLIENT_ID_LENGTH = 255
+
+export function normalizeGoogleClientId(value) {
+  const candidate =
+    typeof value === 'string' ? value.trim() : ''
+
+  return (
+    candidate.length <=
+      MAX_GOOGLE_CLIENT_ID_LENGTH &&
+    GOOGLE_CLIENT_ID_PATTERN.test(candidate)
+  )
+    ? candidate
+    : ''
+}
+
 function isValidOptionalHttpUrl(value) {
   if (value.length === 0) {
     return true
@@ -118,6 +135,11 @@ const envSchema = z.object({
     .min(0)
     .max(2)
     .optional(),
+
+  GOOGLE_CLIENT_ID: z
+    .string()
+    .default('')
+    .transform(normalizeGoogleClientId),
 
   POSTMARK_SERVER_TOKEN: z
     .string()
@@ -470,6 +492,8 @@ export const env = Object.freeze({
   trustProxyHops:
     result.data.TRUST_PROXY_HOPS ??
     (isProduction ? 1 : 0),
+  googleClientId:
+    result.data.GOOGLE_CLIENT_ID,
   postmarkServerToken:
     result.data.POSTMARK_SERVER_TOKEN,
   mailFromAddress:

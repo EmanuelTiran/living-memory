@@ -92,6 +92,30 @@ export function loginAccount(input) {
     })
 }
 
+export function loginWithGoogle(input) {
+    return request('/google', {
+        method: 'POST',
+        body: input,
+    })
+}
+
+export function createGoogleRedirectState(input) {
+    return request('/google/redirect-state', {
+        method: 'POST',
+        body: input,
+    })
+}
+
+export function resolveGoogleRedirectState() {
+    return request(
+        '/google/redirect-state/resolve',
+        {
+            method: 'POST',
+            body: {},
+        },
+    )
+}
+
 export function requestPasswordReset(input) {
     return request('/forgot-password', {
         method: 'POST',

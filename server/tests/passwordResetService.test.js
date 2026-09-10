@@ -206,6 +206,42 @@ describe('Password reset service', () => {
       ).not.toHaveBeenCalled()
     })
 
+    it('allows an active Google-only Workspace user to establish a password through verified email recovery', async () => {
+      const workspaceGoogleUser = {
+        ...activeUser,
+        email: 'member@example.org',
+        googleSubject: 'google-subject-123',
+      }
+      mocks.findOneAndUpdate.mockResolvedValue(
+        workspaceGoogleUser,
+      )
+      mocks.updateOne.mockResolvedValue({
+        modifiedCount: 1,
+      })
+      mocks.sendPasswordResetEmail.mockResolvedValue()
+
+      await expect(
+        requestPasswordReset({
+          email: 'member@example.org',
+        }),
+      ).resolves.toBeUndefined()
+
+      expect(
+        mocks.findOneAndUpdate.mock.calls[0][0],
+      ).toEqual({
+        email: 'member@example.org',
+        status: 'active',
+      })
+      expect(
+        mocks.sendPasswordResetEmail,
+      ).toHaveBeenCalledWith({
+        to: 'member@example.org',
+        resetUrl: expect.stringContaining(
+          'https://zikaron-hai.co.il/reset-password?token=',
+        ),
+      })
+    })
+
     it('replaces the previous token when another reset is requested', async () => {
       mocks.findOneAndUpdate.mockResolvedValue(
         activeUser,
