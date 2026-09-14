@@ -20,6 +20,10 @@ import {
   previewMemoryInvitationSchema,
   updateMemoryMembershipSchema,
 } from './familyAccessValidation.js'
+import {
+  createFamilyInvitationUrl,
+  sendFamilyInvitationEmail,
+} from './familyInvitationMailService.js'
 
 const INVITATION_LIFETIME_MS =
   14 * 24 * 60 * 60 * 1000
@@ -264,9 +268,13 @@ export async function createMemoryInvitation(
 
   const token = randomBytes(32)
     .toString('base64url')
+  const invitationUrl =
+    createFamilyInvitationUrl(token)
+
+  let invitation
 
   try {
-    const invitation =
+    invitation =
       await MemoryInvitation.create({
         memoryId,
         invitedByUserId: userId,
@@ -279,14 +287,6 @@ export async function createMemoryInvitation(
             INVITATION_LIFETIME_MS,
         ),
       })
-
-    return {
-      invitation:
-        createInvitationPublicObject(
-          invitation,
-        ),
-      token,
-    }
   } catch (error) {
     if (error?.code === 11000) {
       throw createInvitationConflictError(
@@ -295,6 +295,29 @@ export async function createMemoryInvitation(
     }
 
     throw error
+  }
+
+  let emailDelivery = 'sent'
+
+  try {
+    await sendFamilyInvitationEmail({
+      to: invitationData.email,
+      invitationUrl,
+      subjectName:
+        access.memoryProfile.subjectName,
+    })
+  } catch {
+    emailDelivery = 'failed'
+  }
+
+  return {
+    invitation:
+      createInvitationPublicObject(
+        invitation,
+      ),
+    token,
+    invitationUrl,
+    emailDelivery,
   }
 }
 

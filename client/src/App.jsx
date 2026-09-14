@@ -1096,6 +1096,7 @@ function AuthPage({
             registrationCompleted: true,
             email: formData.email.trim(),
             returnTo,
+            invitationToken,
           },
         })
 
@@ -1756,6 +1757,7 @@ function ResetPasswordPage({
 }
 
 function App() {
+  const location = useLocation()
   const [
     authentication,
     setAuthentication,
@@ -1813,6 +1815,10 @@ function App() {
       }
     />
   )
+  const authenticatedEntryDestination =
+    getSafeReturnTo(
+      location.state?.returnTo,
+    )
 
   return (
     <Routes>
@@ -1844,7 +1850,7 @@ function App() {
             <LoadingScreen />
           ) : authentication?.user ? (
             <Navigate
-              to="/app"
+              to={authenticatedEntryDestination}
               replace
             />
           ) : (
@@ -1866,7 +1872,7 @@ function App() {
             <LoadingScreen />
           ) : authentication?.user ? (
             <Navigate
-              to="/app"
+              to={authenticatedEntryDestination}
               replace
             />
           ) : (

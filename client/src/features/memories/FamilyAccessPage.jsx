@@ -288,6 +288,8 @@ function FamilyAccessPage({
     useState('')
   const [successMessage, setSuccessMessage] =
     useState('')
+  const [deliveryWarning, setDeliveryWarning] =
+    useState('')
 
   const runAuthenticatedRequest =
     useCallback(
@@ -392,9 +394,14 @@ function FamilyAccessPage({
     event,
   ) {
     event.preventDefault()
+    const submittedEmail = email
+      .trim()
+      .toLowerCase()
+
     setBusyKey('create')
     setErrorMessage('')
     setSuccessMessage('')
+    setDeliveryWarning('')
     setInvitationLink('')
 
     try {
@@ -411,17 +418,25 @@ function FamilyAccessPage({
             ),
         )
 
-      const nextLink =
-        `${window.location.origin}` +
-        `/invitation#token=${encodeURIComponent(
-          result.token,
-        )}`
+      const invitedEmail =
+        result.invitation?.invitedEmail ??
+        submittedEmail
 
-      setInvitationLink(nextLink)
-      setEmail('')
-      setSuccessMessage(
-        'ההזמנה נוצרה. העתיקו את הקישור ושלחו אותו רק לבן או לבת המשפחה שאליהם הוא מיועד.',
+      setInvitationLink(
+        result.invitationUrl,
       )
+      setEmail('')
+
+      if (result.emailDelivery === 'sent') {
+        setSuccessMessage(
+          `ההזמנה נשלחה ל־${invitedEmail}. הקישור זמין גם כאן להעתקה.`,
+        )
+      } else {
+        setDeliveryWarning(
+          'ההזמנה נוצרה, אבל שליחת המייל לא הצליחה. אפשר להעתיק את הקישור ולשלוח אותו ידנית.',
+        )
+      }
+
       await loadFamilyAccess()
     } catch (error) {
       setErrorMessage(
@@ -589,6 +604,15 @@ function FamilyAccessPage({
           </p>
         )}
 
+        {deliveryWarning && (
+          <p
+            className="family-access-delivery-warning"
+            role="status"
+          >
+            {deliveryWarning}
+          </p>
+        )}
+
         {isLoading ? (
           <div
             className="family-access-loading"
@@ -655,12 +679,12 @@ function FamilyAccessPage({
                 <button
                   className="primary-button"
                   type="submit"
-                  data-aura-tooltip="ליצור קישור הזמנה אישי למשפחה"
+                  data-aura-tooltip="לשלוח הזמנה אישית לבן או לבת המשפחה"
                   disabled={busyKey === 'create'}
                 >
                   {busyKey === 'create'
-                    ? 'יוצרים הזמנה...'
-                    : 'יצירת קישור הזמנה'}
+                    ? 'שולחים הזמנה...'
+                    : 'שליחת הזמנה'}
                 </button>
               </form>
 

@@ -279,7 +279,10 @@ function InvitationAcceptPage({
                     className="primary-button"
                     data-aura-tooltip="להתחבר ולחזור להזמנה המשפחתית"
                     to="/login"
-                    state={{ returnTo }}
+                    state={{
+                      returnTo,
+                      invitationToken: token,
+                    }}
                   >
                     כניסה לחשבון
                   </Link>

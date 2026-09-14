@@ -31,6 +31,17 @@
   color: #68706c;
 }
 
+.family-access-delivery-warning {
+  margin: 22px 0 0;
+  padding: 12px 14px;
+  color: #73531f;
+  background: #fff7e7;
+  border: 1px solid rgb(215 162 76 / 32%);
+  border-radius: 10px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
 .family-access-section {
   position: relative;
   margin-block-start: 30px;

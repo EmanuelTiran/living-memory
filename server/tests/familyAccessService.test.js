@@ -19,6 +19,8 @@ const mocks = vi.hoisted(() => ({
   membershipFindOneAndUpdate: vi.fn(),
   consentUpdateOne: vi.fn(),
   memoryFindOneAndUpdate: vi.fn(),
+  createFamilyInvitationUrl: vi.fn(),
+  sendFamilyInvitationEmail: vi.fn(),
 }))
 
 vi.mock(
@@ -97,6 +99,16 @@ vi.mock(
   }),
 )
 
+vi.mock(
+  '../src/modules/memories/familyInvitationMailService.js',
+  () => ({
+    createFamilyInvitationUrl:
+      mocks.createFamilyInvitationUrl,
+    sendFamilyInvitationEmail:
+      mocks.sendFamilyInvitationEmail,
+  }),
+)
+
 import {
   acceptMemoryInvitation,
   createMemoryInvitation,
@@ -148,6 +160,13 @@ describe('Family access service', () => {
       .mockResolvedValue({
         upsertedCount: 1,
       })
+    mocks.createFamilyInvitationUrl
+      .mockImplementation(
+        (token) =>
+          `https://zikaron-hai.co.il/invitation#token=${token}`,
+      )
+    mocks.sendFamilyInvitationEmail
+      .mockResolvedValue(undefined)
   })
 
   it('creates a single-use invitation without returning its stored hash', async () => {
@@ -184,14 +203,97 @@ describe('Family access service', () => {
     expect(result.token).toMatch(
       /^[A-Za-z0-9_-]{43}$/,
     )
+    expect(result.invitationUrl).toBe(
+      `https://zikaron-hai.co.il/invitation#token=${result.token}`,
+    )
+    expect(result.emailDelivery).toBe(
+      'sent',
+    )
     expect(storedInvitation.tokenHash)
       .toMatch(/^[0-9a-f]{64}$/)
     expect(storedInvitation.tokenHash)
       .not.toBe(result.token)
     expect(storedInvitation.invitedEmail)
       .toBe('family@example.com')
+    expect(storedInvitation.expiresAt)
+      .toEqual(
+        new Date(
+          '2026-09-08T10:00:00.000Z',
+        ),
+      )
     expect(result.invitation)
       .not.toHaveProperty('tokenHash')
+    expect(storedInvitation)
+      .not.toHaveProperty('token')
+    expect(
+      mocks.sendFamilyInvitationEmail,
+    ).toHaveBeenCalledWith({
+      to: 'family@example.com',
+      invitationUrl:
+        result.invitationUrl,
+      subjectName: 'רות',
+    })
+    expect(
+      mocks.invitationCreate.mock
+        .invocationCallOrder[0],
+    ).toBeLessThan(
+      mocks.sendFamilyInvitationEmail.mock
+        .invocationCallOrder[0],
+    )
+  })
+
+  it('returns the invitation and raw token when email delivery fails', async () => {
+    mocks.userFindOne.mockReturnValue(
+      selected(null),
+    )
+    mocks.invitationCreate
+      .mockImplementation(
+        async (invitation) => ({
+          _id: invitationId,
+          ...invitation,
+          status: 'pending',
+          acceptedAt: null,
+          revokedAt: null,
+          expiredAt: null,
+          createdAt: now,
+        }),
+      )
+    mocks.sendFamilyInvitationEmail
+      .mockRejectedValue(
+        new Error('private provider failure'),
+      )
+
+    const result =
+      await createMemoryInvitation(
+        userId,
+        memoryId,
+        {
+          email: ' FAMILY@EXAMPLE.COM ',
+          role: 'viewer',
+        },
+        now,
+      )
+
+    expect(mocks.invitationCreate)
+      .toHaveBeenCalledOnce()
+    expect(result).toMatchObject({
+      emailDelivery: 'failed',
+      invitationUrl:
+        `https://zikaron-hai.co.il/invitation#token=${result.token}`,
+      invitation: {
+        invitedEmail: 'family@example.com',
+        status: 'pending',
+      },
+    })
+    expect(result.token).toMatch(
+      /^[A-Za-z0-9_-]{43}$/,
+    )
+    expect(result.invitation)
+      .not.toHaveProperty('tokenHash')
+    expect(JSON.stringify(result))
+      .not.toContain(
+        'private provider failure',
+      )
   })
 
   it('allows only the owner to assign steward access', async () => {
