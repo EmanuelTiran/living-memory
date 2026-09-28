@@ -44,6 +44,7 @@ import MemoryRecordings from './MemoryRecordings.jsx'
 import MemoryStoryList from './MemoryStoryList.jsx'
 import MemoryTimeline from './MemoryTimeline.jsx'
 import MemoryTodayPanel from './MemoryTodayPanel.jsx'
+import MemoryQrPanel from './MemoryQrPanel.jsx'
 import {
   createMemoryProfileTabSearch,
   getRtlTabTargetIndex,
@@ -2199,6 +2200,10 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
                 ניהול בני המשפחה
               </Link>
             </aside>
+          )}
+
+          {canEditProfile && (
+            <MemoryQrPanel memoryId={memoryProfile.id} runAuthenticatedRequest={runAuthenticatedRequest} />
           )}
 
           {pilotAvatarEnabled && canManage && (

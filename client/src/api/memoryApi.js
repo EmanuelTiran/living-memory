@@ -71,6 +71,14 @@ async function request(
   return payload?.data ?? null
 }
 
+export function getMemoryQr(accessToken, memoryId) {
+  return request(`/${encodeURIComponent(memoryId)}/qr`, accessToken)
+}
+
+export function changeMemoryQr(accessToken, memoryId, body) {
+  return request(`/${encodeURIComponent(memoryId)}/qr`, accessToken, { method: 'POST', body })
+}
+
 export async function listMemoryProfiles(
   accessToken,
 ) {

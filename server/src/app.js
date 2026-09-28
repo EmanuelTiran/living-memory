@@ -16,6 +16,7 @@ import biographyRoutes from './modules/memories/biographyRoutes.js'
 import familyAccessRoutes from './modules/memories/familyAccessRoutes.js'
 import familyQuestionRoutes from './modules/memories/familyQuestionRoutes.js'
 import memoryRoutes from './modules/memories/memoryRoutes.js'
+import { memoryQrRoutes, publicMemoryRoutes, qrPrivacyHeaders } from './modules/memories/memoryQrRoutes.js'
 import memoryAssetRoutes from './modules/media/memoryAssetRoutes.js'
 import recordingRoutes from './modules/media/recordingRoutes.js'
 import pricingPilotRoutes from './modules/pricingPilot/pricingPilotRoutes.js'
@@ -96,6 +97,9 @@ app.get('/api/ready', async (_req, res) => {
 })
 
 app.use('/api/auth', authRoutes)
+app.use('/q', qrPrivacyHeaders)
+app.use('/api/public/memories', publicMemoryRoutes)
+app.use('/api/memories/:memoryId/qr', memoryQrRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/family-access', familyAccessRoutes)
 

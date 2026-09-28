@@ -8,7 +8,9 @@ export function requestLogger(req, res, next) {
     logger.info('HTTP request completed', {
       requestId: req.requestId,
       method: req.method,
-      path: req.path,
+      path: /^\/q(?:\/|$)/.test(req.path) ? '/q/:token'
+        : /^\/api\/public\/memories(?:\/|$)/.test(req.path) ? '/api/public/memories/:token'
+          : req.path,
       statusCode: res.statusCode,
       durationMs: Number(
         (performance.now() - startedAt).toFixed(2),

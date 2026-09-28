@@ -121,7 +121,7 @@ async function findActiveAsset(
   return asset
 }
 
-async function readVerifiedAssetFile(asset) {
+export async function readVerifiedAssetFile(asset) {
   const storage =
     memoryAssetStorageRegistry.get(
       asset.storageProvider,

@@ -33,6 +33,7 @@ import MemoryDashboard from './features/memories/MemoryDashboard.jsx'
 import MemoryPilotPage from './features/memories/MemoryPilotPage.jsx'
 import MemoryPricingPilotPage from './features/memories/MemoryPricingPilotPage.jsx'
 import MemoryProfilePage from './features/memories/MemoryProfilePage.jsx'
+import PublicMemoryPage from './features/memories/PublicMemoryPage.jsx'
 import BrandLogo from './BrandLogo.jsx'
 import GoogleIdentityButton from './GoogleIdentityButton.jsx'
 import {
@@ -1822,6 +1823,7 @@ function App() {
 
   return (
     <Routes>
+      <Route path="/q/:token" element={<PublicMemoryPage />} />
       <Route
         path="/"
         element={

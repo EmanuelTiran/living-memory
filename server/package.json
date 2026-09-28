@@ -13,6 +13,8 @@
     "mongoose": "^9.8.0",
     "multer": "^2.2.0",
     "openai": "^6.49.0",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.35.5",
     "zod": "^4.4.3"
   },
   "scripts": {
@@ -22,6 +24,8 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "jsqr": "^1.4.0",
+    "mongodb-memory-server": "^11.3.0",
     "supertest": "^7.2.2",
     "vitest": "^4.1.10"
   }
