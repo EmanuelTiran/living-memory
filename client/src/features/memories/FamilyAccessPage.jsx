@@ -290,6 +290,12 @@ function FamilyAccessPage({
     useState('')
   const [deliveryWarning, setDeliveryWarning] =
     useState('')
+  const [isInvitationOpen, setIsInvitationOpen] =
+    useState(false)
+  const [editingMemberId, setEditingMemberId] =
+    useState('')
+  const [isPendingOpen, setIsPendingOpen] =
+    useState(null)
 
   const runAuthenticatedRequest =
     useCallback(
@@ -510,6 +516,7 @@ function FamilyAccessPage({
       setSuccessMessage(
         'התפקיד המשפחתי עודכן.',
       )
+      setEditingMemberId('')
       await loadFamilyAccess()
     } catch (error) {
       setErrorMessage(
@@ -545,6 +552,7 @@ function FamilyAccessPage({
       setSuccessMessage(
         'הגישה המשפחתית בוטלה.',
       )
+      setEditingMemberId('')
       await loadFamilyAccess()
     } catch (error) {
       setErrorMessage(
@@ -559,6 +567,22 @@ function FamilyAccessPage({
     familyAccess?.authorization?.role
   const canAssignSteward =
     managerRole === 'owner'
+  const members =
+    familyAccess?.members ?? []
+  const activeMemberCount =
+    members.filter(
+      (member) => member.status !== 'revoked',
+    ).length
+  const pendingInvitations =
+    familyAccess?.invitations.filter(
+      (invitation) =>
+        invitation.status === 'pending',
+    ) ?? []
+  const invitationHistory =
+    familyAccess?.invitations.filter(
+      (invitation) =>
+        invitation.status !== 'pending',
+    ) ?? []
 
   return (
     <main className="page-shell">
@@ -566,30 +590,71 @@ function FamilyAccessPage({
         className="surface-card family-access-page"
         aria-labelledby="family-access-title"
       >
-        <Link
-          className="back-link"
-          data-aura-tooltip="לחזור לפרופיל הזיכרון"
-          to={
-            memoryId
-              ? `/app/memories/${memoryId}`
-              : '/app'
-          }
-        >
-          חזרה לארכיון
-        </Link>
+        <div className="family-access-toolbar">
+          <Link
+            className="back-link"
+            data-aura-tooltip="לחזור לפרופיל הזיכרון"
+            to={
+              memoryId
+                ? `/app/memories/${memoryId}`
+                : '/app'
+            }
+          >
+            חזרה לארכיון
+          </Link>
+        </div>
 
-        <header className="family-access-header">
-          <p className="eyebrow">
-            המעגל המשפחתי
-          </p>
-          <h1 id="family-access-title">
-            הזמנות והרשאות
-          </h1>
-          <p>
-            לכל בן משפחה יש חשבון ותפקיד
-            משלו. קישור ההזמנה הוא אישי,
-            חד־פעמי ותקף ל־14 ימים.
-          </p>
+        <header className="family-access-profile-hero">
+          <div className="family-access-profile-hero-top">
+            <div className="family-access-hero-copy">
+              <p className="family-access-private">
+                <span aria-hidden="true" />
+                גישה משפחתית
+              </p>
+              <p className="family-access-kicker">
+                המעגל המשפחתי
+              </p>
+              <h1 id="family-access-title">
+                המשפחה
+              </h1>
+              <p className="family-access-hero-support">
+                ניהול בני המשפחה, ההזמנות והגישה
+                לזיכרון
+              </p>
+            </div>
+
+            <div
+              className="family-access-ornament"
+              aria-hidden="true"
+            >
+              <span />
+              <span />
+              <span />
+            </div>
+          </div>
+
+          <div className="family-access-hero-lower">
+            <p>
+              המעגל שסביב הזיכרון של{' '}
+              <strong>
+                {familyAccess?.memoryProfile
+                  .subjectName ?? 'המשפחה'}
+              </strong>
+            </p>
+
+            {familyAccess && (
+              <dl className="family-access-summary">
+                <div>
+                  <dt>בני משפחה פעילים</dt>
+                  <dd>{activeMemberCount}</dd>
+                </div>
+                <div>
+                  <dt>הזמנות ממתינות</dt>
+                  <dd>{pendingInvitations.length}</dd>
+                </div>
+              </dl>
+            )}
+          </div>
         </header>
 
         {errorMessage && (
@@ -625,133 +690,191 @@ function FamilyAccessPage({
             <p>טוענים את המעגל המשפחתי...</p>
           </div>
         ) : familyAccess ? (
-          <>
-            <section className="family-access-section">
-              <div>
-                <p className="panel-kicker">
-                  הזמנה חדשה
-                </p>
-                <h2>
-                  הזמנת בן או בת משפחה אל
-                  הזיכרון של{' '}
-                  {
-                    familyAccess.memoryProfile
-                      .subjectName
-                  }
-                </h2>
-              </div>
-
-              <form
-                className="family-invitation-form"
-                onSubmit={
-                  handleCreateInvitation
-                }
+          <div className="family-access-content">
+            <section className="family-invite-region">
+              <button
+                className="primary-button family-invite-toggle"
+                type="button"
+                aria-expanded={isInvitationOpen}
+                aria-controls="family-invitation-panel"
+                data-aura-tooltip="לפתוח הזמנה חדשה למעגל המשפחתי"
+                onClick={() => {
+                  setIsInvitationOpen(
+                    (current) => !current,
+                  )
+                }}
               >
-                <label className="form-field">
-                  <span>כתובת האימייל המוזמנת</span>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(event) => {
-                      setEmail(event.target.value)
-                    }}
-                    maxLength={254}
-                    autoComplete="email"
-                    dir="ltr"
-                    required
-                  />
-                </label>
+                <span aria-hidden="true">+</span>
+                הזמנת בן משפחה
+              </button>
 
-                <div className="form-field">
-                  <span>תפקיד משפחתי</span>
-                  <RoleSelector
-                    value={role}
-                    onChange={(nextRole) => {
-                      setRole(nextRole)
-                    }}
-                    canAssignSteward={
-                      canAssignSteward
-                    }
-                    ariaLabel="תפקיד משפחתי להזמנה החדשה"
-                  />
-                </div>
-
-                <button
-                  className="primary-button"
-                  type="submit"
-                  data-aura-tooltip="לשלוח הזמנה אישית לבן או לבת המשפחה"
-                  disabled={busyKey === 'create'}
+              {isInvitationOpen && (
+                <div
+                  className="family-invitation-panel"
+                  id="family-invitation-panel"
                 >
-                  {busyKey === 'create'
-                    ? 'שולחים הזמנה...'
-                    : 'שליחת הזמנה'}
-                </button>
-              </form>
+                  <div className="family-section-heading">
+                    <p className="panel-kicker">
+                      הזמנה חדשה
+                    </p>
+                    <h2>
+                      מצרפים למעגל של{' '}
+                      {
+                        familyAccess.memoryProfile
+                          .subjectName
+                      }
+                    </h2>
+                    <p>
+                      ההזמנה אישית, חד־פעמית
+                      ותקפה ל־14 ימים.
+                    </p>
+                  </div>
 
-              {invitationLink && (
-                <div className="invitation-link-box">
-                  <strong>
-                    הקישור מוצג פעם אחת בלבד
-                  </strong>
-                  <p>
-                    אל תפרסמו אותו בקבוצה פתוחה.
-                    רק החשבון בעל כתובת האימייל
-                    שהוזמנה יוכל לקבל אותו.
-                  </p>
-                  <div>
-                    <input
-                      type="text"
-                      value={invitationLink}
-                      readOnly
-                      dir="ltr"
-                      aria-label="קישור ההזמנה"
-                    />
+                  <form
+                    className="family-invitation-form"
+                    onSubmit={
+                      handleCreateInvitation
+                    }
+                  >
+                    <label className="form-field">
+                      <span>כתובת האימייל המוזמנת</span>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(event) => {
+                          setEmail(event.target.value)
+                        }}
+                        maxLength={254}
+                        autoComplete="email"
+                        dir="ltr"
+                        required
+                      />
+                    </label>
+
+                    <div className="form-field">
+                      <span>תפקיד משפחתי</span>
+                      <RoleSelector
+                        value={role}
+                        onChange={(nextRole) => {
+                          setRole(nextRole)
+                        }}
+                        canAssignSteward={
+                          canAssignSteward
+                        }
+                        ariaLabel="תפקיד משפחתי להזמנה החדשה"
+                      />
+                    </div>
+
                     <button
-                      className="secondary-button"
-                      type="button"
-                      data-aura-tooltip="להעתיק את קישור ההזמנה"
-                      onClick={
-                        handleCopyInvitation
+                      className="primary-button"
+                      type="submit"
+                      data-aura-tooltip="לשלוח הזמנה אישית לבן או לבת המשפחה"
+                      disabled={
+                        busyKey === 'create'
                       }
                     >
-                      העתקת הקישור
+                      {busyKey === 'create'
+                        ? 'שולחים הזמנה...'
+                        : 'שליחת הזמנה'}
                     </button>
-                  </div>
+                  </form>
+
+                  {invitationLink && (
+                    <div className="invitation-link-box">
+                      <strong>
+                        הקישור מוצג פעם אחת בלבד
+                      </strong>
+                      <p>
+                        אל תפרסמו אותו בקבוצה
+                        פתוחה. רק החשבון בעל
+                        כתובת האימייל שהוזמנה
+                        יוכל לקבל אותו.
+                      </p>
+                      <div>
+                        <input
+                          type="text"
+                          value={invitationLink}
+                          readOnly
+                          dir="ltr"
+                          aria-label="קישור ההזמנה"
+                        />
+                        <button
+                          className="secondary-button"
+                          type="button"
+                          data-aura-tooltip="להעתיק את קישור ההזמנה"
+                          onClick={
+                            handleCopyInvitation
+                          }
+                        >
+                          העתקת הקישור
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </section>
 
-            <section className="family-access-section">
-              <div>
-                <p className="panel-kicker">
-                  חברי הארכיון
-                </p>
-                <h2>מי מחזיק בגישה פעילה?</h2>
+            <section
+              className="family-access-section family-members-section"
+              aria-labelledby="family-members-title"
+            >
+              <div className="family-section-heading family-section-heading-row">
+                <div>
+                  <p className="panel-kicker">
+                    חברי הארכיון
+                  </p>
+                  <h2 id="family-members-title">
+                    בני המשפחה במעגל
+                  </h2>
+                </div>
+                <span className="family-section-count">
+                  {activeMemberCount} פעילים
+                </span>
               </div>
 
               <div className="family-member-list">
-                {familyAccess.members.map(
-                  (member) => {
-                    const isOwner =
-                      member.role === 'owner'
-                    const isRevoked =
-                      member.status === 'revoked'
-                    const isProtectedSteward =
-                      managerRole !== 'owner' &&
-                      member.role === 'steward'
-                    const canManage =
-                      !isOwner &&
-                      !isRevoked &&
-                      !isProtectedSteward
+                {members.map((member) => {
+                  const isOwner =
+                    member.role === 'owner'
+                  const isRevoked =
+                    member.status === 'revoked'
+                  const isProtectedSteward =
+                    managerRole !== 'owner' &&
+                    member.role === 'steward'
+                  const canManage =
+                    !isOwner &&
+                    !isRevoked &&
+                    !isProtectedSteward
+                  const isEditing =
+                    editingMemberId ===
+                    member.membershipId
 
-                    return (
-                      <article
-                        className="family-member-card"
-                        key={
-                          member.membershipId ??
-                          'owner'
-                        }
-                      >
+                  return (
+                    <article
+                      className={`family-member-card ${
+                        isRevoked
+                          ? 'family-member-card-revoked'
+                          : ''
+                      } ${
+                        isEditing
+                          ? 'family-member-card-editing'
+                          : ''
+                      }`}
+                      key={
+                        member.membershipId ??
+                        'owner'
+                      }
+                    >
+                      <div className="family-member-identity">
+                        <span
+                          className="family-member-initial"
+                          aria-hidden="true"
+                        >
+                          {member.displayName
+                            .trim()
+                            .charAt(0)}
+                        </span>
                         <div>
                           <h3>
                             {member.displayName}
@@ -759,22 +882,93 @@ function FamilyAccessPage({
                           <p dir="ltr">
                             {member.email}
                           </p>
-                          <span className="family-member-role-badge">
-                            {isRevoked
-                              ? 'הגישה בוטלה'
-                              : roleLabels[
-                                  member.role
-                                ]}
-                          </span>
                         </div>
+                      </div>
 
-                        {canManage && (
-                          <div className="member-actions">
+                      <div className="family-member-status">
+                        <span className="family-member-role-badge">
+                          {isRevoked
+                            ? 'הגישה בוטלה'
+                            : roleLabels[
+                                member.role
+                              ]}
+                        </span>
+                        {isOwner && (
+                          <span className="family-owner-badge">
+                            בעל/ת הארכיון
+                          </span>
+                        )}
+                      </div>
+
+                      {canManage && (
+                        <details className="family-member-menu">
+                          <summary
+                            aria-label={`פעולות עבור ${member.displayName}`}
+                            data-aura-tooltip="לפתוח פעולות עבור בן המשפחה"
+                          >
+                            <span aria-hidden="true">
+                              ⋮
+                            </span>
+                          </summary>
+                          <div className="family-member-menu-actions">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.currentTarget
+                                  .closest('details')
+                                  ?.removeAttribute(
+                                    'open',
+                                  )
+                                setMemberRoles(
+                                  (current) => ({
+                                    ...current,
+                                    [member.membershipId]:
+                                      member.role,
+                                  }),
+                                )
+                                setEditingMemberId(
+                                  member.membershipId,
+                                )
+                              }}
+                            >
+                              שינוי תפקיד
+                            </button>
+                            <button
+                              className="family-member-menu-danger"
+                              type="button"
+                              onClick={() =>
+                                handleRevokeMember(
+                                  member,
+                                )
+                              }
+                              disabled={
+                                busyKey ===
+                                `member-${member.membershipId}`
+                              }
+                            >
+                              ביטול גישה
+                            </button>
+                          </div>
+                        </details>
+                      )}
+
+                      {canManage && isEditing && (
+                        <div className="member-role-editor">
+                          <div className="member-role-editor-heading">
+                            <strong>
+                              שינוי התפקיד של{' '}
+                              {member.displayName}
+                            </strong>
+                            <span>
+                              בחרו את רמת הגישה
+                              המתאימה למעגל המשפחתי.
+                            </span>
+                          </div>
+                          <div className="member-role-editor-controls">
                             <RoleSelector
                               value={
                                 memberRoles[
-                                  member
-                                    .membershipId
+                                  member.membershipId
                                 ] ?? member.role
                               }
                               onChange={(nextRole) => {
@@ -792,7 +986,7 @@ function FamilyAccessPage({
                               ariaLabel={`תפקיד עבור ${member.displayName}`}
                             />
                             <button
-                              className="secondary-button"
+                              className="primary-button"
                               type="button"
                               data-aura-tooltip="לשמור את התפקיד החדש"
                               onClick={() =>
@@ -808,81 +1002,88 @@ function FamilyAccessPage({
                               עדכון תפקיד
                             </button>
                             <button
-                              className="danger-button"
+                              className="secondary-button"
                               type="button"
-                              data-aura-tooltip="לבטל את הגישה לזיכרון"
-                              onClick={() =>
-                                handleRevokeMember(
-                                  member,
+                              onClick={() => {
+                                setMemberRoles(
+                                  (current) => ({
+                                    ...current,
+                                    [member.membershipId]:
+                                      member.role,
+                                  }),
                                 )
-                              }
+                                setEditingMemberId('')
+                              }}
                               disabled={
                                 busyKey ===
                                 `member-${member.membershipId}`
                               }
                             >
-                              ביטול גישה
+                              ביטול
                             </button>
                           </div>
-                        )}
-                      </article>
-                    )
-                  },
-                )}
+                        </div>
+                      )}
+                    </article>
+                  )
+                })}
               </div>
             </section>
 
-            <section className="family-access-section">
-              <div>
-                <p className="panel-kicker">
-                  היסטוריית הזמנות
-                </p>
-                <h2>קישורים שנוצרו</h2>
-              </div>
-
-              {familyAccess.invitations.length ===
-              0 ? (
-                <p className="family-empty-note">
-                  עדיין לא נוצרו הזמנות.
-                </p>
-              ) : (
-                <div className="family-invitation-list">
-                  {familyAccess.invitations.map(
-                    (invitation) => (
-                      <article
-                        className="family-invitation-card"
-                        key={invitation.id}
-                      >
-                        <div>
-                          <h3 dir="ltr">
-                            {invitation.invitedEmail}
-                          </h3>
-                          <p>
-                            {roleLabels[
-                              invitation.role
-                            ]}{' '}
-                            ·{' '}
-                            {
-                              invitationStatusLabels[
-                                invitation.status
-                              ]
-                            }
-                          </p>
-                          <small>
-                            נוצרה{' '}
-                            {formatDate(
-                              invitation.createdAt,
-                            )}
-                            {invitation.status ===
-                              'pending' &&
-                              ` · בתוקף עד ${formatDate(
+            <details
+              className="family-access-disclosure"
+              open={
+                isPendingOpen ??
+                pendingInvitations.length > 0
+              }
+              onToggle={(event) => {
+                setIsPendingOpen(
+                  event.currentTarget.open,
+                )
+              }}
+            >
+              <summary>
+                <span>הזמנות ממתינות</span>
+                <span className="family-disclosure-count">
+                  {pendingInvitations.length}
+                </span>
+                <span
+                  className="family-disclosure-chevron"
+                  aria-hidden="true"
+                />
+              </summary>
+              <div className="family-disclosure-content">
+                {pendingInvitations.length === 0 ? (
+                  <p className="family-empty-note">
+                    אין כרגע הזמנות שממתינות
+                    לקבלה.
+                  </p>
+                ) : (
+                  <div className="family-invitation-list">
+                    {pendingInvitations.map(
+                      (invitation) => (
+                        <article
+                          className="family-invitation-card"
+                          key={invitation.id}
+                        >
+                          <div>
+                            <h3 dir="ltr">
+                              {invitation.invitedEmail}
+                            </h3>
+                            <p>
+                              {
+                                roleLabels[
+                                  invitation.role
+                                ]
+                              }
+                            </p>
+                            <small>
+                              בתוקף עד{' '}
+                              {formatDate(
                                 invitation.expiresAt,
-                              )}`}
-                          </small>
-                        </div>
-
-                        {invitation.status ===
-                          'pending' && (
+                              )}
+                            </small>
+                          </div>
                           <button
                             className="danger-button"
                             type="button"
@@ -899,14 +1100,71 @@ function FamilyAccessPage({
                           >
                             ביטול ההזמנה
                           </button>
-                        )}
-                      </article>
-                    ),
-                  )}
-                </div>
-              )}
-            </section>
-          </>
+                        </article>
+                      ),
+                    )}
+                  </div>
+                )}
+              </div>
+            </details>
+
+            <details className="family-access-disclosure">
+              <summary>
+                <span>היסטוריית הזמנות</span>
+                <span className="family-disclosure-count">
+                  {invitationHistory.length}
+                </span>
+                <span
+                  className="family-disclosure-chevron"
+                  aria-hidden="true"
+                />
+              </summary>
+              <div className="family-disclosure-content">
+                {invitationHistory.length === 0 ? (
+                  <p className="family-empty-note">
+                    עדיין אין הזמנות שהושלמו,
+                    בוטלו או שפג תוקפן.
+                  </p>
+                ) : (
+                  <div className="family-invitation-list">
+                    {invitationHistory.map(
+                      (invitation) => (
+                        <article
+                          className="family-invitation-card family-invitation-card-history"
+                          key={invitation.id}
+                        >
+                          <div>
+                            <h3 dir="ltr">
+                              {invitation.invitedEmail}
+                            </h3>
+                            <p>
+                              {
+                                roleLabels[
+                                  invitation.role
+                                ]
+                              }{' '}
+                              ·{' '}
+                              {
+                                invitationStatusLabels[
+                                  invitation.status
+                                ]
+                              }
+                            </p>
+                            <small>
+                              נוצרה{' '}
+                              {formatDate(
+                                invitation.createdAt,
+                              )}
+                            </small>
+                          </div>
+                        </article>
+                      ),
+                    )}
+                  </div>
+                )}
+              </div>
+            </details>
+          </div>
         ) : null}
       </section>
     </main>
