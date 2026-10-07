@@ -191,7 +191,28 @@ async function installApiMock(
   }
 }
 
+async function expectCredentialForm(page, mode) {
+  const form = page.locator(`#${mode}-form`)
+  await expect(form).toHaveAttribute('name', mode)
+  await expect(form).not.toHaveAttribute('autocomplete', 'off')
+
+  const email = form.getByLabel('כתובת אימייל')
+  await expect(email).toHaveAttribute('type', 'email')
+  await expect(email).toHaveAttribute('name', 'email')
+  await expect(email).toHaveAttribute('autocomplete', 'email')
+
+  const password = form.getByLabel('סיסמה')
+  await expect(password).toHaveAttribute('type', 'password')
+  await expect(password).toHaveAttribute('name', 'password')
+  await expect(password).toHaveAttribute(
+    'autocomplete',
+    mode === 'register' ? 'new-password' : 'current-password',
+  )
+  await expect(form.locator('button[type="submit"]')).toBeVisible()
+}
+
 async function completePasswordLogin(page) {
+  await expectCredentialForm(page, 'login')
   await page
     .getByLabel('כתובת אימייל')
     .fill('family@example.test')
@@ -244,6 +265,7 @@ test.describe('Invitation authentication continuation', () => {
         name: 'יצירת חשבון',
       })
       .click()
+    await expectCredentialForm(page, 'register')
     await page
       .getByLabel('שם להצגה')
       .fill('בן משפחה')
@@ -365,5 +387,62 @@ test.describe('Invitation authentication continuation', () => {
     ).toHaveText(
       'ההזמנה אינה זמינה, בוטלה או שפג תוקפה.',
     )
+  })
+})
+
+test.describe('Password recovery autofill', () => {
+  test('submits the recovery email with standard autofill metadata', async ({ page }) => {
+    await installApiMock(page)
+    const requests = []
+    await page.route('**/api/auth/forgot-password', async (route) => {
+      requests.push(route.request().postDataJSON())
+      await fulfillJson(route, { success: true, data: null })
+    })
+    await page.goto('/forgot-password')
+    const email = page.getByLabel('כתובת אימייל')
+    await expect(email).toHaveAttribute('type', 'email')
+    await expect(email).toHaveAttribute('name', 'email')
+    await expect(email).toHaveAttribute('autocomplete', 'email')
+    await email.fill('family@example.test')
+    await page.locator('.auth-form button[type="submit"]').click()
+    await expect(page.getByRole('status')).toBeVisible()
+    expect(requests).toEqual([{ email: 'family@example.test' }])
+  })
+
+  test('marks both reset fields as new passwords and preserves confirmation validation', async ({ page }) => {
+    await installApiMock(page)
+    const requests = []
+    await page.route('**/api/auth/reset-password', async (route) => {
+      requests.push(route.request().postDataJSON())
+      await fulfillJson(route, { success: true, data: null })
+    })
+    const token = 'a'.repeat(43)
+    await page.goto(`/reset-password?token=${token}`)
+    const form = page.locator('.auth-form')
+    const password = form.locator('input[name="password"]')
+    const confirmation = form.locator('input[name="passwordConfirmation"]')
+    for (const field of [password, confirmation]) {
+      await expect(field).toHaveAttribute('type', 'password')
+      await expect(field).toHaveAttribute('autocomplete', 'new-password')
+    }
+    await expect(form).not.toHaveAttribute('autocomplete', 'off')
+    await password.fill('correct-password-long')
+    await confirmation.fill('different-password-long')
+    await form.locator('button[type="submit"]').click()
+    await expect(page.getByRole('alert')).toHaveText('הסיסמאות אינן זהות.')
+    expect(requests).toEqual([])
+    await confirmation.fill('correct-password-long')
+    await form.locator('button[type="submit"]').click()
+    await expect(page.getByRole('heading', { name: 'הסיסמה עודכנה בהצלחה' })).toBeVisible()
+    expect(requests).toEqual([{ token, password: 'correct-password-long' }])
+    await page.getByRole('link', { name: 'כניסה לחשבון', exact: true }).click()
+    await expectCredentialForm(page, 'login')
+  })
+
+  test('rejects a reset link without a valid token', async ({ page }) => {
+    await installApiMock(page)
+    await page.goto('/reset-password?token=invalid')
+    await expect(page.getByRole('heading', { name: 'קישור איפוס לא תקין' })).toBeVisible()
+    await expect(page.locator('input[type="password"]')).toHaveCount(0)
   })
 })

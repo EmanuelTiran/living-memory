@@ -1318,6 +1318,8 @@ function AuthPage({
         )}
 
         <form
+          id={`${mode}-form`}
+          name={mode}
           className="auth-form"
           onSubmit={handleSubmit}
           aria-busy={isSubmitting}
@@ -1345,6 +1347,7 @@ function AuthPage({
 
             <input
               type="email"
+              id={`${mode}-email`}
               name="email"
               value={formData.email}
               onChange={handleChange}
@@ -1361,6 +1364,7 @@ function AuthPage({
 
             <input
               type="password"
+              id={`${mode}-password`}
               name="password"
               value={formData.password}
               onChange={handleChange}
@@ -1558,6 +1562,7 @@ function ForgotPasswordPage() {
             <span>כתובת אימייל</span>
             <input
               type="email"
+              name="email"
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value)
@@ -1706,6 +1711,7 @@ function ResetPasswordPage({
           <span>סיסמה חדשה</span>
           <input
             type="password"
+            name="password"
             value={password}
             onChange={(event) => {
               setPassword(event.target.value)
@@ -1723,6 +1729,7 @@ function ResetPasswordPage({
           <span>אימות הסיסמה החדשה</span>
           <input
             type="password"
+            name="passwordConfirmation"
             value={passwordConfirmation}
             onChange={(event) => {
               setPasswordConfirmation(
