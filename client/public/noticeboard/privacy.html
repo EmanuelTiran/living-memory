@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>מדיניות פרטיות — Community Notice Board</title>
+  <meta name="description" content="מדיניות הפרטיות של Community Notice Board: קריאת מודעות באמצעות Google Sheets API, הרשאות גישה, מצב קריאה ב־User Properties ונושאים להשלמה לפני הפרסום.">
+  <meta name="theme-color" content="#183e34">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="he_IL">
+  <meta property="og:title" content="מדיניות פרטיות — Community Notice Board">
+  <meta property="og:description" content="הרשאות התוסף, אחסון הנתונים ולוגי האירוח. השלמות נקודתיות לפני הפרסום מפורטות במסמך.">
+  <meta property="og:url" content="https://zikaron-hai.co.il/noticeboard/privacy">
+  <link rel="canonical" href="https://zikaron-hai.co.il/noticeboard/privacy">
+  <link rel="stylesheet" href="/noticeboard/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">דילוג לתוכן הראשי</a>
+  <header class="site-header"><div class="wrap header-inner">
+    <a class="brand" href="/noticeboard"><span class="brand-mark" aria-hidden="true">▤</span><span><bdi lang="en">Community Notice Board</bdi><small>לוח המודעות של הקהילה</small></span></a>
+    <nav aria-label="ניווט ראשי"><a href="/noticeboard">המוצר</a><a href="/noticeboard/privacy" aria-current="page">פרטיות</a><a href="/noticeboard/terms">תנאי שימוש</a><a href="/noticeboard/support">תמיכה</a></nav>
+  </div></header>
+  <main id="main" class="wrap document" tabindex="-1">
+    <p class="eyebrow">שקיפות ושימוש בנתונים</p>
+    <h1>מדיניות פרטיות</h1>
+    <p class="metadata">Community Notice Board · עודכנה ב־12 באוקטובר 2026</p>
+    <div class="callout"><strong>השלמות נקודתיות לפני הפרסום</strong><p>המסמך מתאר את המימוש שנמסר ואושר בידי המפתח ואת לוגי השרת שנבדקו. נושאים שלא אומתו מסומנים במפורש ב<a href="#review">סעיף 5</a>; המסמך עדיין טעון השלמה לפני הגשה סופית ל־Google.</p></div>
+    <section aria-labelledby="owner"><h2 id="owner">1. המוצר ופרטי המפתח</h2><p><bdi lang="en">Community Notice Board</bdi> הוא תוסף עצמאי המציג מודעות קהילתיות בתוך Gmail. מפתח התוסף: <strong>עמנואל</strong>. לשאלות פרטיות: <a href="mailto:t7193439@gmail.com"><bdi>t7193439@gmail.com</bdi></a>.</p><p>מדיניות זו מתייחסת לתוסף. דפי המידע שלו מתארחים תחת הנתיב <code>/noticeboard</code> באתר זיכרון חי; אין בכך חיבור בין נתוני התוסף לבין מערכת הזיכרונות.</p></section>
+    <section aria-labelledby="data"><h2 id="data">2. הנתונים המשמשים את התוסף</h2><ul><li><strong>תוכן המודעות:</strong> המודעות נשמרות ב־Google Sheets. התוסף קורא את גיליון הצפייה הפרטי שהוגדר ללוח באמצעות Google Sheets API, כדי להציג את המודעות בחלונית.</li><li><strong>מצב הקריאה:</strong> מצב קריאת המודעות האישי נשמר באמצעות Google Apps Script User Properties, לצורך מעקב אחר מודעות שנקראו והצגת המונה.</li><li><strong>בקרת גישה:</strong> גישת הצפייה מבוססת על הרשאות Google Sheets שהוענקו לקבוצת Google Groups של הקהילה. חברי הקבוצה מקבלים גישה בהתאם להרשאות שהוגדרו לגיליון.</li></ul><p>התוסף אינו מבקש הרשאה לקריאת תוכן הודעות Gmail, ולא נבנתה בו יכולת כזאת. תוכן הודעות הדואר אינו מקור למודעות הלוח.</p></section>
+    <section aria-labelledby="scopes"><h2 id="scopes">3. הרשאות Google ומשמעותן</h2><p>אלה ההרשאות שנמסרו עבור התוסף. קידומת כל הרשאה היא <code>https://www.googleapis.com/auth/</code>.</p>
+      <article class="card"><h3><code class="scope">gmail.addons.execute</code></h3><p>מאפשרת להפעיל את התוסף במסגרת Gmail. הרשאה זו לבדה אינה מעניקה הרשאה לקריאת תוכן הודעות Gmail.</p></article>
+      <article class="card"><h3><code class="scope">spreadsheets.readonly</code></h3><p>מאפשרת צפייה וקריאה בגיליונות Google Sheets שאליהם יש למשתמש גישה, ללא הרשאת כתיבה מכוח הרשאה זו. ההרשאה אינה מוגבלת טכנית לגיליון המודעות בלבד. לפי אופן הפעולה שנמסר, התוסף משתמש בה לקריאת גיליון המודעות המוגדר.</p></article>
+      <article class="card"><h3><code class="scope">script.storage</code></h3><p>מאפשרת קריאה וכתיבה של נתונים בשירות Properties של Apps Script. ההרשאה אינה מוגבלת טכנית למצב קריאה בלבד. בתוסף היא משמשת לשמירת מצב הקריאה ב־User Properties, שהם נתוני מפתח–ערך בהיקף המשתמש בפרויקט הסקריפט.</p></article>
+      <p class="metadata">מקורות: <a href="https://codelabs.developers.google.com/codelabs/gmail-add-ons">מדריך Google לתוספי Gmail</a>, <a href="https://developers.google.com/workspace/sheets/api/scopes">הרשאות Google Sheets</a>, <a href="https://developers.google.com/apps-script/guides/properties">שירות Properties של Apps Script</a>.</p>
+    </section>
+    <section aria-labelledby="storage"><h2 id="storage">4. אחסון, תשתיות, לוגים ואבטחה</h2><p>המודעות נשמרות ב־Google Sheets, ומצב הקריאה נשמר ב־Apps Script User Properties בהיקף המשתמש בפרויקט הסקריפט. אין במסמך זה תקופת שמירה קבועה למצב הקריאה; משך השמירה ומנגנון המחיקה טעונים אימות והשלמה כמפורט בסעיף 5. אין התחייבות שהסרת התוסף או ביטול הרשאותיו מוחקים מידע שנשמר.</p><p>דפי המידע באזור זה הם דפים סטטיים, ללא טפסים, קוד תוסף או מנגנון לשמירת מצב קריאה. אין בהם חיבור למסד הנתונים של מערכת הזיכרונות. הדפים מתארחים בתשתית Render הקיימת, בעוד נתוני המודעות ומצב הקריאה המתוארים לעיל מאוחסנים בשירותי Google.</p><p>תשתיות Google ו־Render עשויות לעבד מידע לצורכי תפעול השירותים. לוגי שרת Express של דפי המידע כוללים מזהה בקשה, נתיב, שיטת HTTP, קוד תגובה, חותמת זמן ומשך הבקשה. תיאור זה מתייחס ללוגים שנבדקו בקוד השרת; הוא אינו ממצה בהכרח את המידע שספקי התשתית עשויים לאסוף או לעבד.</p><p>בקרת גישת הצפייה הקיימת מבוססת על הרשאות Google Sheets שהוענקו לקבוצת Google Groups. אין במסמך הבטחה לאבטחה מוחלטת, להצפנה מיוחדת או לתאימות רגולטורית שלא נבדקה.</p></section>
+    <section aria-labelledby="review"><h2 id="review">5. השלמות לפני הפרסום</h2><div class="callout"><p><strong>סעיפים שעדיין דורשים אימות והשלמה:</strong> קוד התוסף אינו נמצא במאגר של דפי המידע, ולכן הנושאים הבאים טרם אומתו בבדיקת הקוד המקומית:</p><ul><li><strong>שמירה ומחיקה:</strong> לבדוק את מנגנון מחיקת מצב הקריאה ב־User Properties ואת משך שמירת הנתונים והלוגים. אם מנגנון מחיקה אינו קיים, נותרת השלמה טכנית בתוסף לפני הפרסום. אין כאן הבטחה למחיקה אוטומטית או למועד טיפול בבקשה.</li><li><strong>שימושים נוספים בנתונים:</strong> לאמת מול קוד התוסף ותצורת השירותים אם קיימים נתונים נוספים, בעלי גישה או העברות שלא תוארו במסמך. הצהרה שהתוסף אינו משתמש בנתוני Google לפרסום או לשיווק תתווסף לאחר אימות המימוש; בשלב זה אין כאן הצהרה מאומתת בנושא.</li><li><strong>הרשאות ומדיניות Google:</strong> לאמת את רשימת ההרשאות מול ה־manifest ואת התאמת השימוש בנתונים ל־Google API Services User Data Policy, לרבות Limited Use ככל שחלות. אין כאן הצהרה על עמידה מלאה לפני האימות.</li></ul></div></section>
+    <section aria-labelledby="contact"><h2 id="contact">6. פניות ושינויים</h2><p>לשאלות לגבי מידע אישי, בקשות מחיקה או בירור הרשאות, ניתן לפנות לעמנואל בכתובת <a href="mailto:t7193439@gmail.com"><bdi>t7193439@gmail.com</bdi></a>. מצב הקריאה נשמר ב־User Properties; מנגנון המחיקה ומשך השמירה עדיין טעונים אימות. הסרת התוסף אינה הבטחה למחיקת הנתונים.</p><p>לאחר השלמת הנושאים שבסעיף 5, יש לעדכן את המדיניות ואת תאריך העדכון לפני הגשתה הסופית לאימות OAuth ולפרסום ב־Marketplace.</p></section>
+  </main>
+  <footer class="site-footer"><div class="wrap footer-inner"><p><bdi lang="en">Community Notice Board</bdi> · מוצר עצמאי מאת עמנואל</p><nav aria-label="קישורים בתחתית העמוד"><a href="/noticeboard">המוצר</a><a href="/noticeboard/terms">תנאי שימוש</a><a href="/noticeboard/support">תמיכה</a></nav></div></footer>
+</body>
+</html>

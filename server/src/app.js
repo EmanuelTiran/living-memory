@@ -136,6 +136,20 @@ app.use(
 app.use('/api/memories', memoryRoutes)
 
 if (env.serveClientBuild) {
+  // Standalone public pages must precede static directory redirects and the SPA.
+  for (const [route, file] of [
+    ['/noticeboard', 'index.html'],
+    ['/noticeboard/privacy', 'privacy.html'],
+    ['/noticeboard/terms', 'terms.html'],
+    ['/noticeboard/support', 'support.html'],
+  ]) {
+    app.get(route, (_req, res, next) => {
+      res.sendFile(path.join(clientBuildDirectory, 'noticeboard', file), (error) => {
+        if (error) next(error)
+      })
+    })
+  }
+
   app.use(
     express.static(clientBuildDirectory, {
       index: false,
