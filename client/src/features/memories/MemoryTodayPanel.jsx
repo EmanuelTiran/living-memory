@@ -14,6 +14,7 @@ import {
   listMemoryRecordings,
 } from '../../api/recordingApi.js'
 import GuidedLivingJourney from './GuidedLivingJourney.jsx'
+import MemoryMediaActions from './MemoryMediaActions.jsx'
 import {
   createMemoryProfileTabSearch,
   getMemoryProfileCapabilities,
@@ -272,6 +273,13 @@ function MemoryTodayPanel({
             : 'בכל ביקור בוחרים פעולה משמעותית אחת. אין צורך להשלים הכול בבת אחת.'}
         </p>
       </header>
+
+      {capabilities.canContribute && (
+        <section aria-label="תיעוד חדש">
+          <h2>איך תרצו לתעד היום?</h2>
+          <MemoryMediaActions includeStory />
+        </section>
+      )}
 
       {isLoading ? (
         <div

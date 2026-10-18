@@ -13,6 +13,7 @@ import {
   uploadMemoryAsset,
 } from '../../api/assetApi.js'
 import './MemoryAssets.css'
+import MemoryExternalVideos from './MemoryExternalVideos.jsx'
 
 const MAX_ASSET_SIZE_BYTES =
   10 * 1024 * 1024
@@ -286,6 +287,8 @@ function MemoryAssets({
   memoryId,
   subjectName,
   runAuthenticatedRequest,
+  onExternalVideoCountChange,
+  externalVideoRequestKey = '',
 }) {
   const fileInputRef = useRef(null)
   const [assets, setAssets] = useState([])
@@ -683,7 +686,7 @@ function MemoryAssets({
             אלבום ומסמכים פרטיים
           </p>
           <h2 id="memory-assets-title">
-            תמונות ומסמכים של {subjectName}
+            תמונות, וידאו וקבצים של {subjectName}
           </h2>
           <p>
             {canContribute
@@ -699,6 +702,15 @@ function MemoryAssets({
           {assets.length}
         </span>
       </div>
+
+      <MemoryExternalVideos
+        key={`${memoryId}:${externalVideoRequestKey}`}
+        memoryId={memoryId}
+        canContribute={canContribute}
+        canEdit={canEdit}
+        runAuthenticatedRequest={runAuthenticatedRequest}
+        onCountChange={onExternalVideoCountChange}
+      />
 
       {errorMessage && (
         <p
@@ -742,6 +754,7 @@ function MemoryAssets({
             <span>בחירת קובץ</span>
             <input
               ref={fileInputRef}
+              id="memory-asset-upload-input"
               type="file"
               accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
               onChange={handleFileChange}

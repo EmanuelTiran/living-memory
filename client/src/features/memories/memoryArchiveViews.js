@@ -33,9 +33,9 @@ export const MEMORY_ARCHIVE_VIEWS = [
   },
   {
     id: MEMORY_ARCHIVE_VIEW_IDS.assets,
-    label: 'תמונות וקבצים',
+    label: 'תמונות, וידאו וקבצים',
     hash: '#memory-assets-title',
-    tooltip: 'לראות תמונות וקבצים שנשמרו',
+    tooltip: 'לראות תמונות, סרטונים וקבצים שנשמרו',
   },
 ]
 
@@ -55,6 +55,9 @@ export function resolveMemoryArchiveView({
   hash = '',
   targetType = '',
 }) {
+  if (hash === '#memory-asset-upload-input' || hash === '#memory-external-video-url') {
+    return MEMORY_ARCHIVE_VIEW_IDS.assets
+  }
   if (
     RECORDING_TARGET_TYPES.has(
       targetType,

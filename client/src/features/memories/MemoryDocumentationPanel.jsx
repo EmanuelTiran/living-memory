@@ -5,6 +5,7 @@ import {
 } from 'react-router'
 import BiographyQuestionnaire from './BiographyQuestionnaire.jsx'
 import MemoryStoryComposer from './MemoryStoryComposer.jsx'
+import MemoryMediaActions from './MemoryMediaActions.jsx'
 import {
   createMemoryProfileTabSearch,
   MEMORY_PROFILE_TAB_IDS,
@@ -88,6 +89,8 @@ function MemoryDocumentationPanel({
           בוחרים דרך אחת בלבד. אפשר לעצור בכל שלב ולחזור אליה בביקור הבא.
         </p>
       </header>
+
+      <MemoryMediaActions />
 
       <div
         className={`memory-documentation-tools ${

@@ -147,6 +147,22 @@ export async function listMemoryAssets(
   return data.assets
 }
 
+export async function listMemoryExternalVideos(accessToken, memoryId) {
+  const data = await request(memoryId, '/external-videos', accessToken)
+  return data.externalVideos ?? []
+}
+
+export async function saveMemoryExternalVideo(accessToken, memoryId, input, videoId = '') {
+  const data = await request(memoryId, `/external-videos${videoId ? `/${encodeURIComponent(videoId)}` : ''}`, accessToken, {
+    method: videoId ? 'PATCH' : 'POST', body: input,
+  })
+  return data.externalVideo
+}
+
+export async function archiveMemoryExternalVideo(accessToken, memoryId, videoId) {
+  return request(memoryId, `/external-videos/${encodeURIComponent(videoId)}`, accessToken, { method: 'DELETE' })
+}
+
 export async function uploadMemoryAsset(
   accessToken,
   memoryId,

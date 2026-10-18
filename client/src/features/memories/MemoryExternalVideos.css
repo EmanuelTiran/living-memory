@@ -1,0 +1,7 @@
+.memory-external-videos { margin-block: 24px; padding-block: 18px; border-block: 1px solid var(--color-border); }
+.memory-external-videos > p { color: var(--color-ink-muted); line-height: 1.7; }
+.memory-external-videos > form { max-width: 700px; }
+.memory-external-video-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.memory-external-videos .memory-asset-card-body p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.memory-external-videos h4 { overflow-wrap: anywhere; }
+@media (max-width: 520px) { .memory-external-video-actions > * { width: 100%; } }

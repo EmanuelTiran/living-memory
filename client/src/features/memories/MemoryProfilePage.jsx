@@ -9,6 +9,7 @@ import { ApiError, refreshSession } from '../../api/authApi.js'
 import {
   createMemoryAssetAccessLink,
   listMemoryAssets,
+  listMemoryExternalVideos,
   uploadMemoryAsset,
 } from '../../api/assetApi.js'
 import {
@@ -849,7 +850,8 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
     archiveInventoryMatchesMemory &&
     archiveInventory.status === 'ready' &&
     archiveInventory.recordingCount === 0 &&
-    archiveInventory.assetCount === 0
+    archiveInventory.assetCount === 0 &&
+    (archiveInventory.externalVideoCount ?? 0) === 0
   const hasApprovedSources =
     hasApprovedStory ||
     (
@@ -915,9 +917,10 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
             accessToken,
             memoryId,
           ),
+          listMemoryExternalVideos(accessToken, memoryId),
         ]),
     )
-      .then(([recordings, assets]) => {
+      .then(([recordings, assets, externalVideos]) => {
         if (!isCurrent) {
           return
         }
@@ -928,6 +931,7 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
           recordingCount:
             recordings.length,
           assetCount: assets.length,
+          externalVideoCount: externalVideos.length,
         })
       })
       .catch(() => {
@@ -1113,6 +1117,8 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
     location.hash,
     location.key,
     memoryProfile,
+    activeArchiveView,
+    archiveInventoryIsLoading,
   ])
 
   function handleMemoryTabChange(
@@ -1822,7 +1828,10 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
                   בודקים מה כבר נשמר בארכיון...
                 </p>
               </div>
-            ) : archiveIsEmpty ? (
+            ) : archiveIsEmpty && ![
+              MEMORY_ARCHIVE_VIEW_IDS.assets,
+              MEMORY_ARCHIVE_VIEW_IDS.recordings,
+            ].includes(activeArchiveView) ? (
               <section
                 className="memory-archive-empty"
                 aria-labelledby="memory-archive-empty-title"
@@ -2094,6 +2103,8 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
                 aria-labelledby="memory-archive-view-assets"
               >
                 <MemoryAssets
+                  key={memoryProfile.id}
+                  externalVideoRequestKey={location.key}
                   canContribute={canContribute}
                   canEdit={canEdit}
                   memoryId={memoryProfile.id}
@@ -2103,6 +2114,9 @@ function MemoryProfilePage({ authentication, onAuthenticationChange }) {
                   runAuthenticatedRequest={
                     runAuthenticatedRequest
                   }
+                  onExternalVideoCountChange={(externalVideoCount) => {
+                    setArchiveInventory(current => ({ ...current, externalVideoCount }))
+                  }}
                 />
               </div>
             )}

@@ -14,6 +14,7 @@ import {
   viewAssetFile,
 } from './memoryAssetController.js'
 import { uploadMemoryAsset } from './memoryAssetUpload.js'
+import memoryExternalVideoRoutes from './memoryExternalVideoRoutes.js'
 import {
   memoryAssetAccessLinkSchema,
   memoryAssetAccessQuerySchema,
@@ -36,6 +37,7 @@ memoryAssetRoutes.get(
 )
 
 memoryAssetRoutes.use(requireAuth)
+memoryAssetRoutes.use('/external-videos', memoryExternalVideoRoutes)
 
 memoryAssetRoutes.get(
   '/',

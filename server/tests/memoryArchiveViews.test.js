@@ -45,6 +45,8 @@ describe('memory archive views', () => {
     ['#recordings-title', 'recordings'],
     ['#memory-recording-recording-1', 'recordings'],
     ['#memory-assets-title', 'assets'],
+    ['#memory-asset-upload-input', 'assets'],
+    ['#memory-external-video-url', 'assets'],
   ])(
     'opens the matching view for the legacy hash %s',
     (hash, expectedView) => {

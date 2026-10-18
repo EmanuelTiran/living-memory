@@ -1,0 +1,8 @@
+.memory-media-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 12px;
+}
+
+.memory-media-actions a { min-height: 48px; text-align: center; }
+.memory-media-actions a:focus-visible { outline: 3px solid var(--color-olive); outline-offset: 3px; }
