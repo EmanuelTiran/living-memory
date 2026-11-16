@@ -4,15 +4,11 @@ services:
     runtime: node
     branch: release/production-launch
     region: frankfurt
-    plan: 1c-2g
+    plan: free
     numInstances: 1
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /api/ready
-    disk:
-      name: living-memory-data
-      mountPath: /var/lib/living-memory
-      sizeGB: 10
     envVars:
       - key: MONGODB_URI
         sync: false
@@ -31,10 +27,10 @@ services:
       - key: SERVE_CLIENT_BUILD
         value: true
       - key: PERSISTENT_STORAGE_REQUIRED
-        value: true
+        value: false
       - key: TRUST_PROXY_HOPS
         value: 1
       - key: RECORDING_STORAGE_ROOT
-        value: /var/lib/living-memory/recordings
+        value: /tmp/living-memory/recordings
       - key: MEMORY_ASSET_STORAGE_ROOT
-        value: /var/lib/living-memory/memory-assets
+        value: /tmp/living-memory/memory-assets
